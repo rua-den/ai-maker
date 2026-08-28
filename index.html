@@ -34,6 +34,24 @@
   }
   #fullscreenBtn:hover { background: rgba(0,0,0,0.55); }
   #fullscreenBtn:active { transform: scale(0.92); }
+  #homeBtn {
+    position: fixed;
+    top: 14px; left: 14px;
+    z-index: 20;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.35);
+    color: white;
+    font-size: 20px;
+    text-decoration: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(3px);
+    transition: background 0.15s, transform 0.1s;
+  }
+  #homeBtn:hover { background: rgba(0,0,0,0.55); }
+  #homeBtn:active { transform: scale(0.92); }
   canvas {
     display: block;
     box-shadow: 0 0 60px rgba(0,0,0,0.4);
@@ -184,10 +202,35 @@
     list-style: none;
     padding: 6px 0;
   }
+  #lbActions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  #lbActions button {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 6px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.12);
+    color: white;
+    cursor: pointer;
+    text-shadow: none;
+    transition: background 0.15s, transform 0.08s;
+  }
+  #lbActions button:hover { background: rgba(255,255,255,0.22); }
+  #lbActions button:active { transform: scale(0.96); }
 </style>
+<!-- Firebase (used only for the shared global leaderboard — config lives in firebase-config.js) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<!-- <script src="firebase-config.js"></script> -->
 </head>
 <body>
 <div id="gameContainer">
+  <a id="homeBtn" href="index.html" title="Về trang chủ">🐢</a>
   <button id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
   <canvas id="game" width="400" height="600"></canvas>
   <div id="scoreDisplay">0</div>
@@ -201,6 +244,11 @@
     <div id="leaderboardBox" class="panel">
       <div id="lbTitle">🏆 Top 10</div>
       <ol id="leaderboardList"></ol>
+      <div id="lbActions">
+        <!-- <button id="exportBtn" title="Download leaderboard as a JSON file">⬇ Export</button>
+        <button id="importBtn" title="Load a leaderboard JSON file">⬆ Import</button> -->
+        <!-- <input id="importFile" type="file" accept="application/json" style="display:none" /> -->
+      </div>
     </div>
   </div>
 </div>
@@ -252,31 +300,120 @@ const nameInput = document.getElementById('nameInput');
 const startBtn = document.getElementById('startBtn');
 const leaderboardBox = document.getElementById('leaderboardBox');
 const leaderboardList = document.getElementById('leaderboardList');
+const firebaseConfig = {
+  apiKey: "AIzaSyCr7P5vuhMZsGC-DzR-cKV7BUzgpBeeapk",
+  authDomain: "first-app-7456b.firebaseapp.com",
+  databaseURL: "https://first-app-7456b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "first-app-7456b",
+};
 
-// ---------- Leaderboard (persisted as JSON, top 10) ----------
-const LB_KEY = 'flappyDogLeaderboard_v1';
-const NAME_KEY = 'flappyDogPlayerName_v1';
+// ---------- Leaderboard (shared globally via Firebase Realtime Database) ----------
+// firebaseConfig comes from firebase-config.js (shared across all games on this site).
+// Until it's filled in, the game falls back to this browser's local storage only.
+// Namespaced by game, so this SAME Firebase project can host other games'
+// leaderboards too (each game just gets its own GAME_ID) without mixing scores.
+const GAME_ID = 'flappy-dog';
+
+const USE_FIREBASE = !!(typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY" && window.firebase);
+let fbRef = null;
+if (USE_FIREBASE) {
+  firebase.initializeApp(firebaseConfig);
+  fbRef = firebase.database().ref('leaderboards/' + GAME_ID);
+}
+
+const LB_KEY = 'leaderboard_' + GAME_ID;
+const NAME_KEY = 'playerName'; // shared across all games on this site — enter your name once
 let playerName = '';
+let leaderboard = [];
 
-function loadLeaderboard() {
+function localLoad() {
   try {
     const raw = JSON.parse(localStorage.getItem(LB_KEY));
     return Array.isArray(raw) ? raw : [];
   } catch (e) { return []; }
 }
-function saveLeaderboard(list) {
+function localSave(list) {
   try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch (e) {}
 }
-let leaderboard = loadLeaderboard();
+if (USE_FIREBASE) {
+  // Live-synced: every visitor sees the same top 10, updating in real time.
+  fbRef.on('value', (snap) => {
+    const arr = [];
+    snap.forEach((child) => {
+      const v = child.val() || {};
+      arr.push({ key: child.key, name: v.name, score: v.score, date: v.date || 0 });
+    });
+    arr.sort((a, b) => b.score - a.score || a.date - b.date);
+    leaderboard = arr.slice(0, 10);
+    renderLeaderboard();
+  });
+} else {
+  leaderboard = localLoad();
+}
+
+async function pruneFirebaseLeaderboard() {
+  if (!fbRef) return;
+
+  try {
+    const snap = await fbRef.orderByChild('score').once('value');
+
+    const items = [];
+
+    snap.forEach((child) => {
+      const value = child.val() || {};
+
+      items.push({
+        key: child.key,
+        score: Number(value.score || 0),
+        date: Number(value.date || 0)
+      });
+    });
+
+    // Keep the 10 highest scores.
+    // Sort ascending first so the lowest scores are removed.
+    items.sort((a, b) => a.score - b.score || a.date - b.date);
+
+    if (items.length <= 10) {
+      console.log(`Firebase leaderboard: ${items.length} records, nothing to prune.`);
+      return;
+    }
+
+    const toRemove = items.slice(0, items.length - 10);
+
+    console.log(
+      `Firebase leaderboard: ${items.length} records -> removing ${toRemove.length}`
+    );
+
+    await Promise.all(
+      toRemove.map(({ key }) => fbRef.child(key).remove())
+    );
+
+    console.log('Firebase leaderboard pruned to 10 records.');
+  } catch (err) {
+    console.error('Firebase leaderboard prune failed:', err);
+  }
+}
 
 function addScoreToLeaderboard(name, sc) {
   const entry = { name: name, score: sc, date: Date.now() };
-  leaderboard.push(entry);
-  leaderboard.sort((a, b) => b.score - a.score || a.date - b.date);
-  leaderboard = leaderboard.slice(0, 10);
-  saveLeaderboard(leaderboard);
-  const rank = leaderboard.indexOf(entry);
-  return { entry: entry, madeTop10: rank !== -1, rank: rank };
+  // rank computed against the currently cached top 10 (works before the async write resolves)
+  let rank = leaderboard.findIndex((e) => sc > e.score);
+  if (rank === -1) rank = leaderboard.length;
+  const madeTop10 = rank < 10;
+
+  if (USE_FIREBASE) {
+    fbRef.push(entry)
+      .then(() => pruneFirebaseLeaderboard())
+      .catch((err) => {
+        console.error('Firebase leaderboard write failed:', err);
+      });
+  } else {
+    leaderboard.push(entry);
+    leaderboard.sort((a, b) => b.score - a.score || a.date - b.date);
+    leaderboard = leaderboard.slice(0, 10);
+    localSave(leaderboard);
+  }
+  return { entry: entry, madeTop10: madeTop10, rank: rank };
 }
 
 function escapeHtml(str) {
@@ -296,7 +433,8 @@ function renderLeaderboard(highlightEntry) {
   }
   leaderboard.forEach((entry, i) => {
     const li = document.createElement('li');
-    li.className = 'lbRow' + (highlightEntry === entry ? ' lbHighlight' : '');
+    const isHighlight = highlightEntry && entry.name === highlightEntry.name && entry.score === highlightEntry.score;
+    li.className = 'lbRow' + (isHighlight ? ' lbHighlight' : '');
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
     li.innerHTML = '<span class="lbRank">' + medal + '</span>' +
       '<span class="lbName">' + escapeHtml(entry.name) + '</span>' +
@@ -308,6 +446,60 @@ function renderLeaderboard(highlightEntry) {
 // prefill last-used name
 nameInput.value = (() => { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } })();
 renderLeaderboard();
+
+// ---------- Export / Import leaderboard as a real .json file ----------
+// const exportBtn = document.getElementById('exportBtn');
+// const importBtn = document.getElementById('importBtn');
+// const importFile = document.getElementById('importFile');
+
+function exportLeaderboard(e) {
+  e.stopPropagation();
+  const blob = new Blob([JSON.stringify(leaderboard, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = GAME_ID + '-leaderboard.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importLeaderboardFile(e) {
+  e.stopPropagation();
+  importFile.value = '';
+  importFile.click();
+}
+
+// importFile.addEventListener('change', () => {
+//   const file = importFile.files[0];
+//   if (!file) return;
+//   const reader = new FileReader();
+//   reader.onload = () => {
+//     try {
+//       const incoming = JSON.parse(reader.result);
+//       if (!Array.isArray(incoming)) throw new Error('not an array');
+//       const valid = incoming.filter(x => x && typeof x.name === 'string' && typeof x.score === 'number');
+//       if (USE_FIREBASE) {
+//         valid.forEach(x => fbRef.push({ name: x.name, score: x.score, date: x.date || Date.now() }));
+//         pruneFirebaseLeaderboard();
+//       } else {
+//         const merged = leaderboard.concat(valid);
+//         merged.sort((a, b) => b.score - a.score || (a.date || 0) - (b.date || 0));
+//         leaderboard = merged.slice(0, 10);
+//         localSave(leaderboard);
+//         renderLeaderboard();
+//       }
+//       subText.textContent = 'Leaderboard imported and merged!';
+//     } catch (err) {
+//       subText.textContent = 'Could not read that file — is it a valid leaderboard JSON?';
+//     }
+//   };
+//   reader.readAsText(file);
+// });
+
+// exportBtn.addEventListener('click', exportLeaderboard);
+// importBtn.addEventListener('click', importLeaderboardFile);
 
 // ---------- Game State ----------
 let state = 'ready'; // ready, playing, dead
