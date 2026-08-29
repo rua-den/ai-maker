@@ -2,129 +2,80 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Cờ Tướng — Rùa</title>
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; overflow: hidden;
-    height: 100%; width: 100%;
-    background: #2b1d12;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    touch-action: manipulation;
-  }
-  #gameContainer {
-    position: relative;
-    width: 100vw; height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-  }
-  canvas {
-    display: block;
-    box-shadow: 0 0 60px rgba(0,0,0,0.5);
-    border-radius: 8px;
-  }
-  #fullscreenBtn, #homeBtn {
-    position: fixed; top: 14px; z-index: 30;
-    width: 40px; height: 40px; border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.25);
-    background: rgba(0,0,0,0.4); color: white; font-size: 18px;
-    text-decoration: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px);
-    transition: background 0.15s, transform 0.1s;
-  }
-  #fullscreenBtn { right: 14px; }
-  #homeBtn { left: 14px; font-size: 20px; }
-  #fullscreenBtn:hover, #homeBtn:hover { background: rgba(0,0,0,0.6); }
-  #fullscreenBtn:active, #homeBtn:active { transform: scale(0.92); }
-
-  .panel {
-    pointer-events: auto;
-    background: rgba(30, 20, 12, 0.75);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 14px;
-    padding: 14px 18px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-    color: white;
-  }
-
-  /* ---- Menu overlay ---- */
-  #menuOverlay {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 16px; z-index: 25; color: white; text-shadow: 0 3px 6px rgba(0,0,0,0.5);
-  }
-  #menuOverlay h1 {
-    font-size: clamp(28px, 6vw, 42px); font-weight: 900; margin: 0;
-    animation: floaty 2.2s ease-in-out infinite;
-  }
-  @keyframes floaty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
-  .modeRow { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .choiceBtn {
-    font-size: 15px; font-weight: 700; padding: 12px 20px; border-radius: 10px;
-    border: 2px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08);
-    color: white; cursor: pointer; transition: all 0.15s; text-shadow: none;
-  }
-  .choiceBtn:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); }
-  .choiceBtn.active { background: linear-gradient(180deg,#e8a33d,#c97a1e); border-color: #ffcf7a; color:#3a1e00; }
-  #startGameBtn {
-    font-size: 17px; font-weight: 800; padding: 12px 30px; border-radius: 10px;
-    border: none; background: linear-gradient(180deg, #ff8a5c, #e2542a);
-    color: white; cursor: pointer; box-shadow: 0 4px 0 #a1381a; text-shadow:none;
-    transition: transform 0.08s;
-  }
-  #startGameBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #a1381a; }
-  .sectionLabel { font-size: 13px; opacity: 0.75; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px; }
-
-  /* ---- In-game top bar ---- */
-  #topBar {
-    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-    display: none; align-items: center; gap: 14px; z-index: 20;
-    font-size: 14px; font-weight: 700;
-  }
-  #topBar .turnDot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: -2px; }
-  #topBar button {
-    font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.12); color: white;
-    cursor: pointer; transition: background 0.15s;
-  }
-  #topBar button:hover { background: rgba(255,255,255,0.24); }
-
-  /* ---- Game over overlay ---- */
-  #overOverlay {
-    position: absolute; inset: 0; display: none;
-    align-items: center; justify-content: center; z-index: 25;
-    background: rgba(0,0,0,0.45);
-  }
-  #overOverlay .panel { text-align: center; display:flex; flex-direction:column; gap:14px; align-items:center; }
-  #overOverlay h2 { margin: 0; font-size: 26px; }
-  #overOverlay .row { display:flex; gap:10px; }
-
-  #thinkingBadge {
-    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
-    display: none; font-size: 13px; font-weight: 700; padding: 8px 16px;
-    border-radius: 999px; background: rgba(0,0,0,0.5); color: #ffd08a; z-index: 20;
-  }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#2b1d12; color:#fff; font-family:'Segoe UI',system-ui,sans-serif; }
+  #loading { height:100%; display:grid; place-items:center; font-weight:800; opacity:.82; }
 </style>
 </head>
 <body>
-<div id="gameContainer">
-  <a id="homeBtn" href="../index.html" title="Về trang chủ">🐢</a>
-  <button id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
-  <canvas id="board" width="560" height="640"></canvas>
+<div id="loading">Đang tải Cờ Tướng…</div>
+<script>
+(async () => {
+  try {
+    const response = await fetch('./xiangqi-core.html', { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    let html = await response.text();
 
-  <div id="topBar" class="panel">
-    <span id="turnLabel"><span class="turnDot" id="turnDot" style="background:#e2542a"></span>Lượt: Đỏ</span>
-    <button id="undoBtn">↩ Undo</button>
-    <button id="menuBtn">☰ Menu</button>
-  </div>
+    if (!/<meta\s+name=["']viewport["']/i.test(html)) {
+      html = html.replace(
+        '<meta charset="UTF-8">',
+        '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">'
+      );
+    }
 
-  <div id="thinkingBadge">🤔 Bot đang nghĩ...</div>
+    html = html.replace(
+      'background: rgba(30, 20, 12, 0.75);\n    backdrop-filter: blur(4px);',
+      'background: rgba(30, 20, 12, 0.96);\n    backdrop-filter: blur(8px);'
+    );
 
-  <div id="menuOverlay">
-    <h1>🐴 CỜ TƯỚNG</h1>
-    <div class="sectionLabel">Chế độ chơi</div>
+    const extraCss = `
+  #setupPanel {
+    width: min(390px, calc(100vw - 30px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(180deg, rgba(49,31,17,.98), rgba(28,18,11,.98));
+    border: 1px solid rgba(255,216,155,.28);
+    box-shadow: 0 16px 42px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .playerNames {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .playerField { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .playerField label { font-size:12px; font-weight:800; opacity:.9; text-align:left; }
+  .playerInput {
+    width: 100%;
+    border: 2px solid rgba(255,255,255,.2);
+    border-radius: 9px;
+    padding: 10px 11px;
+    outline: none;
+    background: #fff8ec;
+    color: #2c1a0c;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: center;
+    text-shadow: none;
+  }
+  .playerInput:focus { border-color:#f1a54b; box-shadow:0 0 0 3px rgba(241,165,75,.18); }
+  #twoPlayerHint { font-size:12px; opacity:.72; line-height:1.4; text-align:center; }
+  @media (max-width: 520px) {
+    #menuOverlay { gap:10px; padding:68px 12px 18px; overflow:auto; justify-content:flex-start; }
+    #menuOverlay h1 { font-size:30px; margin-top:8px; }
+    #setupPanel { gap:10px; padding:13px 14px; }
+    .choiceBtn { padding:10px 13px; font-size:14px; }
+    .playerNames { grid-template-columns:1fr; gap:8px; }
+    #topBar { top:62px; gap:8px; }
+  }
+`;
+    html = html.replace('</style>', extraCss + '\n</style>');
+
+    const oldMenu = `    <div class="sectionLabel">Chế độ chơi</div>
     <div class="modeRow">
       <button class="choiceBtn active" data-mode="2p">👥 2 người</button>
       <button class="choiceBtn" data-mode="bot">🤖 Đấu với Bot</button>
@@ -142,550 +93,98 @@
         <button class="choiceBtn" data-diff="3">Khó</button>
       </div>
     </div>
-    <button id="startGameBtn">▶ Bắt đầu</button>
-  </div>
+    <button id="startGameBtn">▶ Bắt đầu</button>`;
 
-  <div id="overOverlay">
-    <div class="panel">
-      <h2 id="overTitle">🎉 Đỏ thắng!</h2>
-      <div class="row">
-        <button id="playAgainBtn" class="choiceBtn active">🔄 Chơi lại</button>
-        <button id="backMenuBtn" class="choiceBtn">☰ Menu</button>
+    const newMenu = `    <div id="setupPanel" class="panel">
+      <div class="sectionLabel">Chế độ chơi</div>
+      <div class="modeRow">
+        <button class="choiceBtn active" data-mode="2p">👥 2 người cùng máy</button>
+        <button class="choiceBtn" data-mode="bot">🤖 Đấu với Bot</button>
       </div>
-    </div>
-  </div>
-</div>
+      <div id="twoPlayerOptions" style="display:flex; flex-direction:column; gap:9px; width:100%; align-items:center;">
+        <div class="sectionLabel">Tên người chơi</div>
+        <div class="playerNames">
+          <div class="playerField">
+            <label for="redNameInput">🔴 Người chơi Đỏ</label>
+            <input id="redNameInput" class="playerInput" maxlength="14" placeholder="Tên người Đỏ" value="Đỏ">
+          </div>
+          <div class="playerField">
+            <label for="blackNameInput">⚫ Người chơi Đen</label>
+            <input id="blackNameInput" class="playerInput" maxlength="14" placeholder="Tên người Đen" value="Đen">
+          </div>
+        </div>
+        <div id="twoPlayerHint">Hai người thay phiên chạm quân trên cùng thiết bị.</div>
+      </div>
+      <div id="botOptions" style="display:none; flex-direction:column; gap:12px; align-items:center;">
+        <div class="sectionLabel">Bạn cầm quân</div>
+        <div class="modeRow">
+          <button class="choiceBtn active" data-side="r">🔴 Đỏ (đi trước)</button>
+          <button class="choiceBtn" data-side="b">⚫ Đen</button>
+        </div>
+        <div class="sectionLabel">Độ khó</div>
+        <div class="modeRow">
+          <button class="choiceBtn" data-diff="1">Dễ</button>
+          <button class="choiceBtn active" data-diff="2">Vừa</button>
+          <button class="choiceBtn" data-diff="3">Khó</button>
+        </div>
+      </div>
+      <button id="startGameBtn">▶ Bắt đầu</button>
+    </div>`;
+    if (!html.includes(oldMenu)) throw new Error('Menu template changed');
+    html = html.replace(oldMenu, newMenu);
 
-<script>
-// ================= Responsive canvas =================
-const canvas = document.getElementById('board');
-const ctx = canvas.getContext('2d');
-const W = 560, H = 640;
-function setupCanvas() {
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.imageSmoothingEnabled = true;
-  const scale = Math.min(window.innerWidth / W, window.innerHeight / H) * 0.96;
-  canvas.style.width = Math.floor(W * scale) + 'px';
-  canvas.style.height = Math.floor(H * scale) + 'px';
-}
-setupCanvas();
-window.addEventListener('resize', setupCanvas);
-window.addEventListener('orientationchange', setupCanvas);
+    html = html.replace(
+      "let mode = '2p';           // '2p' | 'bot'\nlet humanColor = 'r';",
+      "let mode = '2p';           // '2p' | 'bot'\nlet redPlayerName = 'Đỏ';\nlet blackPlayerName = 'Đen';\nlet humanColor = 'r';"
+    );
 
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-fullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) (document.documentElement.requestFullscreen && document.documentElement.requestFullscreen())?.catch(()=>{});
-  else document.exitFullscreen && document.exitFullscreen();
-});
-document.addEventListener('fullscreenchange', () => {
-  fullscreenBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
-  setupCanvas();
-});
+    html = html.replace(
+      "const overTitle = document.getElementById('overTitle');",
+      "const overTitle = document.getElementById('overTitle');\nconst twoPlayerOptions = document.getElementById('twoPlayerOptions');\nconst redNameInput = document.getElementById('redNameInput');\nconst blackNameInput = document.getElementById('blackNameInput');\ntry { redNameInput.value = localStorage.getItem('xiangqiRedName') || 'Đỏ'; blackNameInput.value = localStorage.getItem('xiangqiBlackName') || 'Đen'; } catch (e) {}"
+    );
 
-// ================= Board geometry =================
-const CELL = 56, MARGIN_X = 56, MARGIN_Y = 68;
-function boardToPx(r, c) { return [MARGIN_X + c * CELL, MARGIN_Y + r * CELL]; }
+    html = html.replace(
+      "botOptions.style.display = mode === 'bot' ? 'flex' : 'none';",
+      "botOptions.style.display = mode === 'bot' ? 'flex' : 'none';\n    twoPlayerOptions.style.display = mode === '2p' ? 'flex' : 'none';"
+    );
 
-// ================= XIANGQI CORE LOGIC (validated) =================
-function inBounds(r, c) { return r >= 0 && r <= 9 && c >= 0 && c <= 8; }
-function inPalace(r, c, color) {
-  if (c < 3 || c > 5) return false;
-  return color === 'r' ? (r >= 7 && r <= 9) : (r >= 0 && r <= 2);
-}
-function crossedRiver(r, color) { return color === 'r' ? r <= 4 : r >= 5; }
-function emptyBoard() { return Array.from({length:10}, () => Array(9).fill(null)); }
-function initialBoard() {
-  const b = emptyBoard();
-  const backRow = ['R','H','E','A','G','A','E','H','R'];
-  backRow.forEach((t,c) => { b[0][c] = {color:'b', type:t}; b[9][c] = {color:'r', type:t}; });
-  [1,7].forEach(c => { b[2][c] = {color:'b', type:'C'}; b[7][c] = {color:'r', type:'C'}; });
-  [0,2,4,6,8].forEach(c => { b[3][c] = {color:'b', type:'S'}; b[6][c] = {color:'r', type:'S'}; });
-  return b;
-}
-function findGeneral(board, color) {
-  for (let r=0;r<10;r++) for (let c=0;c<9;c++) { const p=board[r][c]; if (p && p.color===color && p.type==='G') return [r,c]; }
-  return null;
-}
-function pseudoMoves(board, r, c) {
-  const p = board[r][c];
-  if (!p) return [];
-  const moves = [];
-  const push = (nr, nc) => {
-    if (!inBounds(nr, nc)) return false;
-    const target = board[nr][nc];
-    if (target && target.color === p.color) return false;
-    moves.push([nr, nc]);
-    return !target;
-  };
-  switch (p.type) {
-    case 'G':
-      [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc]) => { const nr=r+dr,nc=c+dc; if (inPalace(nr,nc,p.color)) push(nr,nc); });
-      break;
-    case 'A':
-      [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => { const nr=r+dr,nc=c+dc; if (inPalace(nr,nc,p.color)) push(nr,nc); });
-      break;
-    case 'E':
-      [[2,2],[2,-2],[-2,2],[-2,-2]].forEach(([dr,dc]) => {
-        const nr=r+dr,nc=c+dc, midR=r+dr/2, midC=c+dc/2;
-        if (!inBounds(nr,nc)) return;
-        if (crossedRiver(nr,p.color)) return;
-        if (board[midR][midC]) return;
-        push(nr,nc);
-      });
-      break;
-    case 'H': {
-      const legs = [
-        {leg:[0,1], ms:[[1,2],[-1,2]]}, {leg:[0,-1], ms:[[1,-2],[-1,-2]]},
-        {leg:[1,0], ms:[[2,1],[2,-1]]}, {leg:[-1,0], ms:[[-2,1],[-2,-1]]},
-      ];
-      legs.forEach(({leg, ms}) => {
-        const legR=r+leg[0], legC=c+leg[1];
-        if (inBounds(legR,legC) && board[legR][legC]) return;
-        ms.forEach(([dr,dc]) => { const nr=r+dr,nc=c+dc; if (inBounds(nr,nc)) push(nr,nc); });
-      });
-      break;
-    }
-    case 'R':
-      [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc]) => {
-        let nr=r+dr,nc=c+dc;
-        while (inBounds(nr,nc)) { if (!push(nr,nc)) break; nr+=dr; nc+=dc; }
-      });
-      break;
-    case 'C':
-      [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc]) => {
-        let nr=r+dr,nc=c+dc, screen=false;
-        while (inBounds(nr,nc)) {
-          const t = board[nr][nc];
-          if (!screen) { if (!t) moves.push([nr,nc]); else screen = true; }
-          else { if (t) { if (t.color !== p.color) moves.push([nr,nc]); break; } }
-          nr+=dr; nc+=dc;
-        }
-      });
-      break;
-    case 'S': {
-      const fwd = p.color === 'r' ? -1 : 1;
-      push(r+fwd, c);
-      if (crossedRiver(r, p.color)) { push(r, c+1); push(r, c-1); }
-      break;
-    }
-  }
-  return moves;
-}
-function generalsFacing(board) {
-  const rg = findGeneral(board,'r'), bg = findGeneral(board,'b');
-  if (!rg || !bg || rg[1] !== bg[1]) return false;
-  const col = rg[1], rMin = Math.min(rg[0],bg[0]), rMax = Math.max(rg[0],bg[0]);
-  for (let r=rMin+1; r<rMax; r++) if (board[r][col]) return false;
-  return true;
-}
-function isSquareAttacked(board, r, c, byColor) {
-  for (let rr=0; rr<10; rr++) for (let cc=0; cc<9; cc++) {
-    const p = board[rr][cc];
-    if (p && p.color === byColor && pseudoMoves(board, rr, cc).some(([mr,mc]) => mr===r && mc===c)) return true;
-  }
-  return false;
-}
-function isInCheck(board, color) {
-  const g = findGeneral(board, color);
-  if (!g) return true;
-  return isSquareAttacked(board, g[0], g[1], color === 'r' ? 'b' : 'r');
-}
-function applyMove(board, from, to) {
-  const nb = board.map(row => row.slice());
-  nb[to[0]][to[1]] = nb[from[0]][from[1]];
-  nb[from[0]][from[1]] = null;
-  return nb;
-}
-function legalMovesForPiece(board, r, c) {
-  const p = board[r][c];
-  if (!p) return [];
-  return pseudoMoves(board, r, c).filter(([nr,nc]) => {
-    const nb = applyMove(board, [r,c], [nr,nc]);
-    if (isInCheck(nb, p.color)) return false;
-    if (generalsFacing(nb)) return false;
-    return true;
-  });
-}
-function allLegalMoves(board, color) {
-  const all = [];
-  for (let r=0;r<10;r++) for (let c=0;c<9;c++) {
-    const p = board[r][c];
-    if (p && p.color === color) legalMovesForPiece(board,r,c).forEach(m => all.push({from:[r,c], to:m}));
-  }
-  return all;
-}
+    html = html.replace(
+      "function startGame() {\n  board = initialBoard();",
+      "function startGame() {\n  if (mode === '2p') {\n    redPlayerName = (redNameInput.value || 'Đỏ').trim().slice(0,14) || 'Đỏ';\n    blackPlayerName = (blackNameInput.value || 'Đen').trim().slice(0,14) || 'Đen';\n    try { localStorage.setItem('xiangqiRedName', redPlayerName); localStorage.setItem('xiangqiBlackName', blackPlayerName); } catch (e) {}\n  }\n  board = initialBoard();"
+    );
 
-// ---- Bot AI ----
-const VALUES = { G: 6000, R: 90, C: 45, H: 40, E: 20, A: 20, S: 10 };
-function soldierBonus(r, color) { return crossedRiver(r, color) ? 8 : 0; }
-function evaluate(board) {
-  let score = 0;
-  for (let r=0;r<10;r++) for (let c=0;c<9;c++) {
-    const p = board[r][c]; if (!p) continue;
-    let v = VALUES[p.type]; if (p.type === 'S') v += soldierBonus(r, p.color);
-    score += (p.color === 'r' ? v : -v);
-  }
-  return score;
-}
-function orderMoves(board, moves) {
-  return moves.slice().sort((a,b) => {
-    const va = board[a.to[0]][a.to[1]] ? VALUES[board[a.to[0]][a.to[1]].type] : 0;
-    const vb = board[b.to[0]][b.to[1]] ? VALUES[board[b.to[0]][b.to[1]].type] : 0;
-    return vb - va;
-  });
-}
-function minimax(board, depth, alpha, beta, maximizing) {
-  const color = maximizing ? 'r' : 'b';
-  let moves = allLegalMoves(board, color);
-  if (moves.length === 0) return maximizing ? -99999 - depth : 99999 + depth;
-  if (depth === 0) return evaluate(board);
-  moves = orderMoves(board, moves);
-  if (maximizing) {
-    let best = -Infinity;
-    for (const m of moves) {
-      const val = minimax(applyMove(board, m.from, m.to), depth-1, alpha, beta, false);
-      best = Math.max(best, val); alpha = Math.max(alpha, val);
-      if (beta <= alpha) break;
-    }
-    return best;
-  } else {
-    let best = Infinity;
-    for (const m of moves) {
-      const val = minimax(applyMove(board, m.from, m.to), depth-1, alpha, beta, true);
-      best = Math.min(best, val); beta = Math.min(beta, val);
-      if (beta <= alpha) break;
-    }
-    return best;
-  }
-}
-function botBestMove(board, color, depth) {
-  const moves = orderMoves(board, allLegalMoves(board, color));
-  if (moves.length === 0) return null;
-  let bestMoves = [], bestVal = color === 'r' ? -Infinity : Infinity;
-  for (const m of moves) {
-    const val = minimax(applyMove(board, m.from, m.to), depth-1, -Infinity, Infinity, color === 'b');
-    if (color === 'r') {
-      if (val > bestVal) { bestVal = val; bestMoves = [m]; } else if (val === bestVal) bestMoves.push(m);
-    } else {
-      if (val < bestVal) { bestVal = val; bestMoves = [m]; } else if (val === bestVal) bestMoves.push(m);
-    }
-  }
-  return bestMoves[Math.floor(Math.random() * bestMoves.length)];
-}
-
-// ================= Piece glyphs =================
-const GLYPH = {
-  r: { G:'帥', A:'仕', E:'相', H:'馬', R:'俥', C:'炮', S:'兵' },
-  b: { G:'將', A:'士', E:'象', H:'馬', R:'車', C:'砲', S:'卒' },
-};
-
-// ================= Game state =================
-let board = initialBoard();
-let turn = 'r';
-let selected = null;       // [r,c] or null
-let legalTargets = [];     // [[r,c], ...]
-let lastMove = null;       // {from,to}
-let history = [];          // stack of {board, turn, lastMove}
-let mode = '2p';           // '2p' | 'bot'
-let humanColor = 'r';
-let botDepth = 2;
-let gameState = 'menu';    // menu | playing | over
-let winner = null;
-let animAnim = null;       // {piece, from:[r,c], to:[r,c], start}
-const ANIM_MS = 180;
-
-// ================= DOM refs =================
-const menuOverlay = document.getElementById('menuOverlay');
-const overOverlay = document.getElementById('overOverlay');
-const topBar = document.getElementById('topBar');
-const turnLabel = document.getElementById('turnLabel');
-const turnDot = document.getElementById('turnDot');
-const thinkingBadge = document.getElementById('thinkingBadge');
-const botOptions = document.getElementById('botOptions');
-const overTitle = document.getElementById('overTitle');
-
-// ---- Menu interactions ----
-document.querySelectorAll('.choiceBtn[data-mode]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.choiceBtn[data-mode]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    mode = btn.dataset.mode;
-    botOptions.style.display = mode === 'bot' ? 'flex' : 'none';
-  });
-});
-document.querySelectorAll('.choiceBtn[data-side]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.choiceBtn[data-side]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    humanColor = btn.dataset.side;
-  });
-});
-document.querySelectorAll('.choiceBtn[data-diff]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.choiceBtn[data-diff]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    botDepth = parseInt(btn.dataset.diff, 10);
-  });
-});
-document.getElementById('startGameBtn').addEventListener('click', startGame);
-document.getElementById('menuBtn').addEventListener('click', backToMenu);
-document.getElementById('backMenuBtn').addEventListener('click', backToMenu);
-document.getElementById('playAgainBtn').addEventListener('click', startGame);
-document.getElementById('undoBtn').addEventListener('click', undoMove);
-
-function startGame() {
-  board = initialBoard();
-  turn = 'r';
-  selected = null; legalTargets = []; lastMove = null; history = [];
-  gameState = 'playing'; winner = null; animAnim = null;
-  menuOverlay.style.display = 'none';
-  overOverlay.style.display = 'none';
-  topBar.style.display = 'flex';
-  updateTurnLabel();
-  maybeTriggerBot();
-}
-function backToMenu() {
-  gameState = 'menu';
-  menuOverlay.style.display = 'flex';
-  overOverlay.style.display = 'none';
-  topBar.style.display = 'none';
-  thinkingBadge.style.display = 'none';
-}
-function updateTurnLabel() {
+    const oldTurnLabel = `function updateTurnLabel() {
   turnDot.style.background = turn === 'r' ? '#e2542a' : '#333';
   turnLabel.innerHTML = '<span class="turnDot" style="background:' + (turn==='r'?'#e2542a':'#333') + '"></span>Lượt: ' + (turn === 'r' ? 'Đỏ' : 'Đen') +
     (mode === 'bot' ? (turn === humanColor ? ' (bạn)' : ' (bot)') : '');
+}`;
+    const newTurnLabel = `function playerNameForColor(color) {
+  return color === 'r' ? redPlayerName : blackPlayerName;
 }
+function updateTurnLabel() {
+  turnDot.style.background = turn === 'r' ? '#e2542a' : '#333';
+  const sideName = turn === 'r' ? 'Đỏ' : 'Đen';
+  const label = mode === '2p'
+    ? playerNameForColor(turn) + ' (' + sideName + ')'
+    : sideName + (turn === humanColor ? ' (bạn)' : ' (bot)');
+  turnLabel.innerHTML = '<span class="turnDot" style="background:' + (turn==='r'?'#e2542a':'#333') + '"></span>Lượt: ' + label;
+}`;
+    if (!html.includes(oldTurnLabel)) throw new Error('Turn label template changed');
+    html = html.replace(oldTurnLabel, newTurnLabel);
 
-function undoMove() {
-  if (history.length === 0 || gameState !== 'playing') return;
-  const prev = history.pop();
-  board = prev.board; turn = prev.turn; lastMove = prev.lastMove;
-  selected = null; legalTargets = [];
-  updateTurnLabel();
-}
+    html = html.replace(
+      "overTitle.textContent = (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen') + ' thắng!' + (isInCheck(board, turn) ? ' (chiếu bí)' : ' (hết nước đi)');",
+      "const winnerLabel = mode === '2p' ? playerNameForColor(winner) + ' (' + (winner === 'r' ? 'Đỏ' : 'Đen') + ')' : (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen');\n    overTitle.textContent = '🎉 ' + winnerLabel + ' thắng!' + (isInCheck(board, turn) ? ' (chiếu bí)' : ' (hết nước đi)');"
+    );
 
-function snapshotHistory() {
-  history.push({ board: board.map(row => row.slice()), turn, lastMove });
-  if (history.length > 60) history.shift();
-}
-
-function checkGameEnd() {
-  const moves = allLegalMoves(board, turn);
-  if (moves.length === 0) {
-    gameState = 'over';
-    winner = turn === 'r' ? 'b' : 'r';
-    overTitle.textContent = (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen') + ' thắng!' + (isInCheck(board, turn) ? ' (chiếu bí)' : ' (hết nước đi)');
-    setTimeout(() => { overOverlay.style.display = 'flex'; }, ANIM_MS + 60);
-    return true;
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (error) {
+    document.getElementById('loading').textContent = 'Không tải được Cờ Tướng. Hãy reload trang.';
+    console.error('Xiangqi loader failed:', error);
   }
-  return false;
-}
-
-function performMove(from, to) {
-  snapshotHistory();
-  const movingPiece = board[from[0]][from[1]];
-  animAnim = { piece: movingPiece, capturedAt: board[to[0]][to[1]] ? [to[0],to[1]] : null, from, to, start: performance.now() };
-  board = applyMove(board, from, to);
-  lastMove = { from, to };
-  turn = turn === 'r' ? 'b' : 'r';
-  selected = null; legalTargets = [];
-  updateTurnLabel();
-  setTimeout(() => {
-    if (!checkGameEnd()) maybeTriggerBot();
-  }, ANIM_MS + 20);
-}
-
-function maybeTriggerBot() {
-  if (mode !== 'bot' || gameState !== 'playing') return;
-  if (turn === humanColor) return;
-  thinkingBadge.style.display = 'block';
-  setTimeout(() => {
-    const mv = botBestMove(board, turn, botDepth);
-    thinkingBadge.style.display = 'none';
-    if (mv) performMove(mv.from, mv.to);
-  }, 260);
-}
-
-// ================= Input =================
-function getBoardCell(evt) {
-  const rect = canvas.getBoundingClientRect();
-  const cx = evt.touches ? evt.touches[0].clientX : evt.clientX;
-  const cy = evt.touches ? evt.touches[0].clientY : evt.clientY;
-  const scaleX = W / rect.width, scaleY = H / rect.height;
-  const x = (cx - rect.left) * scaleX, y = (cy - rect.top) * scaleY;
-  const col = Math.round((x - MARGIN_X) / CELL);
-  const row = Math.round((y - MARGIN_Y) / CELL);
-  return { row, col };
-}
-
-function handleTap(evt) {
-  if (gameState !== 'playing' || animAnim) return;
-  if (mode === 'bot' && turn !== humanColor) return;
-  const { row, col } = getBoardCell(evt);
-  if (!inBounds(row, col)) return;
-
-  const piece = board[row][col];
-  if (selected) {
-    const isTarget = legalTargets.some(([r,c]) => r === row && c === col);
-    if (isTarget) { performMove(selected, [row, col]); return; }
-    if (piece && piece.color === turn) { selected = [row, col]; legalTargets = legalMovesForPiece(board, row, col); return; }
-    selected = null; legalTargets = [];
-    return;
-  }
-  if (piece && piece.color === turn) { selected = [row, col]; legalTargets = legalMovesForPiece(board, row, col); }
-}
-canvas.addEventListener('click', handleTap);
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(e); }, { passive: false });
-
-// ================= Rendering =================
-function drawBoardBackground() {
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#e8c58a'); g.addColorStop(1, '#d4a862');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-}
-function drawGridLines() {
-  ctx.strokeStyle = 'rgba(60,35,10,0.75)';
-  ctx.lineWidth = 1.6;
-  // horizontal lines (10 rows)
-  for (let r = 0; r < 10; r++) {
-    const [x1,y1] = boardToPx(r, 0), [x2,y2] = boardToPx(r, 8);
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  }
-  // vertical lines (9 cols) — broken across the river except the two edge columns
-  for (let c = 0; c < 9; c++) {
-    const [x1,y1] = boardToPx(0, c), [xm1,ym1] = boardToPx(4, c);
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(xm1,ym1); ctx.stroke();
-    const [xm2,ym2] = boardToPx(5, c), [x2,y2] = boardToPx(9, c);
-    ctx.beginPath(); ctx.moveTo(xm2,ym2); ctx.lineTo(x2,y2); ctx.stroke();
-  }
-  // palace diagonals
-  function palaceX(r1,c1,r2,c2) {
-    const [x1,y1] = boardToPx(r1,c1), [x2,y2] = boardToPx(r2,c2);
-    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  }
-  palaceX(0,3,2,5); palaceX(0,5,2,3);
-  palaceX(7,3,9,5); palaceX(7,5,9,3);
-
-  // river text
-  ctx.fillStyle = 'rgba(60,35,10,0.55)';
-  ctx.font = '700 22px Segoe UI, sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const [rx,ry] = boardToPx(4.5, 2);
-  ctx.fillText('楚 河', rx, ry);
-  const [rx2,ry2] = boardToPx(4.5, 6);
-  ctx.fillText('漢 界', rx2, ry2);
-
-  // soldier/cannon position marks (small crosses) — purely decorative guide points
-  ctx.strokeStyle = 'rgba(60,35,10,0.5)'; ctx.lineWidth = 1.3;
-  const marks = [[2,1],[2,7],[7,1],[7,7],[3,0],[3,2],[3,4],[3,6],[3,8],[6,0],[6,2],[6,4],[6,6],[6,8]];
-  marks.forEach(([r,c]) => {
-    const [x,y] = boardToPx(r,c);
-    const s = 6, d = 4;
-    if (c > 0) { ctx.beginPath(); ctx.moveTo(x-d,y-s); ctx.lineTo(x-d,y-d); ctx.lineTo(x-s,y-d); ctx.stroke();
-                 ctx.beginPath(); ctx.moveTo(x-d,y+s); ctx.lineTo(x-d,y+d); ctx.lineTo(x-s,y+d); ctx.stroke(); }
-    if (c < 8) { ctx.beginPath(); ctx.moveTo(x+d,y-s); ctx.lineTo(x+d,y-d); ctx.lineTo(x+s,y-d); ctx.stroke();
-                 ctx.beginPath(); ctx.moveTo(x+d,y+s); ctx.lineTo(x+d,y+d); ctx.lineTo(x+s,y+d); ctx.stroke(); }
-  });
-}
-
-function drawBorder() {
-  ctx.strokeStyle = 'rgba(60,35,10,0.9)';
-  ctx.lineWidth = 3;
-  const [x1,y1] = boardToPx(0,0), [x2,y2] = boardToPx(9,8);
-  ctx.strokeRect(x1-3, y1-3, (x2-x1)+6, (y2-y1)+6);
-}
-
-function drawPieceAt(px, py, piece, r, faded) {
-  const R = 24;
-  ctx.save();
-  if (faded) ctx.globalAlpha = 0.55;
-  // shadow
-  ctx.beginPath(); ctx.arc(px, py+3, R, 0, Math.PI*2);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
-  // body
-  const grad = ctx.createRadialGradient(px-8, py-8, 3, px, py, R);
-  grad.addColorStop(0, '#fff7e0'); grad.addColorStop(1, '#e9d5a6');
-  ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI*2);
-  ctx.fillStyle = grad; ctx.fill();
-  ctx.lineWidth = 2.4;
-  ctx.strokeStyle = piece.color === 'r' ? '#c23b1f' : '#22201d';
-  ctx.stroke();
-  ctx.beginPath(); ctx.arc(px, py, R-4, 0, Math.PI*2);
-  ctx.lineWidth = 1.2; ctx.strokeStyle = piece.color === 'r' ? 'rgba(194,59,31,0.5)' : 'rgba(34,32,29,0.5)';
-  ctx.stroke();
-  // glyph
-  ctx.fillStyle = piece.color === 'r' ? '#c23b1f' : '#22201d';
-  ctx.font = '800 24px "Microsoft YaHei", "PingFang SC", sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(GLYPH[piece.color][piece.type], px, py + 1);
-  ctx.restore();
-}
-
-function drawPieces(now) {
-  for (let r = 0; r < 10; r++) for (let c = 0; c < 9; c++) {
-    const p = board[r][c];
-    if (!p) continue;
-    if (animAnim && animAnim.to[0] === r && animAnim.to[1] === c) continue; // drawn separately below
-    const [px,py] = boardToPx(r,c);
-    drawPieceAt(px, py, p, r, false);
-  }
-  if (animAnim) {
-    const t = Math.min(1, (now - animAnim.start) / ANIM_MS);
-    const ease = 1 - Math.pow(1 - t, 3);
-    const [fx,fy] = boardToPx(animAnim.from[0], animAnim.from[1]);
-    const [tx,ty] = boardToPx(animAnim.to[0], animAnim.to[1]);
-    const px = fx + (tx-fx)*ease, py = fy + (ty-fy)*ease;
-    drawPieceAt(px, py, animAnim.piece, animAnim.to[0], false);
-    if (t >= 1) animAnim = null;
-  }
-}
-
-function drawSelection() {
-  if (selected) {
-    const [px,py] = boardToPx(selected[0], selected[1]);
-    ctx.beginPath(); ctx.arc(px, py, 27, 0, Math.PI*2);
-    ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 3.4; ctx.stroke();
-  }
-  legalTargets.forEach(([r,c]) => {
-    const [px,py] = boardToPx(r,c);
-    const occupied = !!board[r][c];
-    ctx.beginPath();
-    ctx.arc(px, py, occupied ? 26 : 8, 0, Math.PI*2);
-    if (occupied) { ctx.strokeStyle = 'rgba(255,80,60,0.85)'; ctx.lineWidth = 3.4; ctx.stroke(); }
-    else { ctx.fillStyle = 'rgba(60,35,10,0.35)'; ctx.fill(); }
-  });
-  if (lastMove) {
-    [lastMove.from, lastMove.to].forEach(([r,c]) => {
-      const [px,py] = boardToPx(r,c);
-      ctx.beginPath(); ctx.arc(px, py, 29, 0, Math.PI*2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.6; ctx.stroke();
-    });
-  }
-  if (gameState === 'playing' && isInCheck(board, turn)) {
-    const g = findGeneral(board, turn);
-    if (g) {
-      const [px,py] = boardToPx(g[0], g[1]);
-      const pulse = 4 + Math.sin(performance.now()/120) * 3;
-      ctx.beginPath(); ctx.arc(px, py, 27+pulse, 0, Math.PI*2);
-      ctx.strokeStyle = 'rgba(255,40,20,0.8)'; ctx.lineWidth = 3; ctx.stroke();
-    }
-  }
-}
-
-function loop(now) {
-  ctx.clearRect(0,0,W,H);
-  drawBoardBackground();
-  drawGridLines();
-  drawBorder();
-  drawPieces(now || performance.now());
-  drawSelection();
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
