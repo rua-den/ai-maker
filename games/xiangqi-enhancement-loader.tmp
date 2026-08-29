@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Cờ Tướng — Rùa</title>
+<style>
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#2b1d12; color:#fff; font-family:'Segoe UI',system-ui,sans-serif; }
+  #loading { height:100%; display:grid; place-items:center; font-weight:800; opacity:.82; }
+</style>
+</head>
+<body>
+<div id="loading">Đang tải Cờ Tướng…</div>
+<script>
+(async () => {
+  try {
+    const response = await fetch('./xiangqi-core.html', { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    let html = await response.text();
+
+    if (!/<meta\s+name=["']viewport["']/i.test(html)) {
+      html = html.replace(
+        '<meta charset="UTF-8">',
+        '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">'
+      );
+    }
+
+    html = html.replace(
+      'background: rgba(30, 20, 12, 0.75);\n    backdrop-filter: blur(4px);',
+      'background: rgba(30, 20, 12, 0.96);\n    backdrop-filter: blur(8px);'
+    );
+
+    const extraCss = `
+  #setupPanel {
+    width: min(390px, calc(100vw - 30px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(180deg, rgba(49,31,17,.98), rgba(28,18,11,.98));
+    border: 1px solid rgba(255,216,155,.28);
+    box-shadow: 0 16px 42px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .playerNames {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .playerField { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .playerField label { font-size:12px; font-weight:800; opacity:.9; text-align:left; }
+  .playerInput {
+    width: 100%;
+    border: 2px solid rgba(255,255,255,.2);
+    border-radius: 9px;
+    padding: 10px 11px;
+    outline: none;
+    background: #fff8ec;
+    color: #2c1a0c;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: center;
+    text-shadow: none;
+  }
+  .playerInput:focus { border-color:#f1a54b; box-shadow:0 0 0 3px rgba(241,165,75,.18); }
+  #twoPlayerHint { font-size:12px; opacity:.72; line-height:1.4; text-align:center; }
+  @media (max-width: 520px) {
+    #menuOverlay { gap:10px; padding:68px 12px 18px; overflow:auto; justify-content:flex-start; }
+    #menuOverlay h1 { font-size:30px; margin-top:8px; }
+    #setupPanel { gap:10px; padding:13px 14px; }
+    .choiceBtn { padding:10px 13px; font-size:14px; }
+    .playerNames { grid-template-columns:1fr; gap:8px; }
+    #topBar { top:62px; gap:8px; }
+  }
+`;
+    html = html.replace('</style>', extraCss + '\n</style>');
+
+    const oldMenu = `    <div class="sectionLabel">Chế độ chơi</div>
+    <div class="modeRow">
+      <button class="choiceBtn active" data-mode="2p">👥 2 người</button>
+      <button class="choiceBtn" data-mode="bot">🤖 Đấu với Bot</button>
+    </div>
+    <div id="botOptions" style="display:none; display:flex; flex-direction:column; gap:12px; align-items:center;">
+      <div class="sectionLabel">Bạn cầm quân</div>
+      <div class="modeRow">
+        <button class="choiceBtn active" data-side="r">🔴 Đỏ (đi trước)</button>
+        <button class="choiceBtn" data-side="b">⚫ Đen</button>
+      </div>
+      <div class="sectionLabel">Độ khó</div>
+      <div class="modeRow">
+        <button class="choiceBtn" data-diff="1">Dễ</button>
+        <button class="choiceBtn active" data-diff="2">Vừa</button>
+        <button class="choiceBtn" data-diff="3">Khó</button>
+      </div>
+    </div>
+    <button id="startGameBtn">▶ Bắt đầu</button>`;
+
+    const newMenu = `    <div id="setupPanel" class="panel">
+      <div class="sectionLabel">Chế độ chơi</div>
+      <div class="modeRow">
+        <button class="choiceBtn active" data-mode="2p">👥 2 người cùng máy</button>
+        <button class="choiceBtn" data-mode="bot">🤖 Đấu với Bot</button>
+      </div>
+      <div id="twoPlayerOptions" style="display:flex; flex-direction:column; gap:9px; width:100%; align-items:center;">
+        <div class="sectionLabel">Tên người chơi</div>
+        <div class="playerNames">
+          <div class="playerField">
+            <label for="redNameInput">🔴 Người chơi Đỏ</label>
+            <input id="redNameInput" class="playerInput" maxlength="14" placeholder="Tên người Đỏ" value="Đỏ">
+          </div>
+          <div class="playerField">
+            <label for="blackNameInput">⚫ Người chơi Đen</label>
+            <input id="blackNameInput" class="playerInput" maxlength="14" placeholder="Tên người Đen" value="Đen">
+          </div>
+        </div>
+        <div id="twoPlayerHint">Hai người thay phiên chạm quân trên cùng thiết bị.</div>
+      </div>
+      <div id="botOptions" style="display:none; flex-direction:column; gap:12px; align-items:center;">
+        <div class="sectionLabel">Bạn cầm quân</div>
+        <div class="modeRow">
+          <button class="choiceBtn active" data-side="r">🔴 Đỏ (đi trước)</button>
+          <button class="choiceBtn" data-side="b">⚫ Đen</button>
+        </div>
+        <div class="sectionLabel">Độ khó</div>
+        <div class="modeRow">
+          <button class="choiceBtn" data-diff="1">Dễ</button>
+          <button class="choiceBtn active" data-diff="2">Vừa</button>
+          <button class="choiceBtn" data-diff="3">Khó</button>
+        </div>
+      </div>
+      <button id="startGameBtn">▶ Bắt đầu</button>
+    </div>`;
+    if (!html.includes(oldMenu)) throw new Error('Menu template changed');
+    html = html.replace(oldMenu, newMenu);
+
+    html = html.replace(
+      "let mode = '2p';           // '2p' | 'bot'\nlet humanColor = 'r';",
+      "let mode = '2p';           // '2p' | 'bot'\nlet redPlayerName = 'Đỏ';\nlet blackPlayerName = 'Đen';\nlet humanColor = 'r';"
+    );
+
+    html = html.replace(
+      "const overTitle = document.getElementById('overTitle');",
+      "const overTitle = document.getElementById('overTitle');\nconst twoPlayerOptions = document.getElementById('twoPlayerOptions');\nconst redNameInput = document.getElementById('redNameInput');\nconst blackNameInput = document.getElementById('blackNameInput');\ntry { redNameInput.value = localStorage.getItem('xiangqiRedName') || 'Đỏ'; blackNameInput.value = localStorage.getItem('xiangqiBlackName') || 'Đen'; } catch (e) {}"
+    );
+
+    html = html.replace(
+      "botOptions.style.display = mode === 'bot' ? 'flex' : 'none';",
+      "botOptions.style.display = mode === 'bot' ? 'flex' : 'none';\n    twoPlayerOptions.style.display = mode === '2p' ? 'flex' : 'none';"
+    );
+
+    html = html.replace(
+      "function startGame() {\n  board = initialBoard();",
+      "function startGame() {\n  if (mode === '2p') {\n    redPlayerName = (redNameInput.value || 'Đỏ').trim().slice(0,14) || 'Đỏ';\n    blackPlayerName = (blackNameInput.value || 'Đen').trim().slice(0,14) || 'Đen';\n    try { localStorage.setItem('xiangqiRedName', redPlayerName); localStorage.setItem('xiangqiBlackName', blackPlayerName); } catch (e) {}\n  }\n  board = initialBoard();"
+    );
+
+    const oldTurnLabel = `function updateTurnLabel() {
+  turnDot.style.background = turn === 'r' ? '#e2542a' : '#333';
+  turnLabel.innerHTML = '<span class="turnDot" style="background:' + (turn==='r'?'#e2542a':'#333') + '"></span>Lượt: ' + (turn === 'r' ? 'Đỏ' : 'Đen') +
+    (mode === 'bot' ? (turn === humanColor ? ' (bạn)' : ' (bot)') : '');
+}`;
+    const newTurnLabel = `function playerNameForColor(color) {
+  return color === 'r' ? redPlayerName : blackPlayerName;
+}
+function updateTurnLabel() {
+  turnDot.style.background = turn === 'r' ? '#e2542a' : '#333';
+  const sideName = turn === 'r' ? 'Đỏ' : 'Đen';
+  const label = mode === '2p'
+    ? playerNameForColor(turn) + ' (' + sideName + ')'
+    : sideName + (turn === humanColor ? ' (bạn)' : ' (bot)');
+  turnLabel.innerHTML = '<span class="turnDot" style="background:' + (turn==='r'?'#e2542a':'#333') + '"></span>Lượt: ' + label;
+}`;
+    if (!html.includes(oldTurnLabel)) throw new Error('Turn label template changed');
+    html = html.replace(oldTurnLabel, newTurnLabel);
+
+    html = html.replace(
+      "overTitle.textContent = (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen') + ' thắng!' + (isInCheck(board, turn) ? ' (chiếu bí)' : ' (hết nước đi)');",
+      "const winnerLabel = mode === '2p' ? playerNameForColor(winner) + ' (' + (winner === 'r' ? 'Đỏ' : 'Đen') + ')' : (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen');\n    overTitle.textContent = '🎉 ' + winnerLabel + ' thắng!' + (isInCheck(board, turn) ? ' (chiếu bí)' : ' (hết nước đi)');"
+    );
+
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (error) {
+    document.getElementById('loading').textContent = 'Không tải được Cờ Tướng. Hãy reload trang.';
+    console.error('Xiangqi loader failed:', error);
+  }
+})();
+</script>
+</body>
+</html>
