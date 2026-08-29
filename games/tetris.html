@@ -2,146 +2,256 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Xếp Gạch — Rùa</title>
 <style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
-    margin: 0; padding: 0; overflow: hidden;
-    height: 100%; width: 100%;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
     background: #1a1f2e;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    touch-action: manipulation;
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
   #gameContainer {
     position: relative;
-    width: 100vw; height: 100vh;
-    display: flex; align-items: center; justify-content: center;
+    width: 100vw;
+    height: 100dvh;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   canvas {
     display: block;
     box-shadow: 0 0 60px rgba(0,0,0,0.5);
     image-rendering: crisp-edges;
-    border-radius: 6px;
+    border-radius: 8px;
+    touch-action: none;
   }
-  #fullscreenBtn, #homeBtn {
+  #fullscreenBtn, #homeBtn, #pauseBtn {
     position: fixed;
-    top: 14px;
-    z-index: 20;
-    width: 40px; height: 40px;
+    top: calc(14px + env(safe-area-inset-top));
+    z-index: 30;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.25);
-    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(0,0,0,0.46);
     color: white;
     font-size: 18px;
     text-decoration: none;
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px);
-    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
   }
-  #fullscreenBtn { right: 14px; }
   #homeBtn { left: 14px; font-size: 20px; }
-  #fullscreenBtn:hover, #homeBtn:hover { background: rgba(0,0,0,0.6); }
-  #fullscreenBtn:active, #homeBtn:active { transform: scale(0.92); }
+  #fullscreenBtn { right: 14px; }
+  #pauseBtn { right: 66px; }
+  #fullscreenBtn:active, #homeBtn:active, #pauseBtn:active { transform: scale(0.92); }
 
   #overlay {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
     color: white;
+    text-align: center;
+    padding: 72px 16px 128px;
     text-shadow: 0 3px 6px rgba(0,0,0,0.5);
   }
   #titleText {
-    font-size: clamp(26px, 6vw, 42px);
-    font-weight: 800;
+    font-size: clamp(26px, 7vw, 42px);
+    font-weight: 900;
     letter-spacing: 2px;
     margin-bottom: 6px;
     animation: floaty 2.2s ease-in-out infinite;
   }
-  #subText { font-size: clamp(13px, 2.5vw, 16px); opacity: 0.9; font-weight: 500; }
+  #subText {
+    max-width: 340px;
+    font-size: clamp(13px, 3vw, 16px);
+    opacity: 0.94;
+    font-weight: 600;
+    line-height: 1.4;
+  }
   @keyframes floaty {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
   }
   .panel {
     pointer-events: auto;
-    background: rgba(20, 30, 40, 0.6);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(20,30,40,0.68);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.22);
     border-radius: 14px;
     padding: 12px 16px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
   }
-  #nameEntry { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  #nameEntry {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    align-items: center;
+  }
   #nameInput {
-    font-size: 16px; padding: 9px 12px; border-radius: 8px;
-    border: 2px solid rgba(255,255,255,0.4); outline: none; width: 150px;
-    text-align: center; font-weight: 600; background: rgba(255,255,255,0.92);
-    color: #2a2a2a; text-shadow: none; transition: border-color 0.15s;
+    font-size: 16px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.4);
+    outline: none;
+    width: 150px;
+    text-align: center;
+    font-weight: 700;
+    background: rgba(255,255,255,0.95);
+    color: #2a2a2a;
+    text-shadow: none;
+    user-select: text;
+    -webkit-user-select: text;
   }
   #nameInput:focus { border-color: #5be36a; }
   #nameInput.shakeError { border-color: #ec5c5c; animation: shakeX 0.4s; }
   @keyframes shakeX {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
   }
   #startBtn {
-    font-size: 16px; font-weight: 700; padding: 10px 18px; border-radius: 8px;
-    border: none; background: linear-gradient(180deg, #79e88a, #45c95a);
-    color: #073a0f; cursor: pointer; text-shadow: none;
-    box-shadow: 0 3px 0 #2c8a3a; transition: transform 0.08s;
+    font-size: 16px;
+    font-weight: 800;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(180deg, #79e88a, #45c95a);
+    color: #073a0f;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #2c8a3a;
   }
   #startBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c8a3a; }
-  #leaderboardBox { margin-top: 16px; min-width: 220px; max-width: 260px; }
-  #lbTitle { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 8px; letter-spacing: 1px; }
+  #leaderboardBox { margin-top: 14px; min-width: 220px; width: min(270px, 82vw); }
+  #lbTitle { font-size: 16px; font-weight: 900; text-align: center; margin-bottom: 8px; }
   #leaderboardList {
-    list-style: none; margin: 0; padding: 0; max-height: 190px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 170px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
   .lbRow {
-    display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
-    padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 650;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
   }
   .lbRow.lbHighlight {
     background: rgba(91,227,106,0.35);
     box-shadow: 0 0 0 1px rgba(91,227,106,0.6) inset;
-    animation: floaty 1.4s ease-in-out infinite;
   }
   .lbRank { width: 26px; flex-shrink: 0; text-align: center; }
   .lbName { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .lbScore { flex-shrink: 0; opacity: 0.9; }
-  .lbEmpty { text-align: center; font-size: 13px; opacity: 0.8; font-weight: 500; list-style: none; padding: 6px 0; }
+  .lbEmpty { text-align: center; font-size: 13px; opacity: 0.8; padding: 6px 0; }
   #lbActions { display: flex; gap: 6px; margin-top: 10px; }
   #lbActions button {
-    flex: 1; font-size: 12px; font-weight: 700; padding: 7px 6px; border-radius: 7px;
-    border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.12); color: white;
-    cursor: pointer; text-shadow: none; transition: background 0.15s, transform 0.08s;
+    flex: 1;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 6px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.12);
+    color: white;
+    cursor: pointer;
   }
-  #lbActions button:hover { background: rgba(255,255,255,0.22); }
-  #lbActions button:active { transform: scale(0.96); }
 
   #touchControls {
-    position: fixed; bottom: 14px; left: 0; right: 0;
+    position: fixed;
+    left: 50%;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 35;
     display: none;
-    justify-content: center; gap: 10px;
-    z-index: 15; pointer-events: none;
+    grid-template-columns: repeat(5, minmax(54px, 68px));
+    gap: 7px;
+    padding: 8px;
+    border-radius: 20px;
+    background: rgba(10,15,25,0.46);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+    touch-action: none;
   }
   #touchControls button {
-    pointer-events: auto;
-    width: 54px; height: 54px; border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(0,0,0,0.45); color: white; font-size: 22px;
-    display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px);
+    min-width: 0;
+    height: 58px;
+    padding: 0 4px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: linear-gradient(180deg, rgba(61,72,95,.95), rgba(28,35,52,.95));
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 22px;
+    font-weight: 900;
+    box-shadow: 0 3px 0 rgba(0,0,0,.3);
+    touch-action: none;
   }
-  #touchControls button:active { background: rgba(255,255,255,0.25); }
-  @media (max-width: 720px), (max-height: 600px) {
-    #touchControls { display: flex; }
+  #touchControls button .label {
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: .2px;
+    opacity: .72;
+    font-weight: 800;
+  }
+  #touchControls button.pressed,
+  #touchControls button:active {
+    transform: translateY(2px) scale(.98);
+    background: linear-gradient(180deg, rgba(88,106,139,.98), rgba(43,53,78,.98));
+    box-shadow: 0 1px 0 rgba(0,0,0,.3);
+  }
+  #btnRotate { background: linear-gradient(180deg, #7658bd, #4c3786); }
+  #btnDrop { background: linear-gradient(180deg, #d39136, #9b611a); }
+
+  body.touch-enabled #touchControls { display: grid; }
+  body.touch-enabled #overlay { padding-bottom: 126px; }
+
+  @media (max-width: 370px) {
+    #touchControls { grid-template-columns: repeat(5, 57px); gap: 5px; padding: 6px; }
+    #touchControls button { height: 54px; border-radius: 14px; }
+    #nameEntry { padding: 10px; }
+    #nameInput { width: 135px; }
+  }
+  @media (max-height: 650px) {
+    #touchControls button { height: 50px; }
+    #touchControls { bottom: calc(5px + env(safe-area-inset-bottom)); padding: 5px; }
+    body.touch-enabled #overlay { padding-bottom: 98px; }
+    #leaderboardList { max-height: 120px; }
   }
 </style>
-<!-- Firebase (shared global leaderboard — config lives in firebase-config.js) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
@@ -149,71 +259,46 @@
 <body>
 <div id="gameContainer">
   <a id="homeBtn" href="../index.html" title="Về trang chủ">🐢</a>
-  <button id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
+  <button id="pauseBtn" title="Tạm dừng">⏸</button>
+  <button id="fullscreenBtn" title="Toàn màn hình">⛶</button>
   <canvas id="game" width="480" height="640"></canvas>
 
   <div id="overlay">
     <div id="titleText">🧱 XẾP GẠCH</div>
     <div id="subText">← → di chuyển · ↑ xoay · ↓ rơi nhanh · Space thả</div>
     <div id="nameEntry" class="panel">
-      <input id="nameInput" type="text" maxlength="14" placeholder="Tên của bạn" autocomplete="off" />
+      <input id="nameInput" type="text" maxlength="14" placeholder="Tên của bạn" autocomplete="off">
       <button id="startBtn">▶ Chơi</button>
     </div>
     <div id="leaderboardBox" class="panel">
       <div id="lbTitle">🏆 Top 10</div>
       <ol id="leaderboardList"></ol>
       <div id="lbActions">
-        <button id="exportBtn" title="Tải file JSON">⬇ Export</button>
-        <button id="importBtn" title="Nạp file JSON">⬆ Import</button>
-        <input id="importFile" type="file" accept="application/json" style="display:none" />
+        <button id="exportBtn">⬇ Export</button>
+        <button id="importBtn">⬆ Import</button>
+        <input id="importFile" type="file" accept="application/json" hidden>
       </div>
     </div>
   </div>
 
-  <div id="touchControls">
-    <button id="btnLeft">◀</button>
-    <button id="btnRotate">⟳</button>
-    <button id="btnDown">▼</button>
-    <button id="btnRight">▶</button>
-    <button id="btnDrop">⤓</button>
+  <div id="touchControls" aria-label="Điều khiển cảm ứng">
+    <button id="btnLeft" aria-label="Sang trái"><span>◀</span><span class="label">TRÁI</span></button>
+    <button id="btnRotate" aria-label="Xoay"><span>⟳</span><span class="label">XOAY</span></button>
+    <button id="btnDown" aria-label="Rơi nhanh"><span>▼</span><span class="label">XUỐNG</span></button>
+    <button id="btnRight" aria-label="Sang phải"><span>▶</span><span class="label">PHẢI</span></button>
+    <button id="btnDrop" aria-label="Thả xuống"><span>⤓</span><span class="label">THẢ</span></button>
   </div>
 </div>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const W = 480, H = 640; // logical canvas size
+const DESKTOP_W = 480;
+const MOBILE_W = 340;
+const H = 640;
 const COLS = 10, ROWS = 20, CELL = 30;
-const BOARD_X = 20, BOARD_Y = 20; // top-left of the play field within canvas
-const SIDE_X = BOARD_X + COLS * CELL + 30; // sidebar start x
-
-// ---------- Responsive full-window canvas ----------
-function setupCanvas() {
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.imageSmoothingEnabled = true;
-  const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
-  canvas.style.width = Math.floor(W * scale) + 'px';
-  canvas.style.height = Math.floor(H * scale) + 'px';
-}
-setupCanvas();
-window.addEventListener('resize', setupCanvas);
-window.addEventListener('orientationchange', setupCanvas);
-
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-fullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    (document.documentElement.requestFullscreen && document.documentElement.requestFullscreen())?.catch(() => {});
-  } else {
-    document.exitFullscreen && document.exitFullscreen();
-  }
-});
-document.addEventListener('fullscreenchange', () => {
-  fullscreenBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
-  setupCanvas();
-});
+const BOARD_X = 20, BOARD_Y = 20;
+const SIDE_X = BOARD_X + COLS * CELL + 30;
 
 const overlay = document.getElementById('overlay');
 const titleText = document.getElementById('titleText');
@@ -223,109 +308,170 @@ const nameInput = document.getElementById('nameInput');
 const startBtn = document.getElementById('startBtn');
 const leaderboardBox = document.getElementById('leaderboardBox');
 const leaderboardList = document.getElementById('leaderboardList');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const touchControls = document.getElementById('touchControls');
 
-// ---------- Leaderboard (shared globally via Firebase Realtime Database) ----------
-const GAME_ID = 'xep-gach';
-const USE_FIREBASE = !!(typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY" && window.firebase);
-let fbRef = null;
-if (USE_FIREBASE) {
-  firebase.initializeApp(firebaseConfig);
-  fbRef = firebase.database().ref('leaderboards/' + GAME_ID);
+const coarsePointer = window.matchMedia('(pointer: coarse)');
+function detectTouchLayout() {
+  const touch = coarsePointer.matches || navigator.maxTouchPoints > 0 || window.innerWidth <= 720;
+  document.body.classList.toggle('touch-enabled', touch);
+  return touch;
 }
+function isMobileLayout() {
+  return detectTouchLayout() && window.innerWidth < 600 && window.innerHeight >= window.innerWidth;
+}
+function updateHelpText() {
+  if (state !== 'ready') return;
+  subText.textContent = document.body.classList.contains('touch-enabled')
+    ? 'Dùng các nút bên dưới · giữ ◀ ▶ ▼ để di chuyển liên tục'
+    : '← → di chuyển · ↑ xoay · ↓ rơi nhanh · Space thả';
+}
+function setupCanvas() {
+  const touch = detectTouchLayout();
+  const mobile = isMobileLayout();
+  const viewW = mobile ? MOBILE_W : DESKTOP_W;
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = viewW * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+
+  const reserveBottom = touch ? (window.innerHeight < 650 ? 76 : 94) : 0;
+  const availW = Math.max(1, window.innerWidth - 8);
+  const availH = Math.max(1, window.innerHeight - reserveBottom - 8);
+  const scale = Math.min(availW / viewW, availH / H);
+  canvas.style.width = Math.floor(viewW * scale) + 'px';
+  canvas.style.height = Math.floor(H * scale) + 'px';
+  updateHelpText();
+}
+setupCanvas();
+window.addEventListener('resize', setupCanvas);
+window.addEventListener('orientationchange', () => setTimeout(setupCanvas, 100));
+coarsePointer.addEventListener?.('change', setupCanvas);
+
+fullscreenBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+  else document.exitFullscreen?.();
+});
+document.addEventListener('fullscreenchange', () => {
+  fullscreenBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
+  setupCanvas();
+});
+
+const GAME_ID = 'xep-gach';
 const LB_KEY = 'leaderboard_' + GAME_ID;
 const NAME_KEY = 'playerName';
+const USE_FIREBASE = !!(
+  typeof firebaseConfig !== 'undefined' &&
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== 'YOUR_API_KEY' &&
+  window.firebase
+);
+let fbRef = null;
+if (USE_FIREBASE) {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    fbRef = firebase.database().ref('leaderboards/' + GAME_ID);
+  } catch (err) {
+    console.warn('Firebase unavailable; using local leaderboard.', err);
+  }
+}
 let playerName = '';
 let leaderboard = [];
 
 function localLoad() {
-  try { const raw = JSON.parse(localStorage.getItem(LB_KEY)); return Array.isArray(raw) ? raw : []; }
-  catch (e) { return []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(LB_KEY));
+    return Array.isArray(raw) ? raw : [];
+  } catch { return []; }
 }
-function localSave(list) { try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch (e) {} }
-
-if (USE_FIREBASE) {
-  fbRef.on('value', (snap) => {
-    const arr = [];
-    snap.forEach((child) => {
-      const v = child.val() || {};
-      arr.push({ key: child.key, name: v.name, score: v.score, date: v.date || 0 });
+function localSave() {
+  try { localStorage.setItem(LB_KEY, JSON.stringify(leaderboard)); } catch {}
+}
+function escapeHtml(value) {
+  const div = document.createElement('div');
+  div.textContent = String(value ?? '');
+  return div.innerHTML;
+}
+function trimLeaderboard() {
+  leaderboard.sort((a, b) => b.score - a.score || (a.date || 0) - (b.date || 0));
+  leaderboard = leaderboard.slice(0, 10);
+}
+function renderLeaderboard(highlight) {
+  leaderboardList.innerHTML = '';
+  if (!leaderboard.length) {
+    leaderboardList.innerHTML = '<li class="lbEmpty">Chưa có điểm nào — làm người đầu tiên!</li>';
+    return;
+  }
+  leaderboard.forEach((entry, index) => {
+    const li = document.createElement('li');
+    const hit = highlight && entry.name === highlight.name && entry.score === highlight.score;
+    li.className = 'lbRow' + (hit ? ' lbHighlight' : '');
+    const rank = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
+    li.innerHTML = '<span class="lbRank">' + rank + '</span>' +
+      '<span class="lbName">' + escapeHtml(entry.name) + '</span>' +
+      '<span class="lbScore">' + Number(entry.score || 0) + '</span>';
+    leaderboardList.appendChild(li);
+  });
+}
+function pruneFirebase() {
+  if (!fbRef) return;
+  fbRef.orderByChild('score').once('value', snap => {
+    const rows = [];
+    snap.forEach(child => rows.push({ key: child.key, score: Number(child.val()?.score || 0) }));
+    if (rows.length > 10) rows.slice(0, rows.length - 10).forEach(row => fbRef.child(row.key).remove());
+  });
+}
+function addScore(name, value) {
+  const entry = { name, score: value, date: Date.now() };
+  let rank = leaderboard.findIndex(row => value > row.score);
+  if (rank < 0) rank = leaderboard.length;
+  const madeTop10 = rank < 10;
+  if (fbRef) {
+    fbRef.push(entry).then(pruneFirebase).catch(() => {});
+  } else {
+    leaderboard.push(entry);
+    trimLeaderboard();
+    localSave();
+  }
+  return { entry, rank, madeTop10 };
+}
+if (fbRef) {
+  fbRef.on('value', snap => {
+    const rows = [];
+    snap.forEach(child => {
+      const value = child.val() || {};
+      rows.push({ key: child.key, name: value.name, score: Number(value.score || 0), date: value.date || 0 });
     });
-    arr.sort((a, b) => b.score - a.score || a.date - b.date);
-    leaderboard = arr.slice(0, 10);
+    leaderboard = rows;
+    trimLeaderboard();
     renderLeaderboard();
   });
 } else {
   leaderboard = localLoad();
+  trimLeaderboard();
 }
-
-function pruneFirebaseLeaderboard() {
-  fbRef.orderByChild('score').once('value', (snap) => {
-    const items = [];
-    snap.forEach((child) => items.push({ key: child.key, score: (child.val() || {}).score || 0 }));
-    if (items.length > 10) items.slice(0, items.length - 10).forEach((it) => fbRef.child(it.key).remove());
-  });
-}
-
-function addScoreToLeaderboard(name, sc) {
-  const entry = { name: name, score: sc, date: Date.now() };
-  let rank = leaderboard.findIndex((e) => sc > e.score);
-  if (rank === -1) rank = leaderboard.length;
-  const madeTop10 = rank < 10;
-  if (USE_FIREBASE) {
-    fbRef.push(entry).then(() => pruneFirebaseLeaderboard());
-  } else {
-    leaderboard.push(entry);
-    leaderboard.sort((a, b) => b.score - a.score || a.date - b.date);
-    leaderboard = leaderboard.slice(0, 10);
-    localSave(leaderboard);
-  }
-  return { entry: entry, madeTop10: madeTop10, rank: rank };
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function renderLeaderboard(highlightEntry) {
-  leaderboardList.innerHTML = '';
-  if (leaderboard.length === 0) {
-    const li = document.createElement('li');
-    li.className = 'lbEmpty';
-    li.textContent = 'Chưa có điểm nào — làm người đầu tiên!';
-    leaderboardList.appendChild(li);
-    return;
-  }
-  leaderboard.forEach((entry, i) => {
-    const li = document.createElement('li');
-    const isHi = highlightEntry && entry.name === highlightEntry.name && entry.score === highlightEntry.score;
-    li.className = 'lbRow' + (isHi ? ' lbHighlight' : '');
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
-    li.innerHTML = '<span class="lbRank">' + medal + '</span>' +
-      '<span class="lbName">' + escapeHtml(entry.name) + '</span>' +
-      '<span class="lbScore">' + entry.score + '</span>';
-    leaderboardList.appendChild(li);
-  });
-}
-
-nameInput.value = (() => { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } })();
+nameInput.value = (() => { try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; } })();
 renderLeaderboard();
 
-// ---------- Export / Import ----------
 const exportBtn = document.getElementById('exportBtn');
 const importBtn = document.getElementById('importBtn');
 const importFile = document.getElementById('importFile');
-exportBtn.addEventListener('click', (e) => {
+exportBtn.addEventListener('click', e => {
   e.stopPropagation();
   const blob = new Blob([JSON.stringify(leaderboard, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = GAME_ID + '-leaderboard.json';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = GAME_ID + '-leaderboard.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   URL.revokeObjectURL(url);
 });
-importBtn.addEventListener('click', (e) => { e.stopPropagation(); importFile.value = ''; importFile.click(); });
+importBtn.addEventListener('click', e => { e.stopPropagation(); importFile.value = ''; importFile.click(); });
 importFile.addEventListener('change', () => {
   const file = importFile.files[0];
   if (!file) return;
@@ -333,28 +479,26 @@ importFile.addEventListener('change', () => {
   reader.onload = () => {
     try {
       const incoming = JSON.parse(reader.result);
-      if (!Array.isArray(incoming)) throw new Error('not an array');
-      const valid = incoming.filter(x => x && typeof x.name === 'string' && typeof x.score === 'number');
-      if (USE_FIREBASE) {
-        valid.forEach(x => fbRef.push({ name: x.name, score: x.score, date: x.date || Date.now() }));
-        pruneFirebaseLeaderboard();
+      if (!Array.isArray(incoming)) throw new Error('invalid');
+      const valid = incoming.filter(row => row && typeof row.name === 'string' && typeof row.score === 'number');
+      if (fbRef) {
+        valid.forEach(row => fbRef.push({ name: row.name, score: row.score, date: row.date || Date.now() }));
+        pruneFirebase();
       } else {
-        const merged = leaderboard.concat(valid);
-        merged.sort((a, b) => b.score - a.score || (a.date || 0) - (b.date || 0));
-        leaderboard = merged.slice(0, 10);
-        localSave(leaderboard);
+        leaderboard = leaderboard.concat(valid);
+        trimLeaderboard();
+        localSave();
         renderLeaderboard();
       }
       subText.textContent = 'Đã nạp và gộp bảng xếp hạng!';
-    } catch (err) {
+    } catch {
       subText.textContent = 'File JSON không hợp lệ.';
     }
   };
   reader.readAsText(file);
 });
-nameInput.addEventListener('click', (e) => e.stopPropagation());
+nameInput.addEventListener('pointerdown', e => e.stopPropagation());
 
-// ================= TETRIS CORE =================
 const SHAPES = {
   I: { N: 4, cells: [[0,1],[1,1],[2,1],[3,1]], color: '#4dd9ec' },
   O: { N: 2, cells: [[0,0],[1,0],[0,1],[1,1]], color: '#f5d033' },
@@ -362,34 +506,29 @@ const SHAPES = {
   S: { N: 3, cells: [[1,0],[2,0],[0,1],[1,1]], color: '#5be36a' },
   Z: { N: 3, cells: [[0,0],[1,0],[1,1],[2,1]], color: '#ec5c5c' },
   J: { N: 3, cells: [[0,0],[0,1],[1,1],[2,1]], color: '#5085e6' },
-  L: { N: 3, cells: [[2,0],[0,1],[1,1],[2,1]], color: '#eb9b3d' },
+  L: { N: 3, cells: [[2,0],[0,1],[1,1],[2,1]], color: '#eb9b3d' }
 };
-function rotateCellsCW(cells, N) { return cells.map(([x, y]) => [N - 1 - y, x]); }
+function rotateCellsCW(cells, n) { return cells.map(([x, y]) => [n - 1 - y, x]); }
 const ROTATIONS = {};
-Object.keys(SHAPES).forEach(t => {
-  const { N, cells } = SHAPES[t];
-  const states = [cells];
-  for (let i = 1; i < 4; i++) states.push(rotateCellsCW(states[i - 1], N));
-  ROTATIONS[t] = states;
+Object.keys(SHAPES).forEach(type => {
+  const states = [SHAPES[type].cells];
+  for (let i = 1; i < 4; i++) states.push(rotateCellsCW(states[i - 1], SHAPES[type].N));
+  ROTATIONS[type] = states;
 });
 const PIECE_TYPES = Object.keys(SHAPES);
-
-function emptyGrid() { return Array.from({ length: ROWS }, () => Array(COLS).fill(0)); }
+const emptyGrid = () => Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 let grid = emptyGrid();
-
-function collides(g, piece) {
-  for (const [cx, cy] of piece.cells) {
-    const bx = piece.x + cx, by = piece.y + cy;
-    if (bx < 0 || bx >= COLS || by >= ROWS) return true;
-    if (by >= 0 && g[by][bx] !== 0) return true;
-  }
-  return false;
-}
-
-// 7-bag randomizer
 let bag = [];
+let current = null;
+let nextType = null;
+let score = 0, lines = 0, level = 1, best = 0;
+let dropTimer = 0, dropInterval = 800, softDropping = false;
+let state = 'ready';
+let flashRows = [], flashTimer = 0, lockDelay = 0;
+const LOCK_DELAY_MAX = 400;
+
 function nextFromBag() {
-  if (bag.length === 0) {
+  if (!bag.length) {
     bag = PIECE_TYPES.slice();
     for (let i = bag.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -398,150 +537,163 @@ function nextFromBag() {
   }
   return bag.pop();
 }
-
 function spawnPiece(type) {
-  const N = SHAPES[type].N;
-  return { type, rot: 0, cells: ROTATIONS[type][0], x: Math.floor((COLS - N) / 2), y: (type === 'I' ? -1 : 0), color: SHAPES[type].color };
+  const n = SHAPES[type].N;
+  return { type, rot: 0, cells: ROTATIONS[type][0], x: Math.floor((COLS - n) / 2), y: type === 'I' ? -1 : 0, color: SHAPES[type].color };
 }
-
-let current = null, nextType = null;
-let score = 0, lines = 0, level = 1, best = 0;
-let dropTimer = 0, dropInterval = 800; // ms
-let softDropping = false;
-let state = 'ready'; // ready, playing, paused, over
-let flashRows = [];
-let flashTimer = 0;
-let clockTime = 0;
-let lockDelay = 0;
-const LOCK_DELAY_MAX = 400; // ms grace period once a piece lands, before it locks
-
+function collides(board, piece) {
+  for (const [cx, cy] of piece.cells) {
+    const x = piece.x + cx, y = piece.y + cy;
+    if (x < 0 || x >= COLS || y >= ROWS) return true;
+    if (y >= 0 && board[y][x]) return true;
+  }
+  return false;
+}
 function resetGameData() {
   grid = emptyGrid();
-  score = 0; lines = 0; level = 1;
-  dropInterval = 800;
-  bag = [];
-  current = spawnPiece(nextFromBag());
-  nextType = nextFromBag();
-  dropTimer = 0; lockDelay = 0; flashRows = [];
+  score = 0; lines = 0; level = 1; dropInterval = 800;
+  bag = []; current = spawnPiece(nextFromBag()); nextType = nextFromBag();
+  dropTimer = 0; lockDelay = 0; flashRows = []; softDropping = false;
 }
-
 function hardDropDistance(piece) {
-  let d = 0;
-  while (!collides(grid, { ...piece, y: piece.y + d + 1 })) d++;
-  return d;
+  let distance = 0;
+  while (!collides(grid, { ...piece, y: piece.y + distance + 1 })) distance++;
+  return distance;
 }
-
 function tryMove(dx, dy) {
+  if (!current) return false;
   const candidate = { ...current, x: current.x + dx, y: current.y + dy };
-  if (!collides(grid, candidate)) { current = candidate; return true; }
-  return false;
+  if (collides(grid, candidate)) return false;
+  current = candidate;
+  if (dx) lockDelay = 0;
+  return true;
 }
-
 function tryRotate(dir) {
-  const nextRot = (current.rot + dir + 4) % 4;
-  const nextCells = ROTATIONS[current.type][nextRot];
-  const kicks = [0, -1, 1, -2, 2, (current.type === 'I' ? -3 : 0), (current.type === 'I' ? 3 : 0)];
+  if (!current) return false;
+  const rot = (current.rot + dir + 4) % 4;
+  const cells = ROTATIONS[current.type][rot];
+  const kicks = [0, -1, 1, -2, 2, current.type === 'I' ? -3 : 0, current.type === 'I' ? 3 : 0];
   for (const dx of kicks) {
-    const candidate = { ...current, rot: nextRot, cells: nextCells, x: current.x + dx };
-    if (!collides(grid, candidate)) { current = candidate; lockDelay = 0; return true; }
+    const candidate = { ...current, rot, cells, x: current.x + dx };
+    if (!collides(grid, candidate)) {
+      current = candidate;
+      lockDelay = 0;
+      return true;
+    }
   }
   return false;
 }
-
-function lockCurrentPiece() {
-  let topOut = false;
-  for (const [cx, cy] of current.cells) {
-    const bx = current.x + cx, by = current.y + cy;
-    if (by < 0) { topOut = true; continue; }
-    grid[by][bx] = current.color;
-  }
-  if (topOut) { gameOver(); return; }
-
-  // find full rows
-  const full = [];
-  for (let r = 0; r < ROWS; r++) if (grid[r].every(c => c !== 0)) full.push(r);
-
-  if (full.length > 0) {
-    flashRows = full;
-    flashTimer = 160; // ms flash before clearing
-  } else {
-    spawnNext();
-  }
-}
-
-function performClear() {
-  const full = flashRows;
-  full.forEach(r => { grid.splice(r, 1); grid.unshift(Array(COLS).fill(0)); });
-  const n = full.length;
-  const points = [0, 100, 300, 500, 800][n] * level;
-  score += points;
-  lines += n;
-  level = Math.floor(lines / 10) + 1;
-  dropInterval = Math.max(110, 800 - (level - 1) * 65);
-  flashRows = [];
-  spawnNext();
-}
-
 function spawnNext() {
   current = spawnPiece(nextType);
   nextType = nextFromBag();
   lockDelay = 0;
   if (collides(grid, current)) gameOver();
 }
+function lockCurrentPiece() {
+  if (!current) return;
+  let topOut = false;
+  for (const [cx, cy] of current.cells) {
+    const x = current.x + cx, y = current.y + cy;
+    if (y < 0) { topOut = true; continue; }
+    grid[y][x] = current.color;
+  }
+  if (topOut) { gameOver(); return; }
+  const full = [];
+  for (let row = 0; row < ROWS; row++) if (grid[row].every(Boolean)) full.push(row);
+  if (full.length) {
+    flashRows = full;
+    flashTimer = 160;
+  } else spawnNext();
+}
+function performClear() {
+  flashRows.forEach(row => { grid.splice(row, 1); grid.unshift(Array(COLS).fill(0)); });
+  const count = flashRows.length;
+  score += [0, 100, 300, 500, 800][count] * level;
+  lines += count;
+  level = Math.floor(lines / 10) + 1;
+  dropInterval = Math.max(110, 800 - (level - 1) * 65);
+  flashRows = [];
+  spawnNext();
+}
+function hardDrop() {
+  if (state !== 'playing' || !current || flashRows.length) return;
+  const distance = hardDropDistance(current);
+  current = { ...current, y: current.y + distance };
+  score += distance * 2;
+  lockCurrentPiece();
+}
+function vibrate(ms = 8) { navigator.vibrate?.(ms); }
 
+function tryStartGame() {
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameInput.classList.remove('shakeError');
+    void nameInput.offsetWidth;
+    nameInput.classList.add('shakeError');
+    nameInput.focus();
+    subText.textContent = 'Nhập tên để chơi nhé!';
+    return;
+  }
+  playerName = name.slice(0, 14);
+  try { localStorage.setItem(NAME_KEY, playerName); } catch {}
+  resetGameData();
+  state = 'playing';
+  overlay.style.display = 'none';
+  pauseBtn.textContent = '⏸';
+}
+function showReady() {
+  state = 'ready';
+  overlay.style.display = 'flex';
+  nameEntry.style.display = 'flex';
+  leaderboardBox.style.display = 'block';
+  titleText.textContent = '🧱 XẾP GẠCH';
+  renderLeaderboard();
+  updateHelpText();
+}
 function gameOver() {
   if (state !== 'playing') return;
   state = 'over';
+  softDropping = false;
+  stopAllRepeats();
   best = Math.max(best, score);
-  const result = addScoreToLeaderboard(playerName, score);
+  const result = addScore(playerName, score);
   overlay.style.display = 'flex';
   nameEntry.style.display = 'none';
   leaderboardBox.style.display = 'block';
   renderLeaderboard(result.madeTop10 ? result.entry : null);
   titleText.textContent = '💥 THUA RỒI';
   subText.textContent = result.madeTop10
-    ? `Điểm: ${score} • 🎉 Vào Top 10! Hạng #${result.rank + 1} (bấm để chơi lại)`
-    : `Điểm: ${score}  Kỷ lục: ${best}  (bấm để chơi lại)`;
+    ? `Điểm: ${score} • 🎉 Vào Top 10! Hạng #${result.rank + 1} (chạm để chơi lại)`
+    : `Điểm: ${score} • Kỷ lục: ${best} (chạm để chơi lại)`;
 }
-
-// ---------- Input ----------
-function tryStartGame() {
-  const name = nameInput.value.trim();
-  if (!name) {
-    nameInput.classList.remove('shakeError'); void nameInput.offsetWidth;
-    nameInput.classList.add('shakeError'); nameInput.focus();
-    subText.textContent = 'Nhập tên để chơi nhé!';
-    return;
-  }
-  playerName = name.slice(0, 14);
-  try { localStorage.setItem(NAME_KEY, playerName); } catch (e) {}
-  resetGameData();
-  state = 'playing';
-  overlay.style.display = 'none';
-}
-
-function retryOrStart() {
-  if (state === 'ready') { tryStartGame(); return; }
-  if (state === 'over') {
-    state = 'ready';
+function togglePause() {
+  if (state === 'playing') {
+    state = 'paused';
+    softDropping = false;
+    stopAllRepeats();
     overlay.style.display = 'flex';
-    nameEntry.style.display = 'flex';
-    leaderboardBox.style.display = 'block';
-    titleText.textContent = '🧱 XẾP GẠCH';
-    subText.textContent = '← → di chuyển · ↑ xoay · ↓ rơi nhanh · Space thả';
-    renderLeaderboard();
+    nameEntry.style.display = 'none';
+    leaderboardBox.style.display = 'none';
+    titleText.textContent = '⏸ TẠM DỪNG';
+    subText.textContent = document.body.classList.contains('touch-enabled') ? 'Chạm nút ▶ để tiếp tục' : 'Bấm P để tiếp tục';
+    pauseBtn.textContent = '▶';
+  } else if (state === 'paused') {
+    state = 'playing';
+    overlay.style.display = 'none';
+    pauseBtn.textContent = '⏸';
   }
 }
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener('keydown', e => {
   if (document.activeElement === nameInput) {
     if (e.code === 'Enter') { e.preventDefault(); tryStartGame(); }
     return;
   }
   if (state === 'ready' || state === 'over') {
-    if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); retryOrStart(); }
+    if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); state === 'ready' ? tryStartGame() : showReady(); }
     return;
   }
+  if (e.code === 'KeyP') { e.preventDefault(); togglePause(); return; }
   if (state !== 'playing') return;
   switch (e.code) {
     case 'ArrowLeft': e.preventDefault(); tryMove(-1, 0); break;
@@ -549,72 +701,99 @@ window.addEventListener('keydown', (e) => {
     case 'ArrowDown': e.preventDefault(); softDropping = true; break;
     case 'ArrowUp': case 'KeyX': e.preventDefault(); tryRotate(1); break;
     case 'KeyZ': e.preventDefault(); tryRotate(-1); break;
-    case 'Space': {
-      e.preventDefault();
-      const d = hardDropDistance(current);
-      current = { ...current, y: current.y + d };
-      score += d * 2;
-      lockCurrentPiece();
-      break;
-    }
-    case 'KeyP': togglePause(); break;
+    case 'Space': e.preventDefault(); hardDrop(); break;
   }
 });
-window.addEventListener('keyup', (e) => {
-  if (e.code === 'ArrowDown') softDropping = false;
+window.addEventListener('keyup', e => { if (e.code === 'ArrowDown') softDropping = false; });
+
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (state === 'over') showReady();
 });
+startBtn.addEventListener('click', e => { e.stopPropagation(); tryStartGame(); });
+pauseBtn.addEventListener('click', e => { e.stopPropagation(); togglePause(); });
 
-function togglePause() {
-  if (state === 'playing') { state = 'paused'; overlay.style.display = 'flex'; nameEntry.style.display='none'; leaderboardBox.style.display='none'; titleText.textContent='⏸ TẠM DỪNG'; subText.textContent='Bấm P để tiếp tục'; }
-  else if (state === 'paused') { state = 'playing'; overlay.style.display = 'none'; }
-}
-
-canvas.addEventListener('mousedown', () => { if (state === 'ready' || state === 'over') retryOrStart(); });
-canvas.addEventListener('touchstart', (e) => { if (state === 'ready' || state === 'over') { e.preventDefault(); retryOrStart(); } }, { passive: false });
-startBtn.addEventListener('click', (e) => { e.stopPropagation(); tryStartGame(); });
-
-// touch controls
 const btnLeft = document.getElementById('btnLeft');
 const btnRight = document.getElementById('btnRight');
 const btnDown = document.getElementById('btnDown');
 const btnRotate = document.getElementById('btnRotate');
 const btnDrop = document.getElementById('btnDrop');
-function bindTap(el, fn) {
-  el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(); }, { passive: false });
-  el.addEventListener('mousedown', (e) => { e.preventDefault(); fn(); });
-}
-bindTap(btnLeft, () => { if (state === 'playing') tryMove(-1, 0); });
-bindTap(btnRight, () => { if (state === 'playing') tryMove(1, 0); });
-bindTap(btnRotate, () => { if (state === 'playing') tryRotate(1); });
-bindTap(btnDown, () => { if (state === 'playing') tryMove(0, 1); });
-bindTap(btnDrop, () => {
-  if (state !== 'playing') return;
-  const d = hardDropDistance(current);
-  current = { ...current, y: current.y + d };
-  score += d * 2;
-  lockCurrentPiece();
-});
+const repeaters = new Map();
 
-// ---------- Rendering ----------
-function cellColorShades(hex) {
-  return hex; // simple flat fill with bevel drawn separately
+function stopRepeat(el) {
+  const timers = repeaters.get(el);
+  if (timers) {
+    clearTimeout(timers.delay);
+    clearInterval(timers.interval);
+    repeaters.delete(el);
+  }
+  el.classList.remove('pressed');
+  if (el === btnDown) softDropping = false;
 }
+function stopAllRepeats() {
+  [btnLeft, btnRight, btnDown].forEach(stopRepeat);
+}
+function bindAction(el, action) {
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.setPointerCapture?.(e.pointerId);
+    el.classList.add('pressed');
+    vibrate();
+    action();
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => el.addEventListener(type, e => {
+    e.preventDefault();
+    stopRepeat(el);
+  }));
+}
+function bindRepeat(el, action, options = {}) {
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (state !== 'playing') return;
+    el.setPointerCapture?.(e.pointerId);
+    el.classList.add('pressed');
+    vibrate();
+    action();
+    const delay = setTimeout(() => {
+      const interval = setInterval(() => {
+        if (state === 'playing') action();
+      }, options.interval || 80);
+      const currentTimers = repeaters.get(el);
+      if (currentTimers) currentTimers.interval = interval;
+    }, options.delay || 190);
+    repeaters.set(el, { delay, interval: null });
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave'].forEach(type => el.addEventListener(type, () => stopRepeat(el)));
+}
+bindRepeat(btnLeft, () => tryMove(-1, 0));
+bindRepeat(btnRight, () => tryMove(1, 0));
+bindRepeat(btnDown, () => { softDropping = true; if (tryMove(0, 1)) score += 1; }, { delay: 130, interval: 55 });
+bindAction(btnRotate, () => { if (state === 'playing') tryRotate(1); });
+bindAction(btnDrop, hardDrop);
+window.addEventListener('blur', stopAllRepeats);
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopAllRepeats(); });
 
-function drawBlock(px, py, size, color, alpha) {
-  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+function drawBlock(px, py, size, color, alpha = 1) {
+  ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
   ctx.fillRect(px, py, size, size);
-  // bevel highlight
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.fillRect(px, py, size, 3);
   ctx.fillRect(px, py, 3, size);
-  // bevel shadow
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.fillRect(px, py + size - 3, size, 3);
   ctx.fillRect(px + size - 3, py, 3, size);
   ctx.globalAlpha = 1;
 }
-
+function drawBackground(viewW) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, H);
+  gradient.addColorStop(0, '#232a3d');
+  gradient.addColorStop(1, '#141824');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, viewW, H);
+}
 function drawBoardFrame() {
   ctx.fillStyle = '#11151f';
   ctx.fillRect(BOARD_X - 6, BOARD_Y - 6, COLS * CELL + 12, ROWS * CELL + 12);
@@ -622,8 +801,7 @@ function drawBoardFrame() {
   ctx.lineWidth = 2;
   ctx.strokeRect(BOARD_X - 6, BOARD_Y - 6, COLS * CELL + 12, ROWS * CELL + 12);
 }
-
-function drawGrid() {
+function drawGridLines() {
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   ctx.lineWidth = 1;
   for (let c = 0; c <= COLS; c++) {
@@ -633,103 +811,79 @@ function drawGrid() {
     ctx.beginPath(); ctx.moveTo(BOARD_X, BOARD_Y + r * CELL); ctx.lineTo(BOARD_X + COLS * CELL, BOARD_Y + r * CELL); ctx.stroke();
   }
 }
-
 function drawLockedBlocks() {
   for (let r = 0; r < ROWS; r++) {
-    const isFlashing = flashRows.includes(r);
+    const flashing = flashRows.includes(r);
     for (let c = 0; c < COLS; c++) {
-      if (grid[r][c] !== 0) {
-        const color = isFlashing && Math.floor(flashTimer / 40) % 2 === 0 ? '#ffffff' : grid[r][c];
-        drawBlock(BOARD_X + c * CELL + 1, BOARD_Y + r * CELL + 1, CELL - 2, color);
-      }
+      if (!grid[r][c]) continue;
+      const color = flashing && Math.floor(flashTimer / 40) % 2 === 0 ? '#fff' : grid[r][c];
+      drawBlock(BOARD_X + c * CELL + 1, BOARD_Y + r * CELL + 1, CELL - 2, color);
     }
   }
 }
-
 function drawGhost() {
   if (!current) return;
-  const d = hardDropDistance(current);
-  const gy = current.y + d;
-  ctx.globalAlpha = 0.25;
+  const distance = hardDropDistance(current);
   for (const [cx, cy] of current.cells) {
-    const by = gy + cy;
-    if (by < 0) continue;
-    drawBlock(BOARD_X + (current.x + cx) * CELL + 1, BOARD_Y + by * CELL + 1, CELL - 2, current.color, 0.35);
+    const y = current.y + distance + cy;
+    if (y < 0) continue;
+    drawBlock(BOARD_X + (current.x + cx) * CELL + 1, BOARD_Y + y * CELL + 1, CELL - 2, current.color, 0.26);
   }
-  ctx.globalAlpha = 1;
 }
-
-function drawCurrentPiece(renderYOffset) {
+function drawCurrentPiece() {
   if (!current) return;
   for (const [cx, cy] of current.cells) {
-    const by = current.y + cy;
-    const py = BOARD_Y + (by + renderYOffset) * CELL + 1;
-    if (by + renderYOffset < -1) continue;
-    drawBlock(BOARD_X + (current.x + cx) * CELL + 1, py, CELL - 2, current.color);
+    const y = current.y + cy;
+    if (y < 0) continue;
+    drawBlock(BOARD_X + (current.x + cx) * CELL + 1, BOARD_Y + y * CELL + 1, CELL - 2, current.color);
   }
 }
-
 function drawSidebar() {
+  ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.font = '700 15px Segoe UI, sans-serif';
-  ctx.textAlign = 'left';
   ctx.fillText('TIẾP THEO', SIDE_X, BOARD_Y + 20);
-
-  // next piece preview box
   const boxSize = 110;
   ctx.fillStyle = 'rgba(255,255,255,0.06)';
   ctx.fillRect(SIDE_X, BOARD_Y + 30, boxSize, boxSize);
   if (nextType) {
-    const N = SHAPES[nextType].N;
-    const cellSize = 22;
-    const offsetX = SIDE_X + (boxSize - N * cellSize) / 2;
-    const offsetY = BOARD_Y + 30 + (boxSize - N * cellSize) / 2;
-    ROTATIONS[nextType][0].forEach(([cx, cy]) => {
-      drawBlock(offsetX + cx * cellSize + 1, offsetY + cy * cellSize + 1, cellSize - 2, SHAPES[nextType].color);
-    });
+    const n = SHAPES[nextType].N;
+    const size = 22;
+    const ox = SIDE_X + (boxSize - n * size) / 2;
+    const oy = BOARD_Y + 30 + (boxSize - n * size) / 2;
+    ROTATIONS[nextType][0].forEach(([x, y]) => drawBlock(ox + x * size + 1, oy + y * size + 1, size - 2, SHAPES[nextType].color));
   }
-
-  const infoY = BOARD_Y + 30 + boxSize + 30;
-  ctx.font = '700 14px Segoe UI, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('ĐIỂM', SIDE_X, infoY);
-  ctx.font = '800 24px Segoe UI, sans-serif';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(String(score), SIDE_X, infoY + 28);
-
-  ctx.font = '700 14px Segoe UI, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('CẤP ĐỘ', SIDE_X, infoY + 62);
-  ctx.font = '800 20px Segoe UI, sans-serif';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(String(level), SIDE_X, infoY + 88);
-
-  ctx.font = '700 14px Segoe UI, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('HÀNG', SIDE_X, infoY + 118);
-  ctx.font = '800 20px Segoe UI, sans-serif';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(String(lines), SIDE_X, infoY + 144);
+  const infoY = BOARD_Y + 170;
+  const stats = [['ĐIỂM', String(score), 24], ['CẤP ĐỘ', String(level), 20], ['HÀNG', String(lines), 20]];
+  let y = infoY;
+  stats.forEach(([label, value, size]) => {
+    ctx.font = '700 14px Segoe UI, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(label, SIDE_X, y);
+    ctx.font = `800 ${size}px Segoe UI, sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.fillText(value, SIDE_X, y + 28);
+    y += 62;
+  });
+}
+function drawMobileHud() {
+  const rightX = 326;
+  ctx.textAlign = 'right';
+  ctx.font = '800 12px Segoe UI, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.62)';
+  ctx.fillText(`ĐIỂM ${score}`, rightX, 15);
+  ctx.fillText(`LV ${level} · ${lines} HÀNG`, rightX, 632);
 }
 
-function drawBackground() {
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#232a3d'); g.addColorStop(1, '#141824');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-}
-
-// ---------- Main loop (delta-time based) ----------
 let lastTime = performance.now();
 function loop(now) {
   let dt = (now - lastTime) / 1000;
   if (dt > 0.05) dt = 0.05;
   lastTime = now;
-  clockTime += dt;
   const dtMs = dt * 1000;
 
   if (state === 'playing') {
-    if (flashRows.length > 0) {
+    if (flashRows.length) {
       flashTimer -= dtMs;
       if (flashTimer <= 0) performClear();
     } else {
@@ -748,18 +902,18 @@ function loop(now) {
     }
   }
 
-  ctx.clearRect(0, 0, W, H);
-  drawBackground();
+  const mobile = isMobileLayout();
+  const viewW = mobile ? MOBILE_W : DESKTOP_W;
+  ctx.clearRect(0, 0, viewW, H);
+  drawBackground(viewW);
   drawBoardFrame();
-  drawGrid();
+  drawGridLines();
   drawLockedBlocks();
-  if (state === 'playing' && flashRows.length === 0) {
+  if ((state === 'playing' || state === 'paused') && !flashRows.length) {
     drawGhost();
-    const renderOffset = Math.min(1, dropTimer / (softDropping ? Math.min(dropInterval, 50) : dropInterval)) * 0;
-    drawCurrentPiece(renderOffset);
+    drawCurrentPiece();
   }
-  drawSidebar();
-
+  if (mobile) drawMobileHud(); else drawSidebar();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
