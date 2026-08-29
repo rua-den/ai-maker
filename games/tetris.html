@@ -26,6 +26,7 @@
     const mobilePatch = `
 <style id="mobile-tetris-patch">
   html, body { overscroll-behavior: none; }
+  #importBtn, #importFile { display: none !important; }
   @media (max-width: 720px), (max-height: 600px) {
     #touchControls {
       display: flex !important;
@@ -52,6 +53,8 @@
   }
 </style>`;
     html = html.replace('</head>', mobilePatch + '\n</head>');
+    const cleanup = '<script>(function(){const b=document.getElementById("importBtn");const f=document.getElementById("importFile");if(b)b.remove();if(f)f.remove();})();<\\/script>';
+    html = html.replace('</body>', cleanup + '\n</body>');
 
     document.open();
     document.write(html);
