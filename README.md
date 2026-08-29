@@ -1,36 +1,32 @@
 # 🐢 Rùa — Game Portfolio
 
-Trang web game cá nhân, chơi trực tiếp trên trình duyệt, không cần cài đặt gì.
+A personal game portfolio where you can play directly in your browser — no installation required.
 
-## 📁 Cấu trúc project
+## 📁 Project Structure
 
 ```
 rua-games/
-├── index.html            ← Trang chủ "Welcome to Rùa"
-├── firebase-config.js    ← Config Firebase DÙNG CHUNG cho mọi game (điền 1 lần)
+├── index.html            ← Homepage: "Welcome to Rùa"
+├── firebase-config.js    ← Shared Firebase config for all games (configure once)
 ├── README.md
 └── games/
-    ├── flappy-dog.html   ← Flappy Dog (có bảng xếp hạng)
-    ├── tetris.html       ← Xếp Gạch / Tetris (có bảng xếp hạng)
-    └── xiangqi.html      ← Cờ Tướng (2 người / vs Bot — chưa có bảng xếp hạng)
+    ├── flappy-dog.html   ← Flappy Dog (with leaderboard)
+    ├── tetris.html       ← Tetris (with leaderboard)
+    └── xiangqi.html      ← Chinese Chess (2 players / vs Bot — no leaderboard yet)
 ```
 
-Toàn bộ là **static site** (HTML/CSS/JS thuần) — không cần Node, không cần build,
-push thẳng lên GitHub Pages / Netlify / Vercel là chạy.
+The entire project is a **static site** built with plain HTML, CSS, and JavaScript — no Node.js and no build step required. You can deploy it directly to GitHub Pages, Netlify, or Vercel.
 
 ---
 
-## 🔥 Bước 1 — Bật bảng xếp hạng chung (Firebase, free)
+## 🔥 Step 1 — Enable Shared Leaderboards with Firebase (Free)
 
-Nếu không làm bước này, mỗi game vẫn chơi được bình thường, nhưng điểm chỉ lưu
-theo từng trình duyệt (không share được giữa mọi người chơi).
+This step is optional. Without Firebase, every game will still work normally, but scores will only be stored locally in each player's browser and will not be shared across players.
 
-1. Vào **https://console.firebase.google.com** → tạo project mới (miễn phí).
-2. Trong project: **Build → Realtime Database → Create Database** → chọn
-   **Start in test mode** (để chạy thử trước, siết bảo mật sau nếu cần).
-3. **⚙ Project settings** → cuộn xuống **Your apps** → bấm icon Web `</>` →
-   copy đoạn `firebaseConfig` nó đưa ra.
-4. Mở file **`firebase-config.js`** ở thư mục gốc, dán giá trị thật vào:
+1. Go to the **Firebase Console** at `https://console.firebase.google.com` and create a new project (free).
+2. Inside the project, go to **Build → Realtime Database → Create Database**, then select **Start in test mode** for initial testing. You can tighten the security rules later.
+3. Go to **⚙ Project settings**, scroll down to **Your apps**, click the Web `</>` icon, and copy the generated `firebaseConfig` values.
+4. Open **`firebase-config.js`** in the project root and replace the placeholder values with your actual Firebase configuration:
 
 ```js
 const firebaseConfig = {
@@ -41,20 +37,16 @@ const firebaseConfig = {
 };
 ```
 
-5. Xong — **mọi game trên site đều tự dùng chung config này**, mỗi game có
-   bảng xếp hạng riêng (namespaced theo `GAME_ID` trong từng file, không lẫn
-   điểm giữa các game).
+5. That's it — **all games on the site automatically share this Firebase configuration**. Each game has its own leaderboard namespace based on the `GAME_ID` defined in that game's file, so scores from different games do not get mixed together.
 
-> Muốn thêm game mới sau này? Copy 1 file trong `games/`, đổi biến `GAME_ID`
-> trong file đó (vd: `'flappy-dog'` → `'game-moi'`), thêm card link trong
-> `index.html` — không cần tạo Firebase project mới.
+> Want to add another game later? Copy one of the files in `games/`, change its `GAME_ID` (for example, `'flappy-dog'` → `'new-game'`), and add a card/link to `index.html`. You do not need to create another Firebase project.
 
 ---
 
-## 🚀 Bước 2 — Đưa lên GitHub Pages
+## 🚀 Step 2 — Deploy to GitHub Pages
 
 ```bash
-# 1) Tạo repo mới trên GitHub (vd tên: rua-games), rồi:
+# 1) Create a new GitHub repository (for example: rua-games), then:
 cd rua-games
 git init
 git add .
@@ -64,21 +56,22 @@ git remote add origin https://github.com/<username>/rua-games.git
 git push -u origin main
 ```
 
-Sau đó trên GitHub:
-1. Vào repo → **Settings → Pages**
-2. **Source**: chọn **Deploy from a branch**
-3. **Branch**: chọn `main`, thư mục `/ (root)` → **Save**
-4. Đợi ~1 phút, trang sẽ live tại:
+Then, on GitHub:
+
+1. Open the repository and go to **Settings → Pages**.
+2. Under **Source**, select **Deploy from a branch**.
+3. Select the `main` branch and `/ (root)` folder, then click **Save**.
+4. Wait about a minute. The site should become available at:
    `https://<username>.github.io/rua-games/`
 
-Xong — trang chủ sẽ ở `index.html`, các game nằm trong `games/`.
+The homepage is served from `index.html`, and individual games are located in the `games/` directory.
 
 ---
 
-## 🎮 Ghi chú từng game
+## 🎮 Game Notes
 
-- **Flappy Dog** — click/chạm/Space để bay. Bắt buộc nhập tên trước khi chơi.
-- **Xếp Gạch** — phím mũi tên di chuyển/xoay, Space thả nhanh, P tạm dừng. Có nút chạm cho mobile.
-- **Cờ Tướng** — chọn 2 người (cùng máy) hoặc đấu Bot (chọn phe + độ khó). Đã có đủ luật (chiếu tướng, mặt tướng, pháo cần ngòi, mã cản chân, tượng không qua sông...). *Bảng xếp hạng cho game này để làm sau.*
+- **Flappy Dog** — Click, tap, or press Space to fly. A player name is required before starting.
+- **Tetris** — Use the arrow keys to move and rotate pieces, Space for hard drop, and P to pause. Touch controls are included for mobile devices.
+- **Chinese Chess (Xiangqi)** — Play locally with two players or against the bot, with side and difficulty selection. Core rules are implemented, including check, flying general, cannon screens, blocked horse legs, and elephants not crossing the river. *Leaderboard support for this game is planned for later.*
 
-Cả 3 game đều: full màn hình, tự scale theo cửa sổ, có nút 🐢 quay về trang chủ và nút ⛶ fullscreen ở mỗi game.
+All three games support full-screen layouts, automatically scale to the browser window, and include a 🐢 button to return to the homepage plus a ⛶ fullscreen button.
