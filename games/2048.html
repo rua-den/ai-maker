@@ -16,9 +16,17 @@
     let html=await response.text();
     const smoothCss=`
 <style id="smooth-2048-patch">
-html,body{-webkit-user-select:none;user-select:none}.board{will-change:transform;transform:translateZ(0);backface-visibility:hidden}.board.dragging{transition:transform .04s linear}.tile{will-change:transform,filter;transform:translateZ(0);backface-visibility:hidden}.tile-pop{animation:tilePop .16s cubic-bezier(.2,.9,.25,1.35)}.score-pop{animation:scorePop .18s ease-out}.board-enter{animation:boardEnter .2s ease-out}.board-undo{animation:boardUndo .18s ease-out}.board[data-move="left"]{animation:nudgeLeft .12s ease-out}.board[data-move="right"]{animation:nudgeRight .12s ease-out}.board[data-move="up"]{animation:nudgeUp .12s ease-out}.board[data-move="down"]{animation:nudgeDown .12s ease-out}.btn,.home{transition:transform .1s ease,box-shadow .1s ease,filter .12s ease}.btn:hover,.home:hover{filter:brightness(1.035)}
-@keyframes tilePop{0%{transform:scale(.78)}58%{transform:scale(1.09)}100%{transform:scale(1)}}@keyframes scorePop{0%{transform:scale(.82);opacity:.6}55%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}@keyframes boardEnter{0%{transform:scale(.97);opacity:.75}100%{transform:scale(1);opacity:1}}@keyframes boardUndo{0%{transform:scale(.985)}50%{transform:scale(1.012)}100%{transform:scale(1)}}@keyframes nudgeLeft{0%{transform:translateX(0)}45%{transform:translateX(-5px)}100%{transform:translateX(0)}}@keyframes nudgeRight{0%{transform:translateX(0)}45%{transform:translateX(5px)}100%{transform:translateX(0)}}@keyframes nudgeUp{0%{transform:translateY(0)}45%{transform:translateY(-5px)}100%{transform:translateY(0)}}@keyframes nudgeDown{0%{transform:translateY(0)}45%{transform:translateY(5px)}100%{transform:translateY(0)}}
-@media(prefers-reduced-motion:reduce){.tile-pop,.score-pop,.board-enter,.board-undo,.board[data-move]{animation:none!important}.board.dragging{transition:none}}
+html,body{-webkit-user-select:none;user-select:none}
+.board{transform:none!important;will-change:auto;contain:layout paint;}
+.tile{position:relative;overflow:hidden;transform:none!important;will-change:auto;}
+.tile-value{display:block;transform:translateZ(0);backface-visibility:hidden;pointer-events:none;}
+.tile-value.pop{animation:tileValuePop .14s cubic-bezier(.2,.85,.25,1.25)}
+.score-pop{animation:scorePop .16s ease-out}
+.btn,.home{transition:transform .1s ease,box-shadow .1s ease,filter .12s ease}
+.btn:hover,.home:hover{filter:brightness(1.035)}
+@keyframes tileValuePop{0%{transform:scale(.88);opacity:.72}60%{transform:scale(1.06);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes scorePop{0%{transform:scale(.9);opacity:.7}55%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.tile-value.pop,.score-pop{animation:none!important}}
 </style>`;
     html=html.replace('</head>',smoothCss+'\n</head>');
     html=html.replace('</body>','<script src="./2048-smooth.js"><\\/script>\n</body>');
