@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Rùa — Game Portfolio</title>
 <style>
   * { box-sizing: border-box; }
@@ -13,197 +14,48 @@
     overflow-x: hidden;
   }
   body { position: relative; }
-
-  /* floating decorative bubbles */
-  .bubble {
-    position: fixed;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
-    pointer-events: none;
-    animation: rise linear infinite;
-  }
-  @keyframes rise {
-    0% { transform: translateY(10vh) scale(0.8); opacity: 0; }
-    10% { opacity: 0.6; }
-    90% { opacity: 0.4; }
-    100% { transform: translateY(-110vh) scale(1.2); opacity: 0; }
-  }
-
-  header {
-    text-align: center;
-    padding: 64px 20px 32px;
-    position: relative;
-    z-index: 2;
-  }
-  .turtle {
-    font-size: clamp(48px, 10vw, 76px);
-    animation: bob 3s ease-in-out infinite;
-    display: inline-block;
-  }
-  @keyframes bob {
-    0%, 100% { transform: translateY(0) rotate(-3deg); }
-    50% { transform: translateY(-14px) rotate(3deg); }
-  }
-  h1 {
-    font-size: clamp(32px, 6vw, 56px);
-    font-weight: 900;
-    margin: 12px 0 8px;
-    letter-spacing: 1px;
-    background: linear-gradient(90deg, #7ee8fa, #eec0c6, #a8ff78);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: shimmer 6s linear infinite;
-  }
-  @keyframes shimmer {
-    to { background-position: 200% center; }
-  }
-  header p {
-    font-size: clamp(14px, 2.2vw, 18px);
-    opacity: 0.8;
-    max-width: 520px;
-    margin: 0 auto;
-    font-weight: 500;
-  }
-
-  main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 20px 24px 80px;
-    position: relative;
-    z-index: 2;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 26px;
-    margin-top: 20px;
-  }
-  .card {
-    position: relative;
-    border-radius: 20px;
-    padding: 28px 24px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.14);
-    backdrop-filter: blur(8px);
-    text-decoration: none;
-    color: white;
-    overflow: hidden;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: 200px;
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 80% -10%, rgba(255,255,255,0.18), transparent 60%);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-  .card:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: rgba(255,255,255,0.4);
-    box-shadow: 0 18px 40px rgba(0,0,0,0.35);
-  }
+  .bubble { position: fixed; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0.02)); pointer-events: none; animation: rise linear infinite; }
+  @keyframes rise { 0% { transform: translateY(10vh) scale(0.8); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.4; } 100% { transform: translateY(-110vh) scale(1.2); opacity: 0; } }
+  header { text-align: center; padding: 64px 20px 32px; position: relative; z-index: 2; }
+  .turtle { font-size: clamp(48px, 10vw, 76px); animation: bob 3s ease-in-out infinite; display: inline-block; }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
+  h1 { font-size: clamp(32px, 6vw, 56px); font-weight: 900; margin: 12px 0 8px; letter-spacing: 1px; background: linear-gradient(90deg, #7ee8fa, #eec0c6, #a8ff78); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s linear infinite; }
+  @keyframes shimmer { to { background-position: 200% center; } }
+  header p { font-size: clamp(14px, 2.2vw, 18px); opacity: 0.8; max-width: 560px; margin: 0 auto; font-weight: 500; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 24px 80px; position: relative; z-index: 2; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; margin-top: 20px; }
+  .card { position: relative; border-radius: 20px; padding: 28px 24px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(8px); text-decoration: none; color: white; overflow: hidden; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; display: flex; flex-direction: column; gap: 10px; min-height: 200px; }
+  .card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 80% -10%, rgba(255,255,255,0.18), transparent 60%); opacity: 0; transition: opacity 0.25s ease; }
+  .card:hover { transform: translateY(-8px) scale(1.02); border-color: rgba(255,255,255,0.4); box-shadow: 0 18px 40px rgba(0,0,0,0.35); }
   .card:hover::before { opacity: 1; }
-  .card .icon {
-    font-size: 46px;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
-    transition: transform 0.25s ease;
-  }
+  .card .icon { font-size: 46px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); transition: transform 0.25s ease; }
   .card:hover .icon { transform: scale(1.15) rotate(-6deg); }
   .card h2 { margin: 0; font-size: 22px; font-weight: 800; }
   .card p { margin: 0; font-size: 14px; opacity: 0.78; line-height: 1.5; flex: 1; }
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 999px;
-    width: fit-content;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-  .card.soon { opacity: 0.55; cursor: not-allowed; }
-  .card.soon:hover { transform: none; box-shadow: none; border-color: rgba(255,255,255,0.14); }
-  .card.soon .tag { background: rgba(255,255,255,0.06); }
-
-  footer {
-    text-align: center;
-    padding: 30px 20px 50px;
-    opacity: 0.55;
-    font-size: 13px;
-    position: relative;
-    z-index: 2;
-  }
+  .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; width: fit-content; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); }
+  footer { text-align: center; padding: 30px 20px 50px; opacity: 0.55; font-size: 13px; position: relative; z-index: 2; }
+  @media (max-width: 600px) { header { padding-top: 42px; } main { padding: 12px 14px 60px; } .grid { gap: 16px; grid-template-columns: 1fr; } .card { min-height: 170px; padding: 22px 20px; } }
 </style>
 </head>
 <body>
-
 <header>
   <div class="turtle">🐢</div>
   <h1>Welcome to Rùa</h1>
-  <p>Góc chơi game nhỏ của Rùa — chọn 1 game bên dưới, chơi thoải mái, điểm cao được lưu bảng xếp hạng chung nè.</p>
+  <p>Góc chơi game nhỏ của Rùa — chơi một mình, đấu bot hoặc vào bàn online với bạn bè.</p>
 </header>
-
 <main>
   <div class="grid">
-
-    <a class="card" href="games/flappy-dog.html">
-      <div class="icon">🐶</div>
-      <h2>Flappy Dog</h2>
-      <p>Điều khiển chú chó bay qua những chiếc xương, càng chơi càng khó. Đơn giản nhưng gây nghiện!</p>
-      <span class="tag">🏆 Có bảng xếp hạng</span>
-    </a>
-
-    <a class="card" href="games/tetris.html">
-      <div class="icon">🧱</div>
-      <h2>Xếp Gạch</h2>
-      <p>Tetris cổ điển — xoay, thả, xếp hàng để ghi điểm. Càng lên cấp càng rơi nhanh.</p>
-      <span class="tag">🏆 Có bảng xếp hạng</span>
-    </a>
-
-    <a class="card" href="games/xiangqi.html">
-      <div class="icon">🐴</div>
-      <h2>Cờ Tướng</h2>
-      <p>Chơi với bạn bè (2 người cùng máy) hoặc đấu với máy. Đủ luật: chiếu tướng, mặt tướng, đối mã, pháo...</p>
-      <span class="tag">🤖 2 người / vs Bot</span>
-    </a>
-
-    <div class="card soon">
-      <div class="icon">✨</div>
-      <h2>Game tiếp theo</h2>
-      <p>Rùa sẽ thêm game mới ở đây. Quay lại sau nhé!</p>
-      <span class="tag">Sắp có</span>
-    </div>
-
+    <a class="card" href="games/flappy-dog.html"><div class="icon">🐶</div><h2>Flappy Dog</h2><p>Điều khiển chú chó bay qua những chiếc xương, càng chơi càng khó. Đơn giản nhưng gây nghiện!</p><span class="tag">🏆 Firebase leaderboard</span></a>
+    <a class="card" href="games/tetris.html"><div class="icon">🧱</div><h2>Xếp Gạch</h2><p>Tetris cổ điển — xoay, thả, xếp hàng để ghi điểm. Hỗ trợ cả bàn phím và mobile.</p><span class="tag">🏆 Firebase leaderboard</span></a>
+    <a class="card" href="games/2048.html"><div class="icon">🔢</div><h2>2048</h2><p>Vuốt để ghép các ô số giống nhau. Có lưu ván đang chơi, Undo và bảng điểm chung.</p><span class="tag">🏆 Firebase leaderboard</span></a>
+    <a class="card" href="games/xiangqi.html"><div class="icon">🐴</div><h2>Cờ Tướng</h2><p>Tạo bàn hoặc chọn bàn đang chờ để đánh online trên 2 điện thoại. Vẫn có chế độ đấu Bot.</p><span class="tag">🌐 Online / vs Bot</span></a>
+    <a class="card" href="games/caro.html"><div class="icon">⭕</div><h2>Caro Online</h2><p>Tạo bàn, chờ đối thủ hoặc vào bàn có sẵn. Hai điện thoại đồng bộ nước đi realtime qua Firebase.</p><span class="tag">🌐 2 người Online</span></a>
   </div>
 </main>
-
 <footer>Made with 🐢 by Rùa</footer>
-
 <script>
-// gentle floating decorative bubbles across the background
-const colors = ['rgba(126,232,250,', 'rgba(238,192,198,', 'rgba(168,255,120,'];
-for (let i = 0; i < 14; i++) {
-  const el = document.createElement('div');
-  el.className = 'bubble';
-  const size = 20 + Math.random() * 60;
-  el.style.width = size + 'px';
-  el.style.height = size + 'px';
-  el.style.left = Math.random() * 100 + 'vw';
-  const dur = 14 + Math.random() * 16;
-  el.style.animationDuration = dur + 's';
-  el.style.animationDelay = -(Math.random() * dur) + 's';
-  document.body.appendChild(el);
-}
+const colors=['rgba(126,232,250,','rgba(238,192,198,','rgba(168,255,120,'];
+for(let i=0;i<14;i++){const el=document.createElement('div');el.className='bubble';const size=20+Math.random()*60;el.style.width=size+'px';el.style.height=size+'px';el.style.left=Math.random()*100+'vw';const dur=14+Math.random()*16;el.style.animationDuration=dur+'s';el.style.animationDelay=-(Math.random()*dur)+'s';document.body.appendChild(el)}
 </script>
-
 </body>
 </html>
