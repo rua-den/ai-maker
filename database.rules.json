@@ -1,0 +1,40 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "leaderboards": {
+      ".read": true,
+      "$game": {
+        ".write": true,
+        ".indexOn": ["score"]
+      }
+    },
+
+    "xiangqiRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
+    },
+    "caroRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
+    },
+    "connect4Rooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
+    },
+    "tictactoeRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
+    },
+    "reversiRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
+    }
+  }
+}
