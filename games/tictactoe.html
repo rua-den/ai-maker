@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Cờ Caro 3x3 Online — Rùa</title>
+<link rel="stylesheet" href="./realtime-games.css">
+<style>
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:18px}.cell{aspect-ratio:1;border:0;border-radius:14px;background:#eef5f8;color:#123;font-size:clamp(46px,16vw,92px);font-weight:1000;display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}.cell.a{color:#ef4d4d}.cell.b{color:#3ea7f3}.cell.last{outline:4px solid #ffe46c;outline-offset:-6px}.cell:disabled{cursor:default}@media(max-width:520px){.boardWrap{width:min(90vw,430px)}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="./tictactoe-rules.js"></script>
+<script src="./realtime-room.js"></script>
+</head>
+<body>
+<a class="home" href="../index.html">🐢</a>
+<div class="app">
+  <section id="lobby" class="panel">
+    <h1>❌⭕ 3x3</h1>
+    <div class="sub">Nhanh gọn · hai điện thoại · ba ô thẳng hàng là thắng</div>
+    <div class="nameRow"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
+    <div id="status" class="status"></div>
+    <div class="sectionHead"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
+    <div id="roomList" class="rooms"></div>
+    <div class="rules">Người tạo bàn là ❌. Người vào bàn là ⭕. Chạm một ô trống để đánh.</div>
+  </section>
+
+  <section id="game" class="game">
+    <div class="topBar panel"><div><div id="gameStatus" class="gameStatus"></div><div id="roomCode" class="roomCode"></div></div><div class="topActions"><button id="leaveBtn" class="btn secondary">Rời bàn</button></div></div>
+    <div class="boardWrap"><div id="board" class="board"></div></div>
+    <div id="resultNote" class="resultNote"></div>
+  </section>
+</div>
+<script>
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const boardEl=document.getElementById('board');
+for(let i=0;i<9;i++){const b=document.createElement('button');b.className='cell';b.dataset.idx=i;boardEl.appendChild(b)}
+RuaRealtime.boot({
+  root:'tictactoeRooms',
+  initialState:()=>({board:TicTacToeRules.empty(),last:-1}),
+  applyMove:(state,move,seat)=>TicTacToeRules.apply(state,move,seat),
+  render(room,seat,engine){
+    const board=String(room.state?.board||TicTacToeRules.empty());
+    const last=Number(room.state?.last??-1);
+    const playable=room.status==='playing'&&room.turn===seat;
+    [...boardEl.children].forEach((el,i)=>{
+      const v=board[i]||'.';
+      el.textContent=v==='A'?'×':v==='B'?'○':'';
+      el.className='cell'+(v==='A'?' a':v==='B'?' b':'')+(i===last?' last':'');
+      el.disabled=!playable||v!=='.';
+      el.onclick=()=>engine.move({idx:i});
+    });
+    const a=room.players?.A?.name||'X',b=room.players?.B?.name||'O';
+    document.getElementById('resultNote').textContent='❌ '+a+'  ·  ⭕ '+b;
+  }
+});
+</script>
+</body>
+</html>
