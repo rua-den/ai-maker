@@ -34,10 +34,12 @@
 </style>`;
     html = html.replace('</head>', mobilePatch + '\n</head>');
 
-    // Build the closing script tag at runtime to keep the outer loader parse-safe.
+    // Build closing script tags at runtime so the outer loader stays parse-safe.
     const closeScript = '</scr' + 'ipt>';
-    const mobileScript = '<script src="./tetris-mobile.js">' + closeScript;
-    html = html.replace('</body>', mobileScript + '\n</body>');
+    const enhancements =
+      '<script src="./tetris-mobile.js">' + closeScript + '\n' +
+      '<script src="./tetris-pause.js">' + closeScript;
+    html = html.replace('</body>', enhancements + '\n</body>');
 
     document.open();
     document.write(html);
