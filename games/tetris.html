@@ -34,8 +34,10 @@
 </style>`;
     html = html.replace('</head>', mobilePatch + '\n</head>');
 
-    const cleanup = '<script>(function(){const ids=["importBtn","importFile"];ids.forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});})();<\\/script>';
-    html = html.replace('</body>', cleanup + '\n<script src="./tetris-mobile.js"><\\/script>\n</body>');
+    // Build the closing script tag at runtime to keep the outer loader parse-safe.
+    const closeScript = '</scr' + 'ipt>';
+    const mobileScript = '<script src="./tetris-mobile.js">' + closeScript;
+    html = html.replace('</body>', mobileScript + '\n</body>');
 
     document.open();
     document.write(html);
