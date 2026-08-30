@@ -26,35 +26,16 @@
     const mobilePatch = `
 <style id="mobile-tetris-patch">
   html, body { overscroll-behavior: none; }
-  #importBtn, #importFile { display: none !important; }
+  #importBtn, #importFile, #touchControls { display: none !important; }
+  canvas { touch-action: none !important; }
   @media (max-width: 720px), (max-height: 600px) {
-    #touchControls {
-      display: flex !important;
-      bottom: calc(10px + env(safe-area-inset-bottom)) !important;
-      gap: 8px !important;
-      padding: 7px 8px;
-      background: rgba(10,15,25,.45);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 18px;
-      backdrop-filter: blur(8px);
-    }
-    #touchControls button {
-      width: 58px !important;
-      height: 58px !important;
-      font-size: 23px !important;
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #overlay { padding-bottom: 92px; box-sizing: border-box; }
-  }
-  @media (max-width: 360px) {
-    #touchControls { gap: 5px !important; padding: 6px; }
-    #touchControls button { width: 54px !important; height: 54px !important; }
+    #overlay { padding-bottom: 42px; box-sizing: border-box; }
   }
 </style>`;
     html = html.replace('</head>', mobilePatch + '\n</head>');
-    const cleanup = '<script>(function(){const b=document.getElementById("importBtn");const f=document.getElementById("importFile");if(b)b.remove();if(f)f.remove();})();<\\/script>';
-    html = html.replace('</body>', cleanup + '\n</body>');
+
+    const cleanup = '<script>(function(){const ids=["importBtn","importFile"];ids.forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});})();<\\/script>';
+    html = html.replace('</body>', cleanup + '\n<script src="./tetris-mobile.js"><\\/script>\n</body>');
 
     document.open();
     document.write(html);
