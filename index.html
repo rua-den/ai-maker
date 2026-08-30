@@ -6,13 +6,7 @@
 <title>Rùa — Game Portfolio</title>
 <style>
   * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; min-height: 100%;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: linear-gradient(160deg, #0f2027, #203a43, #2c5364);
-    color: white;
-    overflow-x: hidden;
-  }
+  html, body { margin: 0; padding: 0; min-height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(160deg, #0f2027, #203a43, #2c5364); color: white; overflow-x: hidden; }
   body { position: relative; }
   .bubble { position: fixed; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0.02)); pointer-events: none; animation: rise linear infinite; }
   @keyframes rise { 0% { transform: translateY(10vh) scale(0.8); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.4; } 100% { transform: translateY(-110vh) scale(1.2); opacity: 0; } }
@@ -21,7 +15,7 @@
   @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
   h1 { font-size: clamp(32px, 6vw, 56px); font-weight: 900; margin: 12px 0 8px; letter-spacing: 1px; background: linear-gradient(90deg, #7ee8fa, #eec0c6, #a8ff78); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s linear infinite; }
   @keyframes shimmer { to { background-position: 200% center; } }
-  header p { font-size: clamp(14px, 2.2vw, 18px); opacity: 0.8; max-width: 560px; margin: 0 auto; font-weight: 500; }
+  header p { font-size: clamp(14px, 2.2vw, 18px); opacity: 0.8; max-width: 650px; margin: 0 auto; font-weight: 500; }
   main { max-width: 1100px; margin: 0 auto; padding: 20px 24px 80px; position: relative; z-index: 2; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; margin-top: 20px; }
   .card { position: relative; border-radius: 20px; padding: 28px 24px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(8px); text-decoration: none; color: white; overflow: hidden; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; display: flex; flex-direction: column; gap: 10px; min-height: 200px; }
@@ -41,20 +35,22 @@
 <header>
   <div class="turtle">🐢</div>
   <h1>Welcome to Rùa</h1>
-  <p>Góc chơi game nhỏ của Rùa — chơi một mình, đấu bot hoặc vào bàn online với bạn bè.</p>
+  <p>Góc chơi game nhỏ của Rùa — chơi một mình, đấu bot hoặc vào bàn realtime trên hai điện thoại với bạn bè.</p>
 </header>
 <main>
   <div class="grid">
     <a class="card" href="games/flappy-dog.html"><div class="icon">🐶</div><h2>Flappy Dog</h2><p>Điều khiển chú chó bay qua những chiếc xương, càng chơi càng khó. Đơn giản nhưng gây nghiện!</p><span class="tag">🏆 Firebase leaderboard</span></a>
-    <a class="card" href="games/tetris.html"><div class="icon">🧱</div><h2>Xếp Gạch</h2><p>Tetris cổ điển — xoay, thả, xếp hàng để ghi điểm. Hỗ trợ cả bàn phím và mobile.</p><span class="tag">🏆 Firebase leaderboard</span></a>
+    <a class="card" href="games/tetris.html"><div class="icon">🧱</div><h2>Xếp Gạch</h2><p>Tetris cổ điển — vuốt, xoay, thả và pause trên mobile. Có nhạc, SFX và bảng điểm chung.</p><span class="tag">🏆 Firebase leaderboard</span></a>
     <a class="card" href="games/2048.html"><div class="icon">🔢</div><h2>2048</h2><p>Vuốt để ghép các ô số giống nhau. Có lưu ván đang chơi, Undo và bảng điểm chung.</p><span class="tag">🏆 Firebase leaderboard</span></a>
     <a class="card" href="games/xiangqi.html"><div class="icon">🐴</div><h2>Cờ Tướng</h2><p>Tạo bàn hoặc chọn bàn đang chờ để đánh online trên 2 điện thoại. Vẫn có chế độ đấu Bot.</p><span class="tag">🌐 Online / vs Bot</span></a>
     <a class="card" href="games/caro.html"><div class="icon">⭕</div><h2>Caro Online</h2><p>Tạo bàn, chờ đối thủ hoặc vào bàn có sẵn. Hai điện thoại đồng bộ nước đi realtime qua Firebase.</p><span class="tag">🌐 2 người Online</span></a>
+    <a class="card" href="games/connect4.html"><div class="icon">🔴</div><h2>Nối 4 Online</h2><p>Thả quân đỏ/vàng theo cột. Ai nối được 4 quân ngang, dọc hoặc chéo trước sẽ thắng.</p><span class="tag">🌐 Realtime Firebase</span></a>
+    <a class="card" href="games/tictactoe.html"><div class="icon">❌</div><h2>3x3 Online</h2><p>Một ván cực nhanh giữa hai điện thoại. Ba dấu thẳng hàng là thắng, hợp để đấu liên tục.</p><span class="tag">🌐 Realtime Firebase</span></a>
+    <a class="card" href="games/reversi.html"><div class="icon">⚫</div><h2>Reversi Online</h2><p>Kẹp và lật quân đối thủ trên bàn 8×8. Hết nước đi thì bên có nhiều quân hơn thắng.</p><span class="tag">🌐 Realtime Firebase</span></a>
   </div>
 </main>
 <footer>Made with 🐢 by Rùa</footer>
 <script>
-const colors=['rgba(126,232,250,','rgba(238,192,198,','rgba(168,255,120,'];
 for(let i=0;i<14;i++){const el=document.createElement('div');el.className='bubble';const size=20+Math.random()*60;el.style.width=size+'px';el.style.height=size+'px';el.style.left=Math.random()*100+'vw';const dur=14+Math.random()*16;el.style.animationDuration=dur+'s';el.style.animationDelay=-(Math.random()*dur)+'s';document.body.appendChild(el)}
 </script>
 </body>
