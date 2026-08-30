@@ -18,7 +18,8 @@
     if (!response.ok) throw new Error('HTTP ' + response.status);
     let html = await response.text();
     html = html.replace('</head>', '<style id="no-leaderboard-import">#importBtn,#importFile{display:none!important}</style>\n</head>');
-    const cleanup = '<script>(function(){const b=document.getElementById("importBtn");const f=document.getElementById("importFile");if(b)b.remove();if(f)f.remove();})();<\\/script>';
+    const closeScript = '</scr' + 'ipt>';
+    const cleanup = '<script>(function(){const b=document.getElementById("importBtn");const f=document.getElementById("importFile");if(b)b.remove();if(f)f.remove();})();' + closeScript;
     html = html.replace('</body>', cleanup + '\n</body>');
     document.open(); document.write(html); document.close();
   } catch (error) {
