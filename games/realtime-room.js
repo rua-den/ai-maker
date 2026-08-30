@@ -51,6 +51,11 @@
         return name;
       }
 
+      function cancelWaitingDisconnect() {
+        if (waitingDisconnect?.cancel) waitingDisconnect.cancel();
+        waitingDisconnect = null;
+      }
+
       function clearSession() {
         localStorage.removeItem(ROOM_KEY);
         localStorage.removeItem(SEAT_KEY);
@@ -89,6 +94,7 @@
             return;
           }
           currentRoom = room;
+          if (room.status !== 'waiting') cancelWaitingDisconnect();
           showGame();
           roomCode.textContent = '#' + roomId.slice(-6).toUpperCase();
           const a = room.players?.A?.name || 'A';
@@ -145,6 +151,7 @@
           turn: 'A', winner: null, reason: null, state: config.initialState()
         };
         ref.set(room).then(() => {
+          cancelWaitingDisconnect();
           waitingDisconnect = ref.onDisconnect();
           waitingDisconnect.remove();
           subscribe(ref.key, 'A');
@@ -194,8 +201,7 @@
       function leave() {
         if (!activeRef || !currentRoom) { clearSession(); showLobby(); return; }
         const room = currentRoom;
-        if (waitingDisconnect?.cancel) waitingDisconnect.cancel();
-        waitingDisconnect = null;
+        cancelWaitingDisconnect();
         if (room.status === 'waiting' && seat === 'A') {
           activeRef.remove().finally(() => { clearSession(); showLobby(); refreshRooms(); });
         } else if (room.status === 'playing') {
