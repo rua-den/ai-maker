@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Nối 4 Online — Rùa</title>
+<link rel="stylesheet" href="./realtime-games.css">
+<style>
+.board{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;padding:10px;background:linear-gradient(180deg,#2466d7,#1749a8);border:4px solid #0d367f;border-radius:18px;box-shadow:0 16px 45px rgba(0,0,0,.42);touch-action:manipulation}.slot{aspect-ratio:1;border:0;border-radius:50%;background:#0d1b29;box-shadow:inset 0 3px 9px rgba(0,0,0,.55);padding:0;cursor:pointer;position:relative}.slot::after{content:'';position:absolute;inset:8%;border-radius:50%;background:#d8e4ec;box-shadow:inset 0 2px 4px rgba(255,255,255,.35)}.slot.a::after{background:radial-gradient(circle at 35% 30%,#ff8579,#eb3e35 60%,#9e1913)}.slot.b::after{background:radial-gradient(circle at 35% 30%,#fff279,#f2c936 58%,#9a7110)}.slot.last::after{outline:4px solid rgba(255,255,255,.75);outline-offset:-4px}.slot:disabled{cursor:default}@media(max-width:520px){.board{gap:4px;padding:7px;border-width:3px;border-radius:14px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="./connect4-rules.js"></script>
+<script src="./realtime-room.js"></script>
+</head>
+<body>
+<a class="home" href="../index.html">🐢</a>
+<div class="app">
+  <section id="lobby" class="panel">
+    <h1>🔴🟡 Nối 4</h1>
+    <div class="sub">Hai điện thoại · thả quân theo cột · nối 4 để thắng</div>
+    <div class="nameRow"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
+    <div id="status" class="status"></div>
+    <div class="sectionHead"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
+    <div id="roomList" class="rooms"></div>
+    <div class="rules">Người tạo bàn là 🔴. Người vào bàn là 🟡. Bấm một cột để thả quân xuống vị trí thấp nhất.</div>
+  </section>
+
+  <section id="game" class="game">
+    <div class="topBar panel"><div><div id="gameStatus" class="gameStatus"></div><div id="roomCode" class="roomCode"></div></div><div class="topActions"><button id="leaveBtn" class="btn secondary">Rời bàn</button></div></div>
+    <div class="boardWrap"><div id="board" class="board"></div></div>
+    <div id="resultNote" class="resultNote"></div>
+  </section>
+</div>
+<script>
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const boardEl = document.getElementById('board');
+for (let i=0;i<42;i++){const b=document.createElement('button');b.className='slot';b.dataset.idx=i;boardEl.appendChild(b)}
+const api = RuaRealtime.boot({
+  root:'connect4Rooms',
+  initialState:()=>({board:Connect4Rules.empty(),last:-1}),
+  applyMove:(state,move,seat)=>Connect4Rules.apply(state,move,seat),
+  render(room,seat,engine){
+    const board=String(room.state?.board||Connect4Rules.empty());
+    const last=Number(room.state?.last ?? -1);
+    const playable=room.status==='playing'&&room.turn===seat;
+    [...boardEl.children].forEach((el,i)=>{
+      const v=board[i]||'.';
+      el.className='slot'+(v==='A'?' a':v==='B'?' b':'')+(i===last?' last':'');
+      el.disabled=!playable;
+      el.onclick=()=>engine.move({col:i%7});
+    });
+    const a=room.players?.A?.name||'Đỏ', b=room.players?.B?.name||'Vàng';
+    document.getElementById('resultNote').textContent='🔴 '+a+'  ·  🟡 '+b;
+  }
+});
+</script>
+</body>
+</html>
