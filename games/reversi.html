@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Reversi Online — Rùa</title>
+<link rel="stylesheet" href="./realtime-games.css">
+<style>
+.board{display:grid;grid-template-columns:repeat(8,1fr);background:#267b48;border:6px solid #174a2c;border-radius:14px;overflow:hidden;box-shadow:0 16px 45px rgba(0,0,0,.42)}.cell{aspect-ratio:1;border:0;border-right:1px solid rgba(0,0,0,.28);border-bottom:1px solid rgba(0,0,0,.28);background:transparent;padding:0;display:grid;place-items:center;cursor:pointer;position:relative}.cell:nth-child(8n){border-right:0}.cell:nth-last-child(-n+8){border-bottom:0}.disc{width:78%;height:78%;border-radius:50%;box-shadow:0 3px 7px rgba(0,0,0,.4)}.disc.a{background:radial-gradient(circle at 35% 30%,#555,#171717 60%,#000)}.disc.b{background:radial-gradient(circle at 35% 30%,#fff,#dce4e8 60%,#98a6ad)}.cell.legal::after{content:'';width:18%;height:18%;border-radius:50%;background:rgba(255,232,101,.8);position:absolute}.cell.last{box-shadow:inset 0 0 0 4px rgba(255,232,101,.85)}.cell:disabled{cursor:default}.score{display:flex;gap:16px;justify-content:center;font-size:13px;font-weight:900}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="./reversi-rules.js"></script>
+<script src="./realtime-room.js"></script>
+</head>
+<body>
+<a class="home" href="../index.html">🐢</a>
+<div class="app">
+  <section id="lobby" class="panel">
+    <h1>⚫⚪ Reversi</h1>
+    <div class="sub">Lật quân đối thủ · hai điện thoại · ai nhiều quân hơn khi hết nước sẽ thắng</div>
+    <div class="nameRow"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
+    <div id="status" class="status"></div>
+    <div class="sectionHead"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
+    <div id="roomList" class="rooms"></div>
+    <div class="rules">Người tạo bàn là ⚫. Người vào bàn là ⚪. Chỉ các ô có chấm vàng mới là nước hợp lệ.</div>
+  </section>
+
+  <section id="game" class="game">
+    <div class="topBar panel"><div><div id="gameStatus" class="gameStatus"></div><div id="roomCode" class="roomCode"></div></div><div class="topActions"><button id="leaveBtn" class="btn secondary">Rời bàn</button></div></div>
+    <div class="score" id="score"></div>
+    <div class="boardWrap"><div id="board" class="board"></div></div>
+    <div id="resultNote" class="resultNote"></div>
+  </section>
+</div>
+<script>
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const boardEl=document.getElementById('board');
+for(let i=0;i<64;i++){const b=document.createElement('button');b.className='cell';b.dataset.idx=i;boardEl.appendChild(b)}
+RuaRealtime.boot({
+  root:'reversiRooms',
+  initialState:()=>({board:ReversiRules.empty(),last:-1}),
+  applyMove:(state,move,seat)=>ReversiRules.apply(state,move,seat),
+  render(room,seat,engine){
+    const board=String(room.state?.board||ReversiRules.empty());
+    const last=Number(room.state?.last??-1);
+    const playable=room.status==='playing'&&room.turn===seat;
+    const legal=playable?new Set(ReversiRules.legalMoves(board,seat)):new Set();
+    [...boardEl.children].forEach((el,i)=>{
+      const v=board[i]||'.';
+      el.innerHTML=v==='.'?'':'<span class="disc '+(v==='A'?'a':'b')+'"></span>';
+      el.className='cell'+(legal.has(i)?' legal':'')+(i===last?' last':'');
+      el.disabled=!legal.has(i);
+      el.onclick=()=>engine.move({idx:i});
+    });
+    const ac=[...board].filter(x=>x==='A').length,bc=[...board].filter(x=>x==='B').length;
+    const a=room.players?.A?.name||'Đen',b=room.players?.B?.name||'Trắng';
+    document.getElementById('score').textContent='⚫ '+ac+'  ·  ⚪ '+bc;
+    document.getElementById('resultNote').textContent='⚫ '+a+'  ·  ⚪ '+b;
+  }
+});
+</script>
+</body>
+</html>
