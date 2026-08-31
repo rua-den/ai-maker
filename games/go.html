@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="./realtime-games.css">
 <style>
 *{box-sizing:border-box}.home{width:58px!important;height:58px!important;font-size:31px!important;border-radius:18px!important;display:grid!important;place-items:center!important}.app{max-width:1120px}.panel h1{margin-bottom:4px}.rules{line-height:1.55}.game{width:100%;max-width:1100px;gap:9px}.topBar{width:min(98vw,1050px)}
+.modeTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.modeTabs button{min-height:42px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-weight:900;cursor:pointer}.modeTabs button.active{background:linear-gradient(180deg,#71e6d3,#39bea9);color:#06382f;border-color:transparent}.botPanel{display:none;flex-direction:column;gap:9px;padding:11px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)}.botPanel.show{display:flex}.botPanel label{font-size:12px;font-weight:900;opacity:.8}.botPanel select{min-height:44px;border:0;border-radius:10px;padding:9px 11px;background:#f6fbfc;color:#18313a;font:inherit;font-weight:900}.botStart{min-height:44px;border:0;border-radius:10px;background:linear-gradient(180deg,#ffd66f,#edb73a);color:#432f00;font-weight:1000;cursor:pointer}.botHint{font-size:11px;line-height:1.5;text-align:center;opacity:.66}.botThinking{opacity:.7}
 .goTools{width:min(98vw,1050px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:13px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}.toolGroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.toolBtn{min-width:44px;min-height:42px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-weight:900;cursor:pointer;padding:8px 11px}.toolBtn.primary{background:linear-gradient(180deg,#73e4d2,#38bea9);color:#073a32;border-color:transparent}.toolBtn.danger{background:rgba(241,95,95,.15);border-color:rgba(255,126,126,.32)}.toolBtn:disabled{opacity:.42;cursor:default}.zoomReadout{min-width:58px;text-align:center;font-size:12px;font-weight:900;opacity:.82}.goInfo{font-size:12px;font-weight:900;text-align:center;line-height:1.5;min-height:20px}
 .boardViewport{position:relative;width:min(98vw,1050px);height:min(76svh,790px);min-height:380px;overflow:hidden;border-radius:18px;background:#5c371d;border:2px solid rgba(255,231,184,.18);box-shadow:0 18px 48px rgba(0,0,0,.42);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}.boardViewport.dragging{cursor:grabbing}.boardStage{position:absolute;left:0;top:0;width:820px;height:820px;transform-origin:0 0;will-change:transform}.goBoard{display:block;width:820px;height:820px}.boardLine{stroke:#3b2414;stroke-width:2}.star{fill:#3b2414}.lastMark{fill:#f0c64c;stroke:#2a160b;stroke-width:1.5}.stone{filter:drop-shadow(0 4px 3px rgba(0,0,0,.34))}.goNotice{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;padding:8px 12px;border-radius:999px;background:rgba(10,14,20,.82);border:1px solid rgba(255,255,255,.16);font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .16s ease}.goNotice.show{opacity:1}.helpOverlay{position:fixed;inset:0;z-index:12000;background:rgba(3,8,12,.76);display:none;align-items:center;justify-content:center;padding:18px}.helpOverlay.show{display:flex}.helpCard{width:min(620px,96vw);max-height:88svh;overflow:auto;border-radius:18px;padding:20px;background:#13232b;color:#fff;border:1px solid rgba(255,255,255,.16);box-shadow:0 22px 60px rgba(0,0,0,.5)}.helpCard h2{margin:0 0 10px}.helpCard p,.helpCard li{font-size:14px;line-height:1.58;opacity:.9}.helpCard ul{padding-left:20px}.helpClose{width:100%;min-height:44px;border:0;border-radius:11px;background:#70e2cf;color:#073a32;font-weight:1000;cursor:pointer}
 @media(max-width:600px){.home{width:54px!important;height:54px!important;font-size:29px!important}.boardViewport{width:100vw;height:72svh;min-height:430px;border-left:0;border-right:0;border-radius:0}.topBar,.goTools{width:100vw;border-radius:0}.game{gap:6px}.goTools{padding:7px}.toolBtn{padding:7px 9px}.goInfo{padding:0 8px}.boardStage{width:820px;height:820px}}
@@ -15,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script src="./go-rules.js"></script>
+<script src="./go-bot.js"></script>
 <script src="./realtime-room.js"></script>
 </head>
 <body>
@@ -23,11 +25,18 @@
   <section id="lobby" class="panel">
     <h1>⚫⚪ Cờ Vây 19×19</h1>
     <div class="sub">Bàn chuẩn 19×19 · đặt quân tự do · kéo để xem bàn · pinch / wheel để zoom</div>
-    <div class="nameRow"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
-    <div id="status" class="status"></div>
-    <div class="sectionHead"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
-    <div id="roomList" class="rooms"></div>
-    <div class="rules">⚫ Đen đi trước. Chạm bất kỳ giao điểm trống nào để đánh — không có chấm vàng ép nước đi. Luật tự sát và Ko vẫn được kiểm tra. Hai bên cùng bỏ lượt thì tính điểm nhanh theo diện tích, Trắng có komi 6.5.</div>
+    <div id="modeTabs" class="modeTabs"><button type="button" data-mode="online" class="active">🌐 Online</button><button type="button" data-mode="bot">🤖 Đấu Bot</button></div>
+    <div id="botPanel" class="botPanel">
+      <label for="botDifficulty">ĐỘ KHÓ BOT</label>
+      <select id="botDifficulty"><option value="1">🙂 Dễ</option><option value="2" selected>😎 Vừa</option><option value="3">🔥 Khó</option><option value="4">💀 Siêu khó</option></select>
+      <button id="botStart" type="button" class="botStart">▶ Đấu với Bot</button>
+      <div class="botHint">Bạn cầm Đen và đi trước. Bot không dùng chấm gợi ý: nó tự chọn nước theo khí, bắt quân, cứu nhóm, gây áp lực và đọc phản công ở cấp Siêu khó.</div>
+    </div>
+    <div class="nameRow onlineOnly"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
+    <div id="status" class="status onlineOnly"></div>
+    <div class="sectionHead onlineOnly"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
+    <div id="roomList" class="rooms onlineOnly"></div>
+    <div class="rules onlineOnly">⚫ Đen đi trước. Chạm bất kỳ giao điểm trống nào để đánh — không có chấm vàng ép nước đi. Luật tự sát và Ko vẫn được kiểm tra. Hai bên cùng bỏ lượt thì tính điểm nhanh theo diện tích, Trắng có komi 6.5.</div>
   </section>
 
   <section id="game" class="game">
@@ -83,9 +92,19 @@ for(let i=0;i<GoRules.SIZE;i++){
 }
 for(const r of [3,9,15])for(const c of [3,9,15]){const dot=document.createElementNS(NS,'circle');dot.setAttribute('cx',PAD+c*STEP);dot.setAttribute('cy',PAD+r*STEP);dot.setAttribute('r',4.2);dot.setAttribute('class','star');starPoints.appendChild(dot)}
 
-const viewport=document.getElementById('boardViewport'),stage=document.getElementById('boardStage'),zoomReadout=document.getElementById('zoomReadout'),notice=document.getElementById('goNotice');
-const passBtn=document.getElementById('passBtn'),resignBtn=document.getElementById('resignBtn'),gameStatus=document.getElementById('gameStatus'),goInfo=document.getElementById('goInfo'),resultNote=document.getElementById('resultNote');
+const lobby=document.getElementById('lobby'),game=document.getElementById('game'),viewport=document.getElementById('boardViewport'),stage=document.getElementById('boardStage'),zoomReadout=document.getElementById('zoomReadout'),notice=document.getElementById('goNotice');
+const passBtn=document.getElementById('passBtn'),resignBtn=document.getElementById('resignBtn'),leaveBtn=document.getElementById('leaveBtn'),gameStatus=document.getElementById('gameStatus'),roomCode=document.getElementById('roomCode'),goInfo=document.getElementById('goInfo'),resultNote=document.getElementById('resultNote');
+const tabs=document.getElementById('modeTabs'),botPanel=document.getElementById('botPanel'),botDifficulty=document.getElementById('botDifficulty'),botStart=document.getElementById('botStart');
 let room=null,seat=null,engine=null,fitScale=.4,scale=.4,panX=0,panY=0,noticeTimer=null,hasFit=false;
+let selectedMode='online',botActive=false,botState=null,botTurn='A',botWinner=null,botThinking=false,botTimer=null;
+const BOT_KEY='goBotDifficulty';
+try{const saved=Number(localStorage.getItem(BOT_KEY));if(saved>=1&&saved<=4)botDifficulty.value=String(saved)}catch(_){}
+
+function setMode(mode){selectedMode=mode;tabs.querySelectorAll('button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));const bot=mode==='bot';botPanel.classList.toggle('show',bot);document.querySelectorAll('.onlineOnly').forEach(el=>el.style.display=bot?'none':'')}
+tabs.addEventListener('click',e=>{const btn=e.target.closest('button[data-mode]');if(btn)setMode(btn.dataset.mode)});
+botDifficulty.addEventListener('change',()=>{try{localStorage.setItem(BOT_KEY,botDifficulty.value)}catch(_){}});
+function botLevel(){return GoBot.LEVELS[Number(botDifficulty.value)]?.label||'Vừa'}
+function stopBotTimer(){if(botTimer)clearTimeout(botTimer);botTimer=null}
 
 function showNotice(text){notice.textContent=text;notice.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('show'),1800)}
 function updateTransform(){stage.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;zoomReadout.textContent=Math.round((scale/fitScale)*100)+'%'}
@@ -121,9 +140,20 @@ viewport.addEventListener('pointermove',e=>{
 });
 function worldPoint(clientX,clientY){const rect=viewport.getBoundingClientRect();return{x:(clientX-rect.left-panX)/scale,y:(clientY-rect.top-panY)/scale}}
 function nearestIndex(clientX,clientY){const w=worldPoint(clientX,clientY);const c=Math.round((w.x-PAD)/STEP),r=Math.round((w.y-PAD)/STEP);if(r<0||r>=GoRules.SIZE||c<0||c>=GoRules.SIZE)return-1;const ix=PAD+c*STEP,iy=PAD+r*STEP;if(Math.hypot(w.x-ix,w.y-iy)>STEP*.48)return-1;return r*GoRules.SIZE+c}
+function botPlayerMove(move){
+  if(!botActive||botWinner||botThinking||botTurn!=='A')return false;
+  const result=GoRules.apply(botState,move,'A');if(!result)return false;botState=result.state;
+  if(result.winner){botWinner=result.winner;botTurn='';renderBot();return true}
+  botTurn=result.nextTurn||'B';renderBot();if(botTurn==='B')queueBot();return true;
+}
 async function playAt(clientX,clientY){
-  if(!room||room.status!=='playing'||room.turn!==seat||!engine)return;
   const idx=nearestIndex(clientX,clientY);if(idx<0)return;
+  if(botActive){
+    if(botState?.board?.[idx]!=='.'){showNotice('Giao điểm này đã có quân.');return}
+    if(!botPlayerMove({idx}))showNotice('Nước này không hợp lệ: tự sát hoặc vi phạm Ko.');
+    return;
+  }
+  if(!room||room.status!=='playing'||room.turn!==seat||!engine)return;
   if(room.state?.board?.[idx]!=='.'){showNotice('Giao điểm này đã có quân.');return}
   const ok=await engine.move({idx});if(!ok)showNotice('Nước này không hợp lệ: tự sát hoặc vi phạm Ko.');
 }
@@ -139,29 +169,65 @@ viewport.addEventListener('dblclick',e=>{e.preventDefault();zoomAt(scale*1.35,e.
 function renderStones(state){
   const s=GoRules.normalize(state);stonesEl.innerHTML='';
   for(let i=0;i<s.board.length;i++){
-    const v=s.board[i];if(v!== 'A'&&v!=='B')continue;const r=Math.floor(i/GoRules.SIZE),c=i%GoRules.SIZE;
+    const v=s.board[i];if(v!=='A'&&v!=='B')continue;const r=Math.floor(i/GoRules.SIZE),c=i%GoRules.SIZE;
     const stone=document.createElementNS(NS,'circle');stone.setAttribute('cx',PAD+c*STEP);stone.setAttribute('cy',PAD+r*STEP);stone.setAttribute('r',STEP*.43);stone.setAttribute('fill',v==='A'?'url(#blackStone)':'url(#whiteStone)');stone.setAttribute('class','stone');stonesEl.appendChild(stone);
     if(i===s.last){const mark=document.createElementNS(NS,'circle');mark.setAttribute('cx',PAD+c*STEP);mark.setAttribute('cy',PAD+r*STEP);mark.setAttribute('r',4.2);mark.setAttribute('class','lastMark');stonesEl.appendChild(mark)}
   }
 }
+function scoreNote(s){return s.score?'Điểm cuối: ⚫ '+s.score.black+' · ⚪ '+s.score.white+' (komi '+s.score.komi+') · thắng '+s.score.margin+' điểm':''}
+function renderBot(){
+  if(!botState)return;const s=GoRules.normalize(botState);renderStones(s);
+  const playable=botActive&&!botWinner&&!botThinking&&botTurn==='A';passBtn.disabled=!playable;resignBtn.disabled=!playable;
+  if(botWinner)gameStatus.textContent=botWinner==='A'?'🏆 Bạn thắng Bot':'💥 Bot thắng';
+  else if(botThinking)gameStatus.textContent='🤖 Bot đang tính nước…';
+  else gameStatus.textContent=botTurn==='A'?'🟢 Tới lượt bạn (Đen)':'⏳ Tới lượt Bot (Trắng)';
+  gameStatus.classList.toggle('botThinking',botThinking);roomCode.textContent='🤖 Bot · '+botLevel();
+  goInfo.textContent='⚫ Bạn · bắt '+s.captures.A+'  |  ⚪ Bot · bắt '+s.captures.B+'  |  Nước '+s.moveNo+(s.passes?' · '+s.passes+' lượt bỏ liên tiếp':'');
+  resultNote.textContent=s.score?scoreNote(s):'Bạn cầm Đen. Đánh tự do trên toàn bàn; Bot không được xem chấm gợi ý vì không có chấm gợi ý.';
+  if(!hasFit)setTimeout(fitView,0);
+}
+function queueBot(){
+  if(!botActive||botWinner||botTurn!=='B')return;stopBotTimer();botThinking=true;renderBot();
+  const level=Number(botDifficulty.value);botTimer=setTimeout(()=>{
+    botTimer=null;if(!botActive||botWinner||botTurn!=='B')return;
+    const move=GoBot.choose(botState,'B',level);botThinking=false;const result=GoRules.apply(botState,move,'B');
+    if(!result){botTurn='A';renderBot();return}botState=result.state;
+    if(result.winner){botWinner=result.winner;botTurn='';renderBot();return}
+    botTurn=result.nextTurn||'A';renderBot();
+  },level>=4?360:level>=3?280:190);
+}
+function startBot(){
+  stopBotTimer();try{localStorage.setItem(BOT_KEY,botDifficulty.value)}catch(_){}
+  botActive=true;botWinner=null;botThinking=false;botTurn='A';botState=GoRules.initialState();lobby.style.display='none';game.classList.add('show');leaveBtn.textContent='Về sảnh';hasFit=false;renderBot();setTimeout(fitView,0);
+}
+function exitBot(){stopBotTimer();botActive=false;botWinner=null;botThinking=false;botState=null;botTurn='A';game.classList.remove('show');lobby.style.display='flex';leaveBtn.textContent='Rời bàn';gameStatus.classList.remove('botThinking');setMode('bot')}
+botStart.addEventListener('click',startBot);
+
 function render(roomData,mySeat,api){
-  room=roomData;seat=mySeat;engine=api;renderStones(room.state);
+  if(botActive)return;room=roomData;seat=mySeat;engine=api;renderStones(room.state);
   const s=GoRules.normalize(room.state);const a=room.players?.A?.name||'Đen',b=room.players?.B?.name||'Trắng';
   const playable=room.status==='playing'&&room.turn===seat;passBtn.disabled=!playable;resignBtn.disabled=!playable;
   if(room.status==='waiting')gameStatus.textContent='🟡 Đang chờ người chơi Trắng vào bàn';
   else if(room.status==='playing')gameStatus.textContent=playable?'🟢 Tới lượt bạn ('+(seat==='A'?'Đen':'Trắng')+')':'⏳ Tới lượt '+(room.turn==='A'?a:b);
   else if(room.status==='finished')gameStatus.textContent=room.winner===seat?'🏆 Bạn thắng':room.winner==='draw'?'🤝 Hòa':'💥 Bạn thua';
-  goInfo.textContent='⚫ '+a+' · bắt '+s.captures.A+'  |  ⚪ '+b+' · bắt '+s.captures.B+'  |  Nước '+s.moveNo+(s.passes?' · '+s.passes+' lượt bỏ liên tiếp':'');
-  if(s.score)resultNote.textContent='Điểm cuối: ⚫ '+s.score.black+' · ⚪ '+s.score.white+' (komi '+s.score.komi+') · thắng '+s.score.margin+' điểm';
-  else resultNote.textContent='Chạm giao điểm trống bất kỳ để đánh. Kéo bàn và zoom tự do để đọc thế cờ.';
+  gameStatus.classList.remove('botThinking');goInfo.textContent='⚫ '+a+' · bắt '+s.captures.A+'  |  ⚪ '+b+' · bắt '+s.captures.B+'  |  Nước '+s.moveNo+(s.passes?' · '+s.passes+' lượt bỏ liên tiếp':'');
+  if(s.score)resultNote.textContent=scoreNote(s);else resultNote.textContent='Chạm giao điểm trống bất kỳ để đánh. Kéo bàn và zoom tự do để đọc thế cờ.';
   if(!hasFit)setTimeout(fitView,0);
 }
 const api=RuaRealtime.boot({root:'goRooms',initialState:()=>GoRules.initialState(),applyMove:(state,move,seat)=>GoRules.apply(state,move,seat),render});
-passBtn.addEventListener('click',async()=>{if(!room||room.turn!==seat)return;const ok=await api.move({pass:true});if(!ok)showNotice('Chưa thể bỏ lượt lúc này.')});
-resignBtn.addEventListener('click',async()=>{if(!room||room.turn!==seat)return;if(confirm('Xin thua ván này?'))await api.move({resign:true})});
+passBtn.addEventListener('click',async()=>{
+  if(botActive){if(!botPlayerMove({pass:true}))showNotice('Chưa thể bỏ lượt lúc này.');return}
+  if(!room||room.turn!==seat)return;const ok=await api.move({pass:true});if(!ok)showNotice('Chưa thể bỏ lượt lúc này.');
+});
+resignBtn.addEventListener('click',async()=>{
+  if(botActive){if(confirm('Xin thua ván này?'))botPlayerMove({resign:true});return}
+  if(!room||room.turn!==seat)return;if(confirm('Xin thua ván này?'))await api.move({resign:true});
+});
+leaveBtn.addEventListener('click',e=>{if(!botActive)return;e.preventDefault();e.stopImmediatePropagation();exitBot()},true);
 
 const helpOverlay=document.getElementById('helpOverlay');document.getElementById('helpBtn').onclick=()=>helpOverlay.classList.add('show');document.getElementById('helpClose').onclick=()=>helpOverlay.classList.remove('show');helpOverlay.addEventListener('click',e=>{if(e.target===helpOverlay)helpOverlay.classList.remove('show')});
 window.addEventListener('resize',()=>{if(hasFit)fitView()});
+setMode(selectedMode);
 </script>
 </body>
 </html>
