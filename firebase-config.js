@@ -17,7 +17,7 @@ const firebaseConfig = {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
   if (window.__ruaGameMusicRequested) return;
   const path = window.location.pathname.toLowerCase();
-  const supported = ['flappy-dog', '/2048', '/caro', '/xiangqi', '/connect4', '/tictactoe', '/reversi'];
+  const supported = ['flappy-dog', '/2048', '/caro', '/xiangqi', '/connect4', '/tictactoe', '/reversi', '/morris'];
   if (!supported.some(name => path.includes(name))) return;
 
   window.__ruaGameMusicRequested = true;
