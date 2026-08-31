@@ -35,6 +35,11 @@
       ".read": true,
       ".indexOn": ["status"],
       "$room": { ".write": true }
+    },
+    "morrisRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
     }
   }
 }
