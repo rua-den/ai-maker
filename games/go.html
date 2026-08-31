@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Cờ Vây 19×19 — Rùa</title>
+<link rel="stylesheet" href="./realtime-games.css">
+<style>
+*{box-sizing:border-box}.home{width:58px!important;height:58px!important;font-size:31px!important;border-radius:18px!important;display:grid!important;place-items:center!important}.app{max-width:1120px}.panel h1{margin-bottom:4px}.rules{line-height:1.55}.game{width:100%;max-width:1100px;gap:9px}.topBar{width:min(98vw,1050px)}
+.goTools{width:min(98vw,1050px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:13px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}.toolGroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.toolBtn{min-width:44px;min-height:42px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-weight:900;cursor:pointer;padding:8px 11px}.toolBtn.primary{background:linear-gradient(180deg,#73e4d2,#38bea9);color:#073a32;border-color:transparent}.toolBtn.danger{background:rgba(241,95,95,.15);border-color:rgba(255,126,126,.32)}.toolBtn:disabled{opacity:.42;cursor:default}.zoomReadout{min-width:58px;text-align:center;font-size:12px;font-weight:900;opacity:.82}.goInfo{font-size:12px;font-weight:900;text-align:center;line-height:1.5;min-height:20px}
+.boardViewport{position:relative;width:min(98vw,1050px);height:min(76svh,790px);min-height:380px;overflow:hidden;border-radius:18px;background:#5c371d;border:2px solid rgba(255,231,184,.18);box-shadow:0 18px 48px rgba(0,0,0,.42);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}.boardViewport.dragging{cursor:grabbing}.boardStage{position:absolute;left:0;top:0;width:820px;height:820px;transform-origin:0 0;will-change:transform}.goBoard{display:block;width:820px;height:820px}.boardLine{stroke:#3b2414;stroke-width:2}.star{fill:#3b2414}.lastMark{fill:#f0c64c;stroke:#2a160b;stroke-width:1.5}.stone{filter:drop-shadow(0 4px 3px rgba(0,0,0,.34))}.goNotice{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;padding:8px 12px;border-radius:999px;background:rgba(10,14,20,.82);border:1px solid rgba(255,255,255,.16);font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .16s ease}.goNotice.show{opacity:1}.helpOverlay{position:fixed;inset:0;z-index:12000;background:rgba(3,8,12,.76);display:none;align-items:center;justify-content:center;padding:18px}.helpOverlay.show{display:flex}.helpCard{width:min(620px,96vw);max-height:88svh;overflow:auto;border-radius:18px;padding:20px;background:#13232b;color:#fff;border:1px solid rgba(255,255,255,.16);box-shadow:0 22px 60px rgba(0,0,0,.5)}.helpCard h2{margin:0 0 10px}.helpCard p,.helpCard li{font-size:14px;line-height:1.58;opacity:.9}.helpCard ul{padding-left:20px}.helpClose{width:100%;min-height:44px;border:0;border-radius:11px;background:#70e2cf;color:#073a32;font-weight:1000;cursor:pointer}
+@media(max-width:600px){.home{width:54px!important;height:54px!important;font-size:29px!important}.boardViewport{width:100vw;height:72svh;min-height:430px;border-left:0;border-right:0;border-radius:0}.topBar,.goTools{width:100vw;border-radius:0}.game{gap:6px}.goTools{padding:7px}.toolBtn{padding:7px 9px}.goInfo{padding:0 8px}.boardStage{width:820px;height:820px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="./go-rules.js"></script>
+<script src="./realtime-room.js"></script>
+</head>
+<body>
+<a class="home" href="../index.html" aria-label="Về trang chủ" title="Về trang chủ">🐢</a>
+<div class="app">
+  <section id="lobby" class="panel">
+    <h1>⚫⚪ Cờ Vây 19×19</h1>
+    <div class="sub">Bàn chuẩn 19×19 · đặt quân tự do · kéo để xem bàn · pinch / wheel để zoom</div>
+    <div class="nameRow"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
+    <div id="status" class="status"></div>
+    <div class="sectionHead"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
+    <div id="roomList" class="rooms"></div>
+    <div class="rules">⚫ Đen đi trước. Chạm bất kỳ giao điểm trống nào để đánh — không có chấm vàng ép nước đi. Luật tự sát và Ko vẫn được kiểm tra. Hai bên cùng bỏ lượt thì tính điểm nhanh theo diện tích, Trắng có komi 6.5.</div>
+  </section>
+
+  <section id="game" class="game">
+    <div class="topBar panel"><div><div id="gameStatus" class="gameStatus"></div><div id="roomCode" class="roomCode"></div></div><div class="topActions"><button id="leaveBtn" class="btn secondary">Rời bàn</button></div></div>
+    <div class="goTools">
+      <div class="toolGroup"><button id="zoomOut" class="toolBtn" type="button" aria-label="Thu nhỏ">−</button><button id="zoomFit" class="toolBtn" type="button">Vừa bàn</button><button id="zoomIn" class="toolBtn" type="button" aria-label="Phóng to">＋</button><span id="zoomReadout" class="zoomReadout">100%</span></div>
+      <div class="toolGroup"><button id="helpBtn" class="toolBtn" type="button">? Hướng dẫn</button><button id="passBtn" class="toolBtn primary" type="button">Bỏ lượt</button><button id="resignBtn" class="toolBtn danger" type="button">Xin thua</button></div>
+    </div>
+    <div id="goInfo" class="goInfo"></div>
+    <div id="boardViewport" class="boardViewport" aria-label="Bàn cờ vây có thể kéo và phóng to">
+      <div id="boardStage" class="boardStage">
+        <svg id="goBoard" class="goBoard" viewBox="0 0 820 820" role="img" aria-label="Bàn cờ vây 19 nhân 19">
+          <defs>
+            <radialGradient id="wood" cx="34%" cy="26%" r="82%"><stop offset="0" stop-color="#e6b96f"/><stop offset=".66" stop-color="#c98d45"/><stop offset="1" stop-color="#a66b32"/></radialGradient>
+            <radialGradient id="blackStone" cx="34%" cy="28%" r="72%"><stop offset="0" stop-color="#5e6269"/><stop offset=".42" stop-color="#25282d"/><stop offset="1" stop-color="#050607"/></radialGradient>
+            <radialGradient id="whiteStone" cx="34%" cy="28%" r="72%"><stop offset="0" stop-color="#fff"/><stop offset=".58" stop-color="#e8e8e4"/><stop offset="1" stop-color="#a9aaa5"/></radialGradient>
+          </defs>
+          <rect x="8" y="8" width="804" height="804" rx="18" fill="url(#wood)" stroke="#6e431f" stroke-width="9"/>
+          <g id="gridLines"></g><g id="starPoints"></g><g id="stones"></g>
+        </svg>
+      </div>
+      <div id="goNotice" class="goNotice"></div>
+    </div>
+    <div id="resultNote" class="resultNote">Kéo một ngón để di chuyển bàn · chụm 2 ngón để zoom · desktop dùng bánh xe chuột.</div>
+  </section>
+</div>
+
+<div id="helpOverlay" class="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="helpCard">
+    <h2 id="helpTitle">Cách chơi Cờ Vây</h2>
+    <p>Mục tiêu là kiểm soát nhiều diện tích hơn đối thủ. Đen đi trước, Trắng được cộng 6.5 điểm komi.</p>
+    <ul>
+      <li><strong>Đi tự do:</strong> chạm một giao điểm trống bất kỳ. Game không hiện chấm vàng giới hạn nước đi.</li>
+      <li><strong>Bắt quân:</strong> một nhóm quân hết toàn bộ “khí” sẽ bị nhấc khỏi bàn.</li>
+      <li><strong>Tự sát:</strong> không được đặt quân khiến chính nhóm của mình hết khí, trừ khi nước đó bắt được quân đối thủ.</li>
+      <li><strong>Ko:</strong> không được lập tức đánh lại để đưa bàn về đúng trạng thái của một nước trước.</li>
+      <li><strong>Kết thúc:</strong> khi hai bên liên tiếp bấm “Bỏ lượt”, game tính điểm diện tích tự động.</li>
+      <li><strong>Xem bàn:</strong> kéo để pan; chụm 2 ngón hoặc cuộn bánh xe để zoom; nút “Vừa bàn” đưa toàn bộ 19×19 về màn hình.</li>
+    </ul>
+    <button id="helpClose" class="helpClose" type="button">Đã hiểu</button>
+  </div>
+</div>
+
+<script>
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+const BASE=820,PAD=44,STEP=(BASE-PAD*2)/(GoRules.SIZE-1),NS='http://www.w3.org/2000/svg';
+const gridLines=document.getElementById('gridLines'),starPoints=document.getElementById('starPoints'),stonesEl=document.getElementById('stones');
+for(let i=0;i<GoRules.SIZE;i++){
+  const p=PAD+i*STEP;
+  const h=document.createElementNS(NS,'line');h.setAttribute('x1',PAD);h.setAttribute('y1',p);h.setAttribute('x2',BASE-PAD);h.setAttribute('y2',p);h.setAttribute('class','boardLine');gridLines.appendChild(h);
+  const v=document.createElementNS(NS,'line');v.setAttribute('x1',p);v.setAttribute('y1',PAD);v.setAttribute('x2',p);v.setAttribute('y2',BASE-PAD);v.setAttribute('class','boardLine');gridLines.appendChild(v);
+}
+for(const r of [3,9,15])for(const c of [3,9,15]){const dot=document.createElementNS(NS,'circle');dot.setAttribute('cx',PAD+c*STEP);dot.setAttribute('cy',PAD+r*STEP);dot.setAttribute('r',4.2);dot.setAttribute('class','star');starPoints.appendChild(dot)}
+
+const viewport=document.getElementById('boardViewport'),stage=document.getElementById('boardStage'),zoomReadout=document.getElementById('zoomReadout'),notice=document.getElementById('goNotice');
+const passBtn=document.getElementById('passBtn'),resignBtn=document.getElementById('resignBtn'),gameStatus=document.getElementById('gameStatus'),goInfo=document.getElementById('goInfo'),resultNote=document.getElementById('resultNote');
+let room=null,seat=null,engine=null,fitScale=.4,scale=.4,panX=0,panY=0,noticeTimer=null,hasFit=false;
+
+function showNotice(text){notice.textContent=text;notice.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('show'),1800)}
+function updateTransform(){stage.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;zoomReadout.textContent=Math.round((scale/fitScale)*100)+'%'}
+function clampPan(){
+  const w=viewport.clientWidth,h=viewport.clientHeight,sw=BASE*scale,sh=BASE*scale;
+  if(sw<=w){panX=(w-sw)/2}else{const m=24;panX=Math.min(m,Math.max(w-sw-m,panX))}
+  if(sh<=h){panY=(h-sh)/2}else{const m=24;panY=Math.min(m,Math.max(h-sh-m,panY))}
+}
+function fitView(){
+  const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);
+  fitScale=Math.min((w-8)/BASE,(h-8)/BASE);scale=fitScale;panX=(w-BASE*scale)/2;panY=(h-BASE*scale)/2;updateTransform();hasFit=true;
+}
+function zoomAt(newScale,cx,cy){
+  const rect=viewport.getBoundingClientRect();const min=fitScale,max=fitScale*3.6;newScale=Math.max(min,Math.min(max,newScale));
+  const x=cx-rect.left,y=cy-rect.top,wx=(x-panX)/scale,wy=(y-panY)/scale;panX=x-wx*newScale;panY=y-wy*newScale;scale=newScale;clampPan();updateTransform();
+}
+function zoomCenter(factor){const r=viewport.getBoundingClientRect();zoomAt(scale*factor,r.left+r.width/2,r.top+r.height/2)}
+document.getElementById('zoomOut').onclick=()=>zoomCenter(1/1.22);document.getElementById('zoomIn').onclick=()=>zoomCenter(1.22);document.getElementById('zoomFit').onclick=fitView;
+viewport.addEventListener('wheel',e=>{e.preventDefault();zoomAt(scale*(e.deltaY<0?1.14:1/1.14),e.clientX,e.clientY)},{passive:false});
+
+const pointers=new Map();let dragStart=null,pinch=null,didMove=false;
+function pointerMid(){const a=[...pointers.values()];return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}}
+viewport.addEventListener('pointerdown',e=>{
+  if(e.button!=null&&e.button!==0&&e.pointerType==='mouse')return;
+  viewport.setPointerCapture?.(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});didMove=false;
+  if(pointers.size===1)dragStart={x:e.clientX,y:e.clientY,panX,panY};
+  else if(pointers.size===2){const m=pointerMid(),rect=viewport.getBoundingClientRect();pinch={d:m.d,scale,wx:(m.x-rect.left-panX)/scale,wy:(m.y-rect.top-panY)/scale};didMove=true}
+});
+viewport.addEventListener('pointermove',e=>{
+  const p=pointers.get(e.pointerId);if(!p)return;p.x=e.clientX;p.y=e.clientY;
+  if(pointers.size>=2&&pinch){const m=pointerMid(),rect=viewport.getBoundingClientRect();const next=Math.max(fitScale,Math.min(fitScale*3.6,pinch.scale*(m.d/Math.max(1,pinch.d))));panX=m.x-rect.left-pinch.wx*next;panY=m.y-rect.top-pinch.wy*next;scale=next;clampPan();updateTransform();viewport.classList.add('dragging');return}
+  if(pointers.size===1&&dragStart){const dx=e.clientX-dragStart.x,dy=e.clientY-dragStart.y;if(Math.hypot(dx,dy)>7)didMove=true;if(didMove){panX=dragStart.panX+dx;panY=dragStart.panY+dy;clampPan();updateTransform();viewport.classList.add('dragging')}}
+});
+function worldPoint(clientX,clientY){const rect=viewport.getBoundingClientRect();return{x:(clientX-rect.left-panX)/scale,y:(clientY-rect.top-panY)/scale}}
+function nearestIndex(clientX,clientY){const w=worldPoint(clientX,clientY);const c=Math.round((w.x-PAD)/STEP),r=Math.round((w.y-PAD)/STEP);if(r<0||r>=GoRules.SIZE||c<0||c>=GoRules.SIZE)return-1;const ix=PAD+c*STEP,iy=PAD+r*STEP;if(Math.hypot(w.x-ix,w.y-iy)>STEP*.48)return-1;return r*GoRules.SIZE+c}
+async function playAt(clientX,clientY){
+  if(!room||room.status!=='playing'||room.turn!==seat||!engine)return;
+  const idx=nearestIndex(clientX,clientY);if(idx<0)return;
+  if(room.state?.board?.[idx]!=='.'){showNotice('Giao điểm này đã có quân.');return}
+  const ok=await engine.move({idx});if(!ok)showNotice('Nước này không hợp lệ: tự sát hoặc vi phạm Ko.');
+}
+function pointerEnd(e){
+  const p=pointers.get(e.pointerId);if(!p)return;const wasSingle=pointers.size===1;const tap=!didMove&&!pinch&&wasSingle;
+  pointers.delete(e.pointerId);viewport.classList.remove('dragging');
+  if(tap)playAt(e.clientX,e.clientY);
+  if(pointers.size===1){const rem=[...pointers.values()][0];dragStart={x:rem.x,y:rem.y,panX,panY};pinch=null;didMove=true}else if(!pointers.size){dragStart=null;pinch=null;didMove=false}
+}
+viewport.addEventListener('pointerup',pointerEnd);viewport.addEventListener('pointercancel',pointerEnd);
+viewport.addEventListener('dblclick',e=>{e.preventDefault();zoomAt(scale*1.35,e.clientX,e.clientY)});
+
+function renderStones(state){
+  const s=GoRules.normalize(state);stonesEl.innerHTML='';
+  for(let i=0;i<s.board.length;i++){
+    const v=s.board[i];if(v!== 'A'&&v!=='B')continue;const r=Math.floor(i/GoRules.SIZE),c=i%GoRules.SIZE;
+    const stone=document.createElementNS(NS,'circle');stone.setAttribute('cx',PAD+c*STEP);stone.setAttribute('cy',PAD+r*STEP);stone.setAttribute('r',STEP*.43);stone.setAttribute('fill',v==='A'?'url(#blackStone)':'url(#whiteStone)');stone.setAttribute('class','stone');stonesEl.appendChild(stone);
+    if(i===s.last){const mark=document.createElementNS(NS,'circle');mark.setAttribute('cx',PAD+c*STEP);mark.setAttribute('cy',PAD+r*STEP);mark.setAttribute('r',4.2);mark.setAttribute('class','lastMark');stonesEl.appendChild(mark)}
+  }
+}
+function render(roomData,mySeat,api){
+  room=roomData;seat=mySeat;engine=api;renderStones(room.state);
+  const s=GoRules.normalize(room.state);const a=room.players?.A?.name||'Đen',b=room.players?.B?.name||'Trắng';
+  const playable=room.status==='playing'&&room.turn===seat;passBtn.disabled=!playable;resignBtn.disabled=!playable;
+  if(room.status==='waiting')gameStatus.textContent='🟡 Đang chờ người chơi Trắng vào bàn';
+  else if(room.status==='playing')gameStatus.textContent=playable?'🟢 Tới lượt bạn ('+(seat==='A'?'Đen':'Trắng')+')':'⏳ Tới lượt '+(room.turn==='A'?a:b);
+  else if(room.status==='finished')gameStatus.textContent=room.winner===seat?'🏆 Bạn thắng':room.winner==='draw'?'🤝 Hòa':'💥 Bạn thua';
+  goInfo.textContent='⚫ '+a+' · bắt '+s.captures.A+'  |  ⚪ '+b+' · bắt '+s.captures.B+'  |  Nước '+s.moveNo+(s.passes?' · '+s.passes+' lượt bỏ liên tiếp':'');
+  if(s.score)resultNote.textContent='Điểm cuối: ⚫ '+s.score.black+' · ⚪ '+s.score.white+' (komi '+s.score.komi+') · thắng '+s.score.margin+' điểm';
+  else resultNote.textContent='Chạm giao điểm trống bất kỳ để đánh. Kéo bàn và zoom tự do để đọc thế cờ.';
+  if(!hasFit)setTimeout(fitView,0);
+}
+const api=RuaRealtime.boot({root:'goRooms',initialState:()=>GoRules.initialState(),applyMove:(state,move,seat)=>GoRules.apply(state,move,seat),render});
+passBtn.addEventListener('click',async()=>{if(!room||room.turn!==seat)return;const ok=await api.move({pass:true});if(!ok)showNotice('Chưa thể bỏ lượt lúc này.')});
+resignBtn.addEventListener('click',async()=>{if(!room||room.turn!==seat)return;if(confirm('Xin thua ván này?'))await api.move({resign:true})});
+
+const helpOverlay=document.getElementById('helpOverlay');document.getElementById('helpBtn').onclick=()=>helpOverlay.classList.add('show');document.getElementById('helpClose').onclick=()=>helpOverlay.classList.remove('show');helpOverlay.addEventListener('click',e=>{if(e.target===helpOverlay)helpOverlay.classList.remove('show')});
+window.addEventListener('resize',()=>{if(hasFit)fitView()});
+</script>
+</body>
+</html>
