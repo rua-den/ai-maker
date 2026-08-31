@@ -40,6 +40,11 @@
       ".read": true,
       ".indexOn": ["status"],
       "$room": { ".write": true }
+    },
+    "goRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
     }
   }
 }
