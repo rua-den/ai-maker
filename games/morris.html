@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Nine Men's Morris — Rùa</title>
+<link rel="stylesheet" href="./realtime-games.css">
+<style>
+.modeTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.modeTabs button{min-height:42px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-weight:900;cursor:pointer}.modeTabs button.active{background:linear-gradient(180deg,#71e6d3,#39bea9);color:#06382f;border-color:transparent}.botPanel{display:none;flex-direction:column;gap:9px;padding:11px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)}.botPanel.show{display:flex}.botPanel label{font-size:12px;font-weight:900;opacity:.8}.botPanel select{min-height:44px;border:0;border-radius:10px;padding:9px 11px;background:#f6fbfc;color:#18313a;font:inherit;font-weight:900}.botStart{min-height:44px;border:0;border-radius:10px;background:linear-gradient(180deg,#ffd66f,#edb73a);color:#432f00;font-weight:1000;cursor:pointer}.morrisWrap{width:min(92vw,620px);aspect-ratio:1;position:relative}.morrisBoard{position:absolute;inset:0;border-radius:20px;background:radial-gradient(circle at 35% 25%,#d6a767,#9a6332 68%,#74461f);border:8px solid #6a3d1b;box-shadow:0 18px 48px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,235,192,.18);overflow:hidden;touch-action:manipulation}.morrisLines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.morrisLines line,.morrisLines rect{stroke:#4e2d17;stroke-width:1.6;fill:none;vector-effect:non-scaling-stroke}.point{position:absolute;width:clamp(31px,8.8vw,52px);height:clamp(31px,8.8vw,52px);transform:translate(-50%,-50%);border:0;border-radius:50%;background:transparent;padding:0;display:grid;place-items:center;cursor:pointer;z-index:3;-webkit-tap-highlight-color:transparent}.point::before{content:'';width:18%;height:18%;border-radius:50%;background:#4b2b16;box-shadow:0 1px 2px rgba(255,255,255,.18)}.point .piece{position:absolute;inset:7%;border-radius:50%;box-shadow:0 5px 10px rgba(0,0,0,.42),inset 0 2px 3px rgba(255,255,255,.45)}.point .piece.a{background:radial-gradient(circle at 34% 28%,#fffdf1,#eadfc7 58%,#9c8b72)}.point .piece.b{background:radial-gradient(circle at 34% 28%,#5b5b5b,#202020 58%,#050505)}.point.selected{outline:4px solid #ffe269;outline-offset:-2px}.point.legal::after{content:'';position:absolute;width:42%;height:42%;border-radius:50%;background:rgba(255,226,105,.82);box-shadow:0 0 0 4px rgba(255,226,105,.18)}.point.removable{outline:4px solid #ff6e6e;outline-offset:-2px;animation:pulseRemove .8s ease-in-out infinite alternate}.point.last .piece{box-shadow:0 0 0 4px #70e7d3,0 5px 10px rgba(0,0,0,.42),inset 0 2px 3px rgba(255,255,255,.45)}@keyframes pulseRemove{to{transform:translate(-50%,-50%) scale(1.08)}}.pieceInfo{font-size:12px;font-weight:900;text-align:center;line-height:1.5;min-height:36px}.hint{font-size:11px;opacity:.68;text-align:center;line-height:1.45}.bad{color:#ff8b8b!important}@media(max-width:520px){.morrisBoard{border-width:5px;border-radius:15px}.morrisWrap{width:94vw}.game{gap:7px}.topBar{padding:8px 9px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="./morris-rules.js"></script>
+<script src="./morris-bot.js"></script>
+<script src="./realtime-room.js"></script>
+</head>
+<body>
+<a class="home" href="../index.html">🐢</a>
+<div class="app">
+  <section id="lobby" class="panel">
+    <h1>⚪⚫ Nine Men's Morris</h1>
+    <div class="sub">Đặt 9 quân · tạo hàng 3 để ăn quân · còn 3 quân thì được “bay”</div>
+    <div id="modeTabs" class="modeTabs"><button type="button" data-mode="online" class="active">🌐 Online</button><button type="button" data-mode="bot">🤖 Đấu Bot</button></div>
+    <div id="botPanel" class="botPanel">
+      <label for="botDifficulty">ĐỘ KHÓ BOT</label>
+      <select id="botDifficulty"><option value="1">🙂 Dễ</option><option value="2" selected>😎 Vừa</option><option value="3">🔥 Khó</option><option value="4">💀 Siêu khó</option></select>
+      <button id="botStart" type="button" class="botStart">▶ Đấu với Bot</button>
+      <div class="hint">Dễ đi khá ngẫu nhiên · Vừa biết tạo/chặn mill · Khó tìm trước 2 lớp · Siêu khó alpha-beta sâu hơn.</div>
+    </div>
+    <div class="nameRow onlineOnly"><input id="playerName" maxlength="18" placeholder="Tên của bạn"><button id="createBtn" class="btn primary">＋ Tạo bàn</button></div>
+    <div id="status" class="status onlineOnly"></div>
+    <div class="sectionHead onlineOnly"><strong>BÀN ĐANG CHỜ</strong><button id="refreshBtn">↻ Làm mới</button></div>
+    <div id="roomList" class="rooms onlineOnly"></div>
+    <div class="rules onlineOnly">Trắng đi trước. Tạo một “mill” (3 quân thẳng hàng) để ăn 1 quân đối thủ. Không được ăn quân đang nằm trong mill nếu đối thủ còn quân khác ở ngoài mill. Khi chỉ còn 3 quân, bạn được bay tới bất kỳ điểm trống nào.</div>
+  </section>
+
+  <section id="game" class="game">
+    <div class="topBar panel"><div><div id="gameStatus" class="gameStatus"></div><div id="roomCode" class="roomCode"></div></div><div class="topActions"><button id="leaveBtn" class="btn secondary">Rời bàn</button></div></div>
+    <div id="pieceInfo" class="pieceInfo"></div>
+    <div class="morrisWrap"><div id="board" class="morrisBoard">
+      <svg class="morrisLines" viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="7" y="7" width="86" height="86"/><rect x="21" y="21" width="58" height="58"/><rect x="35" y="35" width="30" height="30"/>
+        <line x1="50" y1="7" x2="50" y2="35"/><line x1="50" y1="65" x2="50" y2="93"/><line x1="7" y1="50" x2="35" y2="50"/><line x1="65" y1="50" x2="93" y2="50"/>
+      </svg>
+    </div></div>
+    <div id="resultNote" class="resultNote"></div>
+  </section>
+</div>
+<script>
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+const POS=[[7,7],[50,7],[93,7],[21,21],[50,21],[79,21],[35,35],[50,35],[65,35],[7,50],[21,50],[35,50],[65,50],[79,50],[93,50],[35,65],[50,65],[65,65],[21,79],[50,79],[79,79],[7,93],[50,93],[93,93]];
+const boardEl=document.getElementById('board');
+const pointEls=[];
+for(let i=0;i<24;i++){
+  const b=document.createElement('button');b.type='button';b.className='point';b.dataset.idx=i;b.style.left=POS[i][0]+'%';b.style.top=POS[i][1]+'%';b.setAttribute('aria-label','Điểm '+(i+1));boardEl.appendChild(b);pointEls.push(b);
+}
+
+const lobby=document.getElementById('lobby'), game=document.getElementById('game'), gameStatus=document.getElementById('gameStatus'), roomCode=document.getElementById('roomCode'), leaveBtn=document.getElementById('leaveBtn'), resultNote=document.getElementById('resultNote'), pieceInfo=document.getElementById('pieceInfo');
+const tabs=document.getElementById('modeTabs'), botPanel=document.getElementById('botPanel'), botDifficulty=document.getElementById('botDifficulty'), botStart=document.getElementById('botStart');
+let selectedMode='online';
+let onlineRoom=null, onlineSeat=null, onlineEngine=null, onlineFrom=null, onlinePending=null;
+let botActive=false, botState=null, botTurn='A', botWinner=null, botFrom=null, botPending=null, botThinking=false, botTimer=null;
+const BOT_KEY='morrisBotDifficulty';
+try{const saved=Number(localStorage.getItem(BOT_KEY));if(saved>=1&&saved<=4)botDifficulty.value=String(saved)}catch(_){}
+
+function phaseLabel(state,seat){const p=MorrisRules.phase(state,seat);return p==='placing'?'Đang đặt quân':p==='flying'?'Còn 3 quân — được bay':'Đang di chuyển'}
+function playerCounts(state){const s=MorrisRules.normalize(state);return {a:MorrisRules.count(s.board,'A'),b:MorrisRules.count(s.board,'B'),pa:s.placed.A,pb:s.placed.B}}
+function setMode(mode){
+  selectedMode=mode;
+  tabs.querySelectorAll('button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));
+  const bot=mode==='bot';botPanel.classList.toggle('show',bot);document.querySelectorAll('.onlineOnly').forEach(el=>el.style.display=bot?'none':'');
+}
+
+tabs.addEventListener('click',e=>{const btn=e.target.closest('button[data-mode]');if(btn)setMode(btn.dataset.mode)});
+botDifficulty.addEventListener('change',()=>{try{localStorage.setItem(BOT_KEY,botDifficulty.value)}catch(_){}});
+
+function renderBoard(state,seat,playable,selected,pending,handler){
+  const s=MorrisRules.normalize(state);const removable=new Set(pending?.removable||[]);const legal=new Set();
+  if(playable&&!pending){
+    const p=MorrisRules.phase(s,seat);
+    if(p==='placing'){for(let i=0;i<24;i++)if(s.board[i]==='.')legal.add(i)}
+    else if(Number.isInteger(selected)){for(const i of MorrisRules.destinations(s,seat,selected))legal.add(i)}
+  }
+  pointEls.forEach((el,i)=>{
+    const v=s.board[i]||'.';el.innerHTML=v==='.'?'':'<span class="piece '+(v==='A'?'a':'b')+'"></span>';
+    el.className='point'+(i===selected?' selected':'')+(legal.has(i)?' legal':'')+(removable.has(i)?' removable':'')+(i===s.last?' last':'');
+    el.disabled=!playable;el.onclick=()=>handler(i);
+  });
+}
+
+function updateInfo(state,seat,text){
+  const c=playerCounts(state);pieceInfo.textContent='⚪ '+c.a+' quân (đã đặt '+c.pa+'/9)  ·  ⚫ '+c.b+' quân (đã đặt '+c.pb+'/9)';
+  resultNote.textContent=text||phaseLabel(state,seat);
+}
+
+function renderOnline(room,seat,engine){
+  onlineRoom=room;onlineSeat=seat;onlineEngine=engine;
+  if(room.turn!==seat||room.status!=='playing'){onlineFrom=null;onlinePending=null}
+  const playable=room.status==='playing'&&room.turn===seat;
+  renderBoard(room.state,seat,playable,onlineFrom,onlinePending,handleOnlinePoint);
+  if(onlinePending)gameStatus.textContent='🎯 Chọn 1 quân đối thủ để ăn';
+  const a=room.players?.A?.name||'Trắng',b=room.players?.B?.name||'Đen';
+  updateInfo(room.state,seat,'⚪ '+a+'  ·  ⚫ '+b+' · '+phaseLabel(room.state,seat));
+}
+
+function commitOnline(base){
+  if(!onlineEngine)return;
+  onlineEngine.move(base).then(ok=>{if(ok){onlineFrom=null;onlinePending=null}else{onlinePending=null;onlineFrom=null;if(onlineRoom)renderOnline(onlineRoom,onlineSeat,onlineEngine)}});
+}
+function handleOnlinePoint(idx){
+  if(!onlineRoom||onlineRoom.status!=='playing'||onlineRoom.turn!==onlineSeat)return;
+  const state=onlineRoom.state,seat=onlineSeat,s=MorrisRules.normalize(state);
+  if(onlinePending){if(onlinePending.removable.includes(idx))commitOnline({...onlinePending.base,remove:idx});return}
+  const p=MorrisRules.phase(s,seat);
+  if(p==='placing'){
+    const base={to:idx},pv=MorrisRules.preview(s,base,seat);if(!pv)return;
+    if(pv.madeMill&&pv.removable.length){onlinePending={base,removable:pv.removable};renderOnline(onlineRoom,seat,onlineEngine)}else commitOnline(base);return;
+  }
+  if(onlineFrom==null){if(s.board[idx]===seat){onlineFrom=idx;renderOnline(onlineRoom,seat,onlineEngine)}return}
+  if(s.board[idx]===seat){onlineFrom=idx;renderOnline(onlineRoom,seat,onlineEngine);return}
+  const base={from:onlineFrom,to:idx},pv=MorrisRules.preview(s,base,seat);if(!pv)return;
+  if(pv.madeMill&&pv.removable.length){onlinePending={base,removable:pv.removable};renderOnline(onlineRoom,seat,onlineEngine)}else commitOnline(base);
+}
+
+RuaRealtime.boot({root:'morrisRooms',initialState:()=>MorrisRules.initialState(),applyMove:(state,move,seat)=>MorrisRules.apply(state,move,seat),render:renderOnline});
+
+function botLevel(){return MorrisBot.LEVELS[Number(botDifficulty.value)]?.label||'Vừa'}
+function botFinish(){if(botWinner==='draw')return'🤝 Hòa';if(botWinner==='A')return'🏆 Bạn thắng';if(botWinner==='B')return'💥 Bot thắng';return''}
+function renderBot(){
+  const playable=botActive&&!botWinner&&!botThinking&&botTurn==='A';
+  renderBoard(botState,'A',playable,botFrom,botPending,handleBotPoint);
+  if(botWinner)gameStatus.textContent=botFinish();else if(botPending)gameStatus.textContent='🎯 Chọn 1 quân Bot để ăn';else if(botThinking)gameStatus.textContent='🤖 Bot đang nghĩ…';else gameStatus.textContent=botTurn==='A'?'🟢 Tới lượt bạn':'⏳ Tới lượt Bot';
+  roomCode.textContent='🤖 Bot · '+botLevel();updateInfo(botState,'A','⚪ Bạn  ·  ⚫ Bot ('+botLevel()+') · '+phaseLabel(botState,'A'));
+}
+function applyLocal(move,seat){
+  const result=MorrisRules.apply(botState,move,seat);if(!result)return false;botState=result.state;botWinner=result.winner||null;botTurn=result.nextTurn||(seat==='A'?'B':'A');botFrom=null;botPending=null;renderBot();if(!botWinner&&botTurn==='B')queueBot();return true;
+}
+function handleBotPoint(idx){
+  if(!botActive||botWinner||botThinking||botTurn!=='A')return;const s=MorrisRules.normalize(botState);
+  if(botPending){if(botPending.removable.includes(idx))applyLocal({...botPending.base,remove:idx},'A');return}
+  const p=MorrisRules.phase(s,'A');
+  if(p==='placing'){
+    const base={to:idx},pv=MorrisRules.preview(s,base,'A');if(!pv)return;if(pv.madeMill&&pv.removable.length){botPending={base,removable:pv.removable};renderBot()}else applyLocal(base,'A');return;
+  }
+  if(botFrom==null){if(s.board[idx]==='A'){botFrom=idx;renderBot()}return}
+  if(s.board[idx]==='A'){botFrom=idx;renderBot();return}
+  const base={from:botFrom,to:idx},pv=MorrisRules.preview(s,base,'A');if(!pv)return;if(pv.madeMill&&pv.removable.length){botPending={base,removable:pv.removable};renderBot()}else applyLocal(base,'A');
+}
+function queueBot(){
+  clearTimeout(botTimer);botThinking=true;renderBot();botTimer=setTimeout(()=>{botThinking=false;if(!botActive||botWinner||botTurn!=='B')return;const move=MorrisBot.choose(botState,'B',Number(botDifficulty.value));if(!move){botWinner='A';renderBot();return}applyLocal(move,'B')},Number(botDifficulty.value)>=4?280:180);
+}
+function startBot(){
+  try{localStorage.setItem(BOT_KEY,botDifficulty.value)}catch(_){}clearTimeout(botTimer);botActive=true;botState=MorrisRules.initialState();botTurn='A';botWinner=null;botFrom=null;botPending=null;botThinking=false;lobby.style.display='none';game.classList.add('show');leaveBtn.textContent='Về sảnh';renderBot();
+}
+function exitBot(){clearTimeout(botTimer);botActive=false;botThinking=false;botPending=null;botFrom=null;game.classList.remove('show');lobby.style.display='flex';leaveBtn.textContent='Rời bàn';setMode('bot')}
+botStart.addEventListener('click',startBot);
+leaveBtn.addEventListener('click',e=>{if(!botActive)return;e.preventDefault();e.stopImmediatePropagation();exitBot()},true);
+setMode('online');
+</script>
+</body>
+</html>
