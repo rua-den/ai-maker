@@ -55,25 +55,17 @@ test('Go board supports free placement, pan and zoom without legal-dot guidance'
   );
 
   await page.goto('/games/go.html');
-  await expect(page.locator('#boardViewport')).toBeVisible();
+  const viewport = page.locator('#boardViewport');
+  await expect(viewport).toBeVisible();
   await expect(page.locator('#zoomIn')).toBeVisible();
   await expect(page.locator('#helpBtn')).toBeVisible();
   await expect(page.locator('.legal')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => hasFit)).toBe(true);
 
   await expect.poll(() => page.locator('#stones circle.stone').count()).toBe(0);
-  await page.locator('#boardViewport').evaluate(viewport => {
-    const r = viewport.getBoundingClientRect();
-    const x = r.left + panX + (PAD + 9 * STEP) * scale;
-    const y = r.top + panY + (PAD + 9 * STEP) * scale;
-    viewport.dispatchEvent(new PointerEvent('pointerdown', {
-      bubbles: true, cancelable: true, pointerId: 501, pointerType: 'touch', isPrimary: true,
-      clientX: x, clientY: y, buttons: 1
-    }));
-    viewport.dispatchEvent(new PointerEvent('pointerup', {
-      bubbles: true, cancelable: true, pointerId: 501, pointerType: 'touch', isPrimary: true,
-      clientX: x, clientY: y, buttons: 0
-    }));
-  });
+  const box = await viewport.boundingBox();
+  expect(box).not.toBeNull();
+  await viewport.tap({ position: { x: box.width / 2, y: box.height / 2 } });
   await expect.poll(() => page.locator('#stones circle.stone').count()).toBe(1);
 
   const beforeZoom = await page.evaluate(() => scale);
@@ -82,23 +74,14 @@ test('Go board supports free placement, pan and zoom without legal-dot guidance'
 
   await page.locator('#zoomIn').click();
   const beforePan = await page.evaluate(() => ({ x: panX, y: panY }));
-  await page.locator('#boardViewport').evaluate(viewport => {
-    const r = viewport.getBoundingClientRect();
-    const sx = r.left + r.width / 2;
-    const sy = r.top + r.height / 2;
-    viewport.dispatchEvent(new PointerEvent('pointerdown', {
-      bubbles: true, cancelable: true, pointerId: 502, pointerType: 'touch', isPrimary: true,
-      clientX: sx, clientY: sy, buttons: 1
-    }));
-    viewport.dispatchEvent(new PointerEvent('pointermove', {
-      bubbles: true, cancelable: true, pointerId: 502, pointerType: 'touch', isPrimary: true,
-      clientX: sx + 55, clientY: sy + 35, buttons: 1
-    }));
-    viewport.dispatchEvent(new PointerEvent('pointerup', {
-      bubbles: true, cancelable: true, pointerId: 502, pointerType: 'touch', isPrimary: true,
-      clientX: sx + 55, clientY: sy + 35, buttons: 0
-    }));
-  });
+  const panBox = await viewport.boundingBox();
+  expect(panBox).not.toBeNull();
+  const sx = panBox.x + panBox.width / 2;
+  const sy = panBox.y + panBox.height / 2;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.mouse.move(sx + 55, sy + 35, { steps: 4 });
+  await page.mouse.up();
   await expect.poll(() => page.evaluate(({ x, y }) => panX !== x || panY !== y, beforePan)).toBe(true);
 
   expect(pageErrors).toEqual([]);
