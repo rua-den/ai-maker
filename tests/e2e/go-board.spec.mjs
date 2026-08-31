@@ -30,6 +30,11 @@ test('Go board supports free placement, pan and zoom without legal-dot guidance'
               players: { A: { name: 'Đen' }, B: { name: 'Trắng' } },
               state: config.initialState()
             };
+            const show = () => {
+              document.getElementById('lobby').style.display = 'none';
+              document.getElementById('game').classList.add('show');
+              config.render(room, 'A', api);
+            };
             const api = {
               async move(move) {
                 const result = config.applyMove(room.state, move, 'A', room);
@@ -37,11 +42,11 @@ test('Go board supports free placement, pan and zoom without legal-dot guidance'
                 room.state = result.state;
                 room.turn = result.nextTurn || 'A';
                 if (result.winner) { room.status = 'finished'; room.winner = result.winner; }
-                config.render(room, 'A', api);
+                show();
                 return true;
               }
             };
-            setTimeout(() => config.render(room, 'A', api), 0);
+            setTimeout(show, 0);
             return api;
           }
         };
