@@ -1,0 +1,9 @@
+html,body{overflow-x:hidden}
+.app{width:100%;max-width:1120px;margin-inline:auto}
+.game{width:100%;max-width:1100px;margin-inline:auto}
+.topBar,.goTools,.boardViewport{width:min(100%,1050px);margin-inline:auto}
+@media(max-width:600px){
+  .app{width:100%;max-width:none}
+  .game{width:100%;max-width:none}
+  .topBar,.goTools,.boardViewport{width:100%;max-width:none;margin-inline:auto}
+}
