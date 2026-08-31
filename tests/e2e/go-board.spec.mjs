@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Go board supports free placement, pan and zoom without legal-dot guidance', async ({ page }) => {
+test('Go board stays centered and supports free placement, pan and zoom', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -15,7 +15,13 @@ test('Go board supports free placement, pan and zoom without legal-dot guidance'
     route.fulfill({
       status: 200,
       contentType: 'application/javascript',
-      body: 'const firebaseConfig = { databaseURL: "stub" };'
+      body: `
+        const firebaseConfig = { databaseURL: "stub" };
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = './go-layout-fix.css';
+        document.head.appendChild(link);
+      `
     })
   );
   await page.route('**/realtime-room.js', route =>
@@ -61,6 +67,16 @@ test('Go board supports free placement, pan and zoom without legal-dot guidance'
   await expect(page.locator('#helpBtn')).toBeVisible();
   await expect(page.locator('.legal')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => hasFit)).toBe(true);
+
+  await expect.poll(() => page.evaluate(() => {
+    const r = document.getElementById('boardViewport').getBoundingClientRect();
+    return Math.abs((r.left + r.width / 2) - innerWidth / 2);
+  })).toBeLessThan(2);
+  await expect.poll(() => page.evaluate(() => {
+    const v = document.getElementById('boardViewport').getBoundingClientRect();
+    const s = document.getElementById('boardStage').getBoundingClientRect();
+    return Math.abs((s.left + s.width / 2) - (v.left + v.width / 2));
+  })).toBeLessThan(2);
 
   await expect.poll(() => page.locator('#stones circle.stone').count()).toBe(0);
   const box = await viewport.boundingBox();
