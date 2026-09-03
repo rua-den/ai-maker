@@ -3,15 +3,18 @@
 
   const SIZE = 19;
   const POINTS = SIZE * SIZE;
-  const KOMI = 6.5;
+  const KOMI = 7.5;
+  const RULESET = 'Chinese/AGA area';
   const other = seat => seat === 'A' ? 'B' : 'A';
   const emptyBoard = () => '.'.repeat(POINTS);
 
   function initialState() {
+    const board = emptyBoard();
     return {
       size: SIZE,
-      board: emptyBoard(),
+      board,
       previousBoard: null,
+      positionHistory: [board],
       captures: { A: 0, B: 0 },
       passes: 0,
       moveNo: 0,
@@ -24,10 +27,15 @@
   function normalize(state) {
     const board = typeof state?.board === 'string' && state.board.length === POINTS ? state.board : emptyBoard();
     const previousBoard = typeof state?.previousBoard === 'string' && state.previousBoard.length === POINTS ? state.previousBoard : null;
+    const rawHistory = Array.isArray(state?.positionHistory) ? state.positionHistory : [];
+    const positionHistory = rawHistory.filter(v => typeof v === 'string' && v.length === POINTS);
+    if (!positionHistory.length) positionHistory.push(board);
+    else if (positionHistory[positionHistory.length - 1] !== board) positionHistory.push(board);
     return {
       size: SIZE,
       board,
       previousBoard,
+      positionHistory,
       captures: {
         A: Math.max(0, Number(state?.captures?.A) || 0),
         B: Math.max(0, Number(state?.captures?.B) || 0)
@@ -91,9 +99,15 @@
       }
     }
 
+    // Suicide is illegal unless the move first captures enough opposing stones
+    // to leave the newly placed group with at least one liberty.
     const mine = group(board, idx);
     if (!mine.liberties.length) return null;
-    if (s.previousBoard && board === s.previousBoard) return null;
+
+    // Positional superko: do not allow any earlier whole-board position to
+    // repeat, not merely the immediately previous board. This is stricter and
+    // prevents long repetition cycles that simple-ko misses.
+    if (s.positionHistory.includes(board)) return null;
 
     const captures = { ...s.captures };
     captures[seat] += captured;
@@ -101,6 +115,7 @@
       size: SIZE,
       board,
       previousBoard: s.board,
+      positionHistory: [...s.positionHistory, board],
       captures,
       passes: 0,
       moveNo: s.moveNo + 1,
@@ -137,9 +152,12 @@
       }
     }
 
+    // Chinese/AGA-style area scoring: living stones + surrounded empty points.
+    // Captures are shown in the UI but are not added again to area score.
     const black = stonesA + territoryA;
     const white = stonesB + territoryB + KOMI;
     return {
+      ruleset: RULESET,
       black, white, komi: KOMI,
       stones: { A: stonesA, B: stonesB },
       territory: { A: territoryA, B: territoryB },
@@ -154,7 +172,11 @@
 
     if (move?.resign) {
       const winner = other(seat);
-      return { state: { ...s, lastAction: 'resign' }, winner, reason: (seat === 'A' ? 'Đen' : 'Trắng') + ' xin thua' };
+      return {
+        state: { ...s, lastAction: 'resign' },
+        winner,
+        reason: (seat === 'A' ? 'Đen' : 'Trắng') + ' xin thua'
+      };
     }
 
     if (move?.pass) {
@@ -173,7 +195,7 @@
         return {
           state: nextState,
           winner: score.winner,
-          reason: 'hai bên cùng bỏ lượt · Đen ' + score.black + ' - Trắng ' + score.white
+          reason: '2 lượt Pass liên tiếp · Đen ' + score.black + ' - Trắng ' + score.white
         };
       }
       return { state: nextState, nextTurn: other(seat) };
@@ -185,5 +207,8 @@
     return { state: nextState, nextTurn: other(seat) };
   }
 
-  window.GoRules = { SIZE, POINTS, KOMI, emptyBoard, initialState, normalize, neighbors, group, playStone, areaScore, apply };
+  window.GoRules = {
+    SIZE, POINTS, KOMI, RULESET,
+    emptyBoard, initialState, normalize, neighbors, group, playStone, areaScore, apply
+  };
 })();
