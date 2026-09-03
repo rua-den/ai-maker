@@ -7,6 +7,7 @@
   const CLIENT_KEY = 'xiangqiClientId';
   const CONNECTION_KEY = 'xiangqiPresenceConnectionId';
   const CLEANUP_GRACE_MS = 12000;
+  const JOIN_GRACE_MS = 1600;
 
   if (!window.firebase || typeof firebaseConfig === 'undefined' || !firebaseConfig.databaseURL) return;
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -82,6 +83,7 @@
   let connectedHandler = null;
   let disconnectRemove = null;
   let disconnectSeen = null;
+  let lastPlayerRoomDisconnect = null;
   let pollTimer = null;
   const cleanupTimers = new Map();
 
@@ -97,9 +99,25 @@
     } catch (_) {}
   }
 
+  async function cancelLastPlayerCleanup() {
+    try { if (lastPlayerRoomDisconnect) await lastPlayerRoomDisconnect.cancel(); } catch (_) {}
+    lastPlayerRoomDisconnect = null;
+  }
+
+  async function armLastPlayerCleanup() {
+    if (!roomRef || lastPlayerRoomDisconnect) return;
+    try {
+      lastPlayerRoomDisconnect = roomRef.onDisconnect();
+      await lastPlayerRoomDisconnect.remove();
+    } catch (_) {
+      lastPlayerRoomDisconnect = null;
+    }
+  }
+
   async function disarmPresence({ removeNow = true } = {}) {
     try { if (disconnectRemove) await disconnectRemove.cancel(); } catch (_) {}
     try { if (disconnectSeen) await disconnectSeen.cancel(); } catch (_) {}
+    await cancelLastPlayerCleanup();
     if (removeNow) {
       try { if (myConnRef) await myConnRef.remove(); } catch (_) {}
       try { if (lastSeenRef) await lastSeenRef.set(firebase.database.ServerValue.TIMESTAMP); } catch (_) {}
@@ -143,14 +161,24 @@
       }
       maybeDeleteIfBothOut(boundRoomId, room);
       if (room.status !== 'playing' || room.presenceVersion !== 1 || !boundColor) {
+        cancelLastPlayerCleanup();
         hideBanner();
         return;
       }
       const other = boundColor === 'r' ? 'b' : 'r';
-      if (seatOnline(room, other)) {
+      const meOnline = seatOnline(room, boundColor);
+      const otherOnline = seatOnline(room, other);
+      if (otherOnline) {
+        cancelLastPlayerCleanup();
         hideBanner();
-      } else if (seatOnline(room, boundColor)) {
-        showBanner('⚠️ ' + playerName(room, other) + ' đã out · đang chờ đối thủ quay lại…');
+      } else if (meOnline) {
+        // When I am the last connected player, arm a server-side room removal.
+        // If I also disconnect before the opponent returns, Firebase deletes
+        // the whole room even though no browser remains online to do cleanup.
+        armLastPlayerCleanup();
+        const justStarted = Date.now() - Number(room.updatedAt || room.createdAt || 0) < JOIN_GRACE_MS;
+        if (justStarted) hideBanner();
+        else showBanner('⚠️ ' + playerName(room, other) + ' đã out · đang chờ đối thủ quay lại…');
       }
     };
     roomRef.on('value', roomHandler);
@@ -220,9 +248,8 @@
     } catch (_) {}
   }
 
-  // Reaper: any Xiangqi client removes a playing room once both player-presence
-  // slots have been empty for the grace period. This keeps stale LIVE rooms out
-  // even when the second player disappeared through a browser/network close.
+  // Fallback reaper for the rare case where both connections disappear at
+  // virtually the same time before either side can arm last-player cleanup.
   const reapQuery = roomsRef.orderByChild('status').equalTo('playing').limitToLast(60);
   reapQuery.on('value', snap => {
     snap.forEach(child => maybeDeleteIfBothOut(child.key, child.val() || {}));
@@ -248,8 +275,8 @@
 
   window.addEventListener('pagehide', () => {
     if (pollTimer) clearInterval(pollTimer);
-    // Do not cancel onDisconnect here: Firebase must remove the connection
-    // marker server-side if the page closes or loses network abruptly.
+    // Keep Firebase onDisconnect handlers armed. They remove this player's
+    // connection marker and, when this is the last player, the whole room.
   });
 
   window.XiangqiPresence = {
