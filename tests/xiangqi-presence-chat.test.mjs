@@ -46,6 +46,19 @@ test('Xiangqi chat stores bounded safe messages in the room', () => {
   assert.match(chat, /who\.textContent = roleLabel\(item\.role\)/);
 });
 
+test('Xiangqi chat includes an emoji picker that inserts at the cursor', () => {
+  assert.match(chat, /const EMOJIS = \[/);
+  assert.match(chat, /😂/);
+  assert.match(chat, /🔥/);
+  assert.match(chat, /🐢/);
+  assert.match(chat, /id="liveChatEmojiBtn"/);
+  assert.match(chat, /id="liveEmojiPicker"/);
+  assert.match(chat, /function insertEmoji\(emoji\)/);
+  assert.match(chat, /selectionStart/);
+  assert.match(chat, /setSelectionRange/);
+  assert.match(chat, /emojis: EMOJIS\.slice\(\)/);
+});
+
 test('Firebase rules index Xiangqi live chat timestamps', () => {
   assert.deepEqual(rules.xiangqiRooms.$room.chat['.indexOn'], ['createdAt']);
 });
