@@ -92,7 +92,7 @@
       else if (v === seat) score += Math.max(1, weight - 2);
     }
 
-    return { move: { idx }, state: next, score };
+    return { move: { idx }, state: next, score, captures };
   }
 
   function candidateIndices(state) {
@@ -128,21 +128,70 @@
     return out;
   }
 
-  function shouldPass(state, seat, level) {
-    const s = R.normalize(state);
-    if (s.passes !== 1 || s.moveNo < 180) return false;
-    const score = R.areaScore(s);
+  function scoreMargin(state, seat) {
+    const score = R.areaScore(state);
     const mine = seat === 'A' ? score.black : score.white;
     const theirs = seat === 'A' ? score.white : score.black;
-    return mine - theirs >= (level >= 4 ? 3 : 7);
+    return mine - theirs;
+  }
+
+  function endgameAssessment(state, seat, moves) {
+    const s = R.normalize(state);
+    const baseMargin = scoreMargin(s, seat);
+    let bestGain = -Infinity;
+    let maxCapture = 0;
+    const sample = moves.slice(0, Math.min(36, moves.length));
+    for (const item of sample) {
+      const gain = scoreMargin(item.state, seat) - baseMargin;
+      if (gain > bestGain) bestGain = gain;
+      maxCapture = Math.max(maxCapture, item.captures || 0);
+    }
+    if (!sample.length) bestGain = 0;
+    return { margin: baseMargin, bestGain, maxCapture };
+  }
+
+  function shouldPass(state, seat, level, moves) {
+    const s = R.normalize(state);
+    if (!moves.length) return true;
+    if (s.moveNo < 80) return false;
+
+    const end = endgameAssessment(s, seat, moves);
+
+    // If the opponent just passed, accept scoring once there is no meaningful
+    // tactical capture or profitable endgame point left. Crucially, this does
+    // NOT require the bot to be ahead, so it no longer stonewalls forever when
+    // it is losing a finished game.
+    if (s.passes === 1) {
+      if (end.maxCapture > 0 && s.moveNo < 260) return false;
+      const tolerance = level >= 4 ? 0.75 : level >= 3 ? 1.25 : 2;
+      if (end.bestGain <= tolerance) return true;
+      if (s.moveNo >= 220 && end.bestGain <= 4) return true;
+      if (s.moveNo >= 300) return true;
+      return false;
+    }
+
+    // In a settled late game, pass proactively instead of filling own secure
+    // territory forever. The human can then Pass back and finish immediately.
+    if (s.moveNo >= 180 && end.maxCapture === 0 && end.bestGain <= 0.25) return true;
+    if (s.moveNo >= 280 && end.maxCapture === 0 && end.bestGain <= 1) return true;
+    return false;
+  }
+
+  function shouldResign(state, seat, level, moves) {
+    const s = R.normalize(state);
+    if (level < 2 || s.moveNo < 240 || !moves.length) return false;
+    const end = endgameAssessment(s, seat, moves);
+    const hopeless = level >= 4 ? -55 : level >= 3 ? -65 : -80;
+    return end.margin <= hopeless && end.maxCapture === 0 && end.bestGain <= 1.5;
   }
 
   function choose(state, seat = 'B', level = 2, rng = Math.random) {
     const n = Math.max(1, Math.min(4, Number(level) || 2));
     const s = R.normalize(state);
-    if (shouldPass(s, seat, n)) return { pass: true };
-
     const moves = scoredMoves(s, seat);
+
+    if (shouldPass(s, seat, n, moves)) return { pass: true };
+    if (shouldResign(s, seat, n, moves)) return { resign: true };
     if (!moves.length) return { pass: true };
 
     if (n === 1) {
@@ -178,5 +227,32 @@
     return best.move;
   }
 
-  window.GoBot = { LEVELS, candidateIndices, evaluateMove, choose };
+  function installRulesCopy() {
+    const update = () => {
+      const pass = document.getElementById('passBtn');
+      if (pass) pass.textContent = 'Pass / Chấm điểm';
+
+      const rules = document.querySelector('.rules.onlineOnly');
+      if (rules) rules.textContent = '⚫ Đen đi trước · luật Chinese/AGA: cấm tự sát, positional Superko, tính điểm theo diện tích, Trắng komi 7.5. Hai bên Pass liên tiếp là kết thúc và chấm điểm ngay.';
+
+      const help = document.querySelector('.helpCard');
+      if (help) {
+        const lead = help.querySelector('p');
+        if (lead) lead.textContent = 'Luật dùng kiểu Chinese/AGA: tính điểm theo diện tích. Đen đi trước, Trắng được cộng 7.5 komi.';
+        const items = [...help.querySelectorAll('li')];
+        const ko = items.find(li => li.textContent.includes('Ko:'));
+        if (ko) ko.innerHTML = '<strong>Superko:</strong> không được tạo lại bất kỳ thế bàn nào đã từng xuất hiện trong ván.';
+        const end = items.find(li => li.textContent.includes('Kết thúc:'));
+        if (end) end.innerHTML = '<strong>Kết thúc:</strong> 2 lượt Pass liên tiếp là chấm điểm ngay; hoặc một bên bấm Xin thua.';
+      }
+
+      const hint = document.querySelector('.botHint');
+      if (hint) hint.textContent = 'Bạn cầm Đen. Bot biết Pass khi endgame đã hết điểm đáng tranh và có thể xin thua khi thế cờ quá chênh; không còn cố rải quân vô nghĩa để kéo dài ván.';
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', update, { once: true });
+    else update();
+  }
+
+  installRulesCopy();
+  window.GoBot = { LEVELS, candidateIndices, evaluateMove, scoredMoves, scoreMargin, endgameAssessment, shouldPass, shouldResign, choose };
 })();
