@@ -383,26 +383,28 @@
       clockBefore: cloneValue(before.clock || null),
       movedAt: Number(after.updatedAt) || Date.now()
     };
-    const patch = {};
-    patch['moveHistory/' + key] = record;
-    if (captured) patch['captures/' + key] = { piece: cloneValue(captured), capturedBy: mover, from: cloneValue(move.from), to: cloneValue(move.to), at: record.movedAt };
-    try { await roomRef.update(patch); } catch (_) {}
-
-    if (before.clock && after.timeControl) {
-      const moveAt = record.movedAt;
-      const startedAt = Number(before.clock.turnStartedAt) || moveAt;
-      const elapsed = Math.max(0, moveAt - startedAt);
-      try {
-        await roomRef.child('clock').transaction(clock => {
-          if (!clock || clock.lastTurn !== mover) return clock;
+    try {
+      await roomRef.transaction(current => {
+        if (!current || Number(current.updatedAt) !== Number(after.updatedAt) || current.turn !== after.turn) return;
+        current.moveHistory = current.moveHistory || {};
+        if (current.moveHistory[key]) return current;
+        current.moveHistory[key] = record;
+        if (captured) {
+          current.captures = current.captures || {};
+          current.captures[key] = { piece: cloneValue(captured), capturedBy: mover, from: cloneValue(move.from), to: cloneValue(move.to), at: record.movedAt };
+        }
+        if (before.clock && current.clock && current.timeControl && current.clock.lastTurn === mover) {
+          const moveAt = record.movedAt;
+          const startedAt = Number(before.clock.turnStartedAt) || moveAt;
+          const elapsed = Math.max(0, moveAt - startedAt);
           const field = mover + 'Ms';
-          clock[field] = Math.max(0, (Number(clock[field]) || 0) - elapsed);
-          clock.turnStartedAt = moveAt;
-          clock.lastTurn = after.turn;
-          return clock;
-        });
-      } catch (_) {}
-    }
+          current.clock[field] = Math.max(0, (Number(current.clock[field]) || 0) - elapsed);
+          current.clock.turnStartedAt = moveAt;
+          current.clock.lastTurn = after.turn;
+        }
+        return current;
+      }, undefined, false);
+    } catch (_) {}
   }
 
   function isUndoTransition(room) {

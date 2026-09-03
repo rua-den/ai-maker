@@ -37,7 +37,8 @@ test('Xiangqi online undo requires opponent approval before restoring state', ()
 
 test('Xiangqi tracks captured pieces chronologically and renders capture effects', () => {
   assert.match(matchUi, /rows\.sort\(\(a, b\) => \(Number\(a\.at\)/);
-  assert.match(matchUi, /patch\['captures\/' \+ key\]/);
+  assert.match(matchUi, /current\.captures\[key\] =/);
+  assert.match(matchUi, /Number\(current\.updatedAt\) !== Number\(after\.updatedAt\)/);
   assert.match(matchUi, /captureFx\.push/);
   assert.match(matchUi, /function drawCaptureEffects/);
   assert.match(matchUi, /drawPieceAt\(0, 0, fx\.piece/);
