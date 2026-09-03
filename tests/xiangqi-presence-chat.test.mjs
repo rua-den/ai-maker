@@ -25,21 +25,32 @@ test('Xiangqi presence marks disconnects and deletes room when the last player l
   assert.match(presence, /equalTo\('playing'\)/);
 });
 
-test('Xiangqi live chat stores bounded messages and listens to the active livestream room', () => {
+test('Xiangqi chat is shared by spectators and both online players', () => {
+  assert.match(chat, /window\.XiangqiLive\?\.watchingId/);
+  assert.match(chat, /window\.XiangqiPresence\?\.roomId/);
+  assert.match(chat, /window\.XiangqiPresence\?\.color/);
+  assert.match(chat, /readLocal\(ROOM_KEY\)/);
+  assert.match(chat, /currentMode\(\) === 'online'/);
+  assert.match(chat, /role: color === 'r' \? 'red' : 'black'/);
+  assert.match(chat, /Chat trận đấu · Bạn:/);
+  assert.match(chat, /Chat LIVE · Khán giả/);
+});
+
+test('Xiangqi chat stores bounded safe messages in the room', () => {
   assert.match(chat, /child\('chat'\)/);
   assert.match(chat, /limitToLast\(80\)/);
   assert.match(chat, /MAX_MESSAGE = 180/);
   assert.match(chat, /chatRef\.push\(\)\.set/);
-  assert.match(chat, /window\.XiangqiLive\?\.watchingId/);
-  assert.match(chat, /Chat khán giả/);
+  assert.match(chat, /role: activeContext\.role/);
   assert.match(chat, /text\.textContent = item\.text/);
+  assert.match(chat, /who\.textContent = roleLabel\(item\.role\)/);
 });
 
 test('Firebase rules index Xiangqi live chat timestamps', () => {
   assert.deepEqual(rules.xiangqiRooms.$room.chat['.indexOn'], ['createdAt']);
 });
 
-test('Xiangqi presence and live chat scripts parse as JavaScript', () => {
+test('Xiangqi presence and shared chat scripts parse as JavaScript', () => {
   assert.doesNotThrow(() => new Function(presence));
   assert.doesNotThrow(() => new Function(chat));
 });
