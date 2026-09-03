@@ -190,8 +190,8 @@
     const s = R.normalize(state);
     const moves = scoredMoves(s, seat);
 
-    if (shouldPass(s, seat, n, moves)) return { pass: true };
     if (shouldResign(s, seat, n, moves)) return { resign: true };
+    if (shouldPass(s, seat, n, moves)) return { pass: true };
     if (!moves.length) return { pass: true };
 
     if (n === 1) {
@@ -228,6 +228,7 @@
   }
 
   function installRulesCopy() {
+    if (typeof document === 'undefined') return;
     const update = () => {
       const pass = document.getElementById('passBtn');
       if (pass) pass.textContent = 'Pass / Chấm điểm';
