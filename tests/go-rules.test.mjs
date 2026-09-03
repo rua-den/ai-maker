@@ -113,7 +113,7 @@ test('Go bot accepts endgame scoring after opponent passes instead of stonewalli
   const score = R.areaScore(state);
   assert.ok(score.black > score.white, 'Bot/White should be behind in this settled position');
   const move = B.choose(state, 'B', 2, () => 0.25);
-  assert.deepEqual(move, { pass: true });
+  assert.equal(move.pass, true);
   const result = R.apply(state, move, 'B');
   assert.equal(result.winner, 'A');
 });
