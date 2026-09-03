@@ -14,7 +14,10 @@
     "xiangqiRooms": {
       ".read": true,
       ".indexOn": ["status"],
-      "$room": { ".write": true }
+      "$room": {
+        ".write": true,
+        "chat": { ".indexOn": ["createdAt"] }
+      }
     },
     "caroRooms": {
       ".read": true,
