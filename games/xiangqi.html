@@ -30,7 +30,7 @@
 </style>`;
     const scripts = '<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"><\/script>\n<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"><\/script>\n<script src="../firebase-config.js"><\/script>';
     html = html.replace('</head>', css + '\n' + scripts + '\n</head>');
-    html = html.replace('</body>', '<script src="./xiangqi-online.js"><\/script>\n</body>');
+    html = html.replace('</body>', '<script src="./xiangqi-online.js"><\/script>\n<script src="./xiangqi-live.js"><\/script>\n</body>');
     document.open(); document.write(html); document.close();
   } catch (error) {
     document.getElementById('loading').textContent = 'Không tải được Cờ Tướng. Hãy reload trang.';
