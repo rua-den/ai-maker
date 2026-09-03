@@ -8,6 +8,7 @@
   const ONLINE_NAME_KEY = 'xiangqiOnlineName';
   const CHAT_ID_KEY = 'xiangqiChatViewerId';
   const MAX_MESSAGE = 180;
+  const EMOJIS = ['😂','🤣','😆','😎','🤔','😱','😭','😡','🔥','👍','👎','👏','🙏','💪','❤️','💀','🐢','🎉','🏆','🤡','😏','🥳','🙄','😤','🤯','⚔️','🐴','🔴','⚫','👀'];
 
   if (!window.firebase || typeof firebaseConfig === 'undefined' || !firebaseConfig.databaseURL) return;
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -19,18 +20,19 @@
   const style = document.createElement('style');
   style.id = 'xiangqi-live-chat-style';
   style.textContent = `
-    #xiangqiLiveChat{position:absolute;right:12px;bottom:12px;z-index:26;width:min(330px,calc(100vw - 24px));height:min(390px,48vh);display:none;flex-direction:column;border-radius:15px;overflow:hidden;background:rgba(20,14,10,.95);border:1px solid rgba(255,210,150,.22);box-shadow:0 16px 40px rgba(0,0,0,.46);backdrop-filter:blur(9px)}
+    #xiangqiLiveChat{position:absolute;right:12px;bottom:12px;z-index:26;width:min(350px,calc(100vw - 24px));height:min(410px,50vh);display:none;flex-direction:column;border-radius:15px;overflow:visible;background:rgba(20,14,10,.95);border:1px solid rgba(255,210,150,.22);box-shadow:0 16px 40px rgba(0,0,0,.46);backdrop-filter:blur(9px)}
     #xiangqiLiveChat.show{display:flex}#xiangqiLiveChat.collapsed{height:auto}#xiangqiLiveChat.collapsed .liveChatBody,#xiangqiLiveChat.collapsed .liveChatComposer{display:none}
-    .liveChatHead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;background:rgba(255,255,255,.055);border-bottom:1px solid rgba(255,255,255,.08)}
+    .liveChatHead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;background:rgba(255,255,255,.055);border-bottom:1px solid rgba(255,255,255,.08);border-radius:15px 15px 0 0}
     .liveChatTitle{font-size:12px;font-weight:1000;color:#ffdca6;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.liveChatToggle{border:0;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-weight:900;cursor:pointer;padding:5px 8px;flex:none}
     .liveChatBody{flex:1;min-height:0;overflow:auto;padding:9px;display:flex;flex-direction:column;gap:7px;scrollbar-width:thin}
     .liveChatEmpty{text-align:center;opacity:.56;font-size:11px;padding:24px 8px}.liveMsg{display:flex;flex-direction:column;gap:2px;padding:7px 8px;border-radius:10px;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.055)}
     .liveMsg.playerRed{border-color:rgba(238,91,69,.28);background:rgba(171,54,37,.12)}.liveMsg.playerBlack{border-color:rgba(207,218,232,.2);background:rgba(151,164,182,.08)}
     .liveMsgMeta{display:flex;justify-content:space-between;gap:8px;font-size:10px;opacity:.72}.liveMsgName{font-weight:1000;color:#ffd28f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.liveMsgTime{flex:none}.liveMsgText{font-size:12px;line-height:1.42;white-space:pre-wrap;overflow-wrap:anywhere}
-    .liveChatComposer{display:grid;grid-template-columns:88px 1fr auto;gap:6px;padding:8px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14)}
+    .liveChatComposer{position:relative;display:grid;grid-template-columns:88px minmax(0,1fr) 38px auto;gap:6px;padding:8px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);border-radius:0 0 15px 15px}
     .liveChatComposer input{min-width:0;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:#fff8ec;color:#2b1a0e;padding:8px 9px;font:inherit;font-size:12px;font-weight:800;outline:none}.liveChatComposer input:focus{border-color:#f0b35d}.liveChatComposer input:disabled{opacity:.82;background:#eadcc7;color:#4b3421}
-    #liveChatSend{border:0;border-radius:9px;background:linear-gradient(180deg,#f3b75f,#d98c2a);color:#3f2300;font-weight:1000;cursor:pointer;padding:7px 10px}#liveChatSend:disabled{opacity:.45;cursor:default}
-    @media(max-width:520px){#xiangqiLiveChat{right:8px;bottom:8px;width:calc(100vw - 16px);height:min(255px,36vh)}.liveChatComposer{grid-template-columns:72px 1fr auto;padding:6px}.liveChatComposer input{padding:7px;font-size:11px}.liveChatBody{padding:7px}.liveMsgText{font-size:11px}}
+    #liveChatEmojiBtn,#liveChatSend{border:0;border-radius:9px;font-weight:1000;cursor:pointer}#liveChatEmojiBtn{background:rgba(255,255,255,.13);color:#fff;font-size:18px;padding:0;min-width:38px}#liveChatEmojiBtn:hover{background:rgba(255,255,255,.22)}#liveChatSend{background:linear-gradient(180deg,#f3b75f,#d98c2a);color:#3f2300;padding:7px 10px}#liveChatSend:disabled{opacity:.45;cursor:default}
+    #liveEmojiPicker{position:absolute;right:48px;bottom:52px;z-index:40;width:246px;display:none;grid-template-columns:repeat(6,1fr);gap:5px;padding:8px;border-radius:13px;background:rgba(8,7,6,.98);border:1px solid rgba(255,218,159,.3);box-shadow:0 14px 36px rgba(0,0,0,.62)}#liveEmojiPicker.show{display:grid}.liveEmoji{height:34px;border:0;border-radius:8px;background:rgba(255,255,255,.08);font-size:19px;cursor:pointer;display:grid;place-items:center}.liveEmoji:hover,.liveEmoji:active{background:rgba(255,208,126,.22);transform:scale(1.06)}
+    @media(max-width:520px){#xiangqiLiveChat{right:8px;bottom:8px;width:calc(100vw - 16px);height:min(285px,39vh)}.liveChatComposer{grid-template-columns:72px minmax(0,1fr) 36px auto;padding:6px}.liveChatComposer input{padding:7px;font-size:11px}.liveChatBody{padding:7px}.liveMsgText{font-size:11px}#liveEmojiPicker{right:42px;bottom:48px;width:min(238px,calc(100vw - 36px));grid-template-columns:repeat(6,1fr)}}
   `;
   document.head.appendChild(style);
 
@@ -46,7 +48,9 @@
     <form id="liveChatComposer" class="liveChatComposer" autocomplete="off">
       <input id="liveChatName" maxlength="16" aria-label="Tên chat" placeholder="Tên">
       <input id="liveChatText" maxlength="${MAX_MESSAGE}" aria-label="Tin nhắn" placeholder="Chém gió gì đi…">
+      <button id="liveChatEmojiBtn" type="button" aria-label="Chọn emoji" title="Emoji">😄</button>
       <button id="liveChatSend" type="submit">Gửi</button>
+      <div id="liveEmojiPicker" aria-label="Emoji chat"></div>
     </form>
   `;
   gameContainer.appendChild(panel);
@@ -58,6 +62,18 @@
   const textInput = panel.querySelector('#liveChatText');
   const sendBtn = panel.querySelector('#liveChatSend');
   const toggleBtn = panel.querySelector('#liveChatToggle');
+  const emojiBtn = panel.querySelector('#liveChatEmojiBtn');
+  const emojiPicker = panel.querySelector('#liveEmojiPicker');
+
+  EMOJIS.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'liveEmoji';
+    btn.textContent = emoji;
+    btn.setAttribute('aria-label', 'Thêm ' + emoji);
+    btn.addEventListener('click', () => insertEmoji(emoji));
+    emojiPicker.appendChild(btn);
+  });
 
   function readLocal(key) { try { return localStorage.getItem(key); } catch (_) { return null; } }
   function saveLocal(key, value) { try { localStorage.setItem(key, value); } catch (_) {} }
@@ -86,6 +102,35 @@
   let pollTimer = null;
   let lastSentAt = 0;
   let mobilePlayerCollapsed = false;
+
+  function insertEmoji(emoji) {
+    const value = textInput.value || '';
+    const start = Number.isInteger(textInput.selectionStart) ? textInput.selectionStart : value.length;
+    const end = Number.isInteger(textInput.selectionEnd) ? textInput.selectionEnd : start;
+    const next = (value.slice(0, start) + emoji + value.slice(end)).slice(0, MAX_MESSAGE);
+    textInput.value = next;
+    const cursor = Math.min(next.length, start + emoji.length);
+    textInput.focus();
+    try { textInput.setSelectionRange(cursor, cursor); } catch (_) {}
+  }
+
+  function closeEmojiPicker() {
+    emojiPicker.classList.remove('show');
+    emojiBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  emojiBtn.setAttribute('aria-expanded', 'false');
+  emojiBtn.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const open = emojiPicker.classList.toggle('show');
+    emojiBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('pointerdown', e => {
+    if (!emojiPicker.classList.contains('show')) return;
+    if (emojiPicker.contains(e.target) || e.target === emojiBtn) return;
+    closeEmojiPicker();
+  }, true);
 
   function formatTime(ts) {
     const d = new Date(Number(ts) || Date.now());
@@ -137,7 +182,6 @@
   function resolveChatContext() {
     const liveRoomId = window.XiangqiLive?.watchingId || null;
     if (liveRoomId) return { roomId: liveRoomId, kind: 'spectator', role: 'spectator', color: null };
-
     const onlineMode = currentMode() === 'online';
     if (!onlineMode) return null;
     const presenceRoomId = window.XiangqiPresence?.roomId || null;
@@ -154,7 +198,7 @@
     if (player) {
       const side = context.color === 'r' ? 'Đỏ' : 'Đen';
       titleEl.textContent = '💬 Chat trận đấu · Bạn: ' + side;
-      const onlineName = cleanName(readLocal(ONLINE_NAME_KEY)) || (context.color === 'r' ? 'Đỏ' : 'Đen');
+      const onlineName = cleanName(readLocal(ONLINE_NAME_KEY)) || side;
       nameInput.value = onlineName;
       nameInput.disabled = true;
       if (!mobilePlayerCollapsed && window.matchMedia?.('(max-width: 520px)').matches) {
@@ -173,12 +217,9 @@
 
   function unbindChat() {
     if (chatQuery && chatHandler) chatQuery.off('value', chatHandler);
-    chatQuery = null;
-    chatHandler = null;
-    chatRef = null;
-    activeRoomId = null;
-    activeContext = null;
+    chatQuery = null; chatHandler = null; chatRef = null; activeRoomId = null; activeContext = null;
     nameInput.disabled = false;
+    closeEmojiPicker();
     panel.classList.remove('show');
     body.innerHTML = '<div class="liveChatEmpty">Vào trận hoặc livestream để chém gió 😄</div>';
   }
@@ -186,10 +227,7 @@
   function bindChat(context) {
     const roomId = context?.roomId;
     if (!roomId) return;
-    if (roomId === activeRoomId) {
-      applyContextUi(context);
-      return;
-    }
+    if (roomId === activeRoomId) { applyContextUi(context); return; }
     unbindChat();
     activeRoomId = roomId;
     applyContextUi(context);
@@ -197,16 +235,11 @@
     chatQuery = chatRef.orderByChild('createdAt').limitToLast(80);
     chatHandler = snap => {
       const items = [];
-      snap.forEach(child => {
-        const value = child.val() || {};
-        if (value.text) items.push(value);
-      });
+      snap.forEach(child => { const value = child.val() || {}; if (value.text) items.push(value); });
       items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
       renderMessages(items);
     };
-    chatQuery.on('value', chatHandler, () => {
-      body.innerHTML = '<div class="liveChatEmpty">Không tải được chat.</div>';
-    });
+    chatQuery.on('value', chatHandler, () => { body.innerHTML = '<div class="liveChatEmpty">Không tải được chat.</div>'; });
     panel.classList.add('show');
   }
 
@@ -216,14 +249,13 @@
     if (now - lastSentAt < 700) return;
     const isPlayer = activeContext.kind === 'player';
     const fallbackPlayerName = activeContext.color === 'r' ? 'Đỏ' : 'Đen';
-    const name = isPlayer
-      ? (cleanName(readLocal(ONLINE_NAME_KEY)) || fallbackPlayerName)
-      : (cleanName(nameInput.value) || 'Khán giả');
+    const name = isPlayer ? (cleanName(readLocal(ONLINE_NAME_KEY)) || fallbackPlayerName) : (cleanName(nameInput.value) || 'Khán giả');
     const text = cleanText(textInput.value);
     if (!text) return;
     if (!isPlayer) saveLocal(CHAT_NAME_KEY, name);
     nameInput.value = name;
     textInput.value = '';
+    closeEmojiPicker();
     lastSentAt = now;
     sendBtn.disabled = true;
     try {
@@ -241,42 +273,34 @@
     }
   }
 
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    sendMessage();
-  });
+  form.addEventListener('submit', e => { e.preventDefault(); sendMessage(); });
   nameInput.addEventListener('change', () => {
     if (activeContext?.kind === 'player') return;
-    const name = cleanName(nameInput.value);
-    nameInput.value = name;
-    if (name) saveLocal(CHAT_NAME_KEY, name);
+    const name = cleanName(nameInput.value); nameInput.value = name; if (name) saveLocal(CHAT_NAME_KEY, name);
   });
   toggleBtn.addEventListener('click', () => {
     const collapsed = panel.classList.toggle('collapsed');
     toggleBtn.textContent = collapsed ? '+' : '−';
+    if (collapsed) closeEmojiPicker();
   });
 
   function syncChatRoom() {
     const context = resolveChatContext();
-    if (context && (context.roomId !== activeRoomId || context.kind !== activeContext?.kind || context.color !== activeContext?.color)) {
-      bindChat(context);
-    } else if (!context && activeRoomId) {
-      unbindChat();
-    }
+    if (context && (context.roomId !== activeRoomId || context.kind !== activeContext?.kind || context.color !== activeContext?.color)) bindChat(context);
+    else if (!context && activeRoomId) unbindChat();
   }
 
   pollTimer = setInterval(syncChatRoom, 250);
   syncChatRoom();
-  window.addEventListener('pagehide', () => {
-    if (pollTimer) clearInterval(pollTimer);
-    unbindChat();
-  });
+  window.addEventListener('pagehide', () => { if (pollTimer) clearInterval(pollTimer); unbindChat(); });
 
   window.XiangqiLiveChat = {
     bindChat,
     unbindChat,
     sendMessage,
+    insertEmoji,
     resolveChatContext,
+    emojis: EMOJIS.slice(),
     get roomId() { return activeRoomId; },
     get context() { return activeContext; }
   };
