@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --app-font-sans: "Noto Sans", "Noto Sans SC", "Segoe UI", Arial, Tahoma, sans-serif;
+  --app-font-cjk: "Noto Sans SC", "Noto Sans", "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif;
+}
+
+/*
+ * Global app font stack.
+ * Noto Sans covers Vietnamese diacritics consistently across Android/iOS/desktop.
+ * Noto Sans SC is the fallback for Han glyphs used by Xiangqi variants.
+ */
+html,
+body,
+body *,
+button,
+input,
+select,
+textarea {
+  font-family: var(--app-font-sans) !important;
+  font-synthesis: none;
+}
+
+html,
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
