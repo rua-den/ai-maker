@@ -2,14 +2,11 @@
 
 importScripts('./destroyer-core.js', './neural-encoder.js');
 
-const ORT_VERSION = '1.29.0';
+const ORT_VERSION = '1.28.0';
 const ORT_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
 const ORT_SCRIPT = ORT_BASE + 'ort.min.js';
-// Never silently fall back to a third-party/random-weight model. A real model
-// must be explicitly configured by the runtime until the verified local asset
-// games/go-ai/models/katago-b6c96.onnx is committed.
-const DEFAULT_MODEL = null;
 const VERIFIED_LOCAL_MODEL = './models/katago-b6c96.onnx';
+const DEFAULT_MODEL = VERIFIED_LOCAL_MODEL;
 
 let sessionPromise = null;
 let loadedModelUrl = null;
@@ -21,8 +18,6 @@ function ensureOrt() {
   importScripts(ORT_SCRIPT);
   if (!self.ort) throw new Error('ONNX Runtime Web failed to load');
   self.ort.env.wasm.wasmPaths = ORT_BASE;
-  // GitHub Pages cannot opt into cross-origin isolation headers, so force a
-  // single WASM thread. The neural work already runs off the UI thread here.
   self.ort.env.wasm.numThreads = 1;
   self.ort.env.wasm.proxy = false;
   return self.ort;
@@ -44,18 +39,32 @@ async function ensureSession(modelUrl = DEFAULT_MODEL) {
   return sessionPromise;
 }
 
-function findInputName(session, kind) {
+function inputName(session, exact, fallbackPattern) {
   const names = Array.isArray(session.inputNames) ? session.inputNames : [];
-  if (kind === 'global') return names.find(name => /global/i.test(name)) || names[1] || 'global_input';
-  return names.find(name => /bin|spatial|plane/i.test(name)) || names[0] || 'bin_input_global_ncplane';
+  return names.find(name => name === exact)
+    || names.find(name => fallbackPattern.test(name))
+    || null;
 }
 
-function findPolicyTensor(outputs) {
+function extractBasePolicy(outputs) {
   const entries = Object.entries(outputs || {});
-  const named = entries.find(([name]) => /policy/i.test(name));
-  if (named?.[1]) return named[1];
-  const compatible = entries.find(([, tensor]) => tensor?.data && tensor.data.length >= self.GoNeuralEncoder.POINTS + 1);
-  return compatible?.[1] || entries[0]?.[1] || null;
+  const boardTensor = outputs?.OutputPolicy
+    || entries.find(([name, tensor]) =>
+      /policy/i.test(name)
+      && !/pass/i.test(name)
+      && tensor?.data
+      && tensor.data.length >= self.GoNeuralEncoder.POINTS
+    )?.[1];
+  if (!boardTensor?.data) throw new Error('KataGo ONNX returned no board policy tensor');
+
+  const passTensor = outputs?.OutputPolicyPass
+    || entries.find(([name, tensor]) => /policy.*pass|pass.*policy/i.test(name) && tensor?.data)?.[1];
+
+  const points = self.GoNeuralEncoder.POINTS;
+  const policy = new Float32Array(points + 1);
+  for (let idx = 0; idx < points; idx++) policy[idx] = Number(boardTensor.data[idx]) || 0;
+  policy[points] = passTensor?.data?.length ? (Number(passTensor.data[0]) || 0) : -1e9;
+  return policy;
 }
 
 function neuralCandidates(state, seat, policyData, limit = 14) {
@@ -94,8 +103,6 @@ function rerankWithTactics(state, seat, candidates) {
     tacticalNodes += 1 + replies.length;
     const replyThreat = replies.length ? replies[0].score : 0;
 
-    // Neural rank remains the primary signal. The local tactical reader only
-    // corrects obvious captures, rescues and one-ply tactical disasters.
     const neuralPrior = Math.max(0, 16 - item.rank) * 34;
     const tactical = Math.max(-260, Math.min(520, root.score)) * 0.42;
     const defense = Math.max(0, Math.min(420, replyThreat)) * 0.24;
@@ -117,18 +124,28 @@ async function choose(message) {
   const session = await ensureSession(modelUrl);
   const encoded = self.GoNeuralEncoder.encode(message.state, seat, 7.5);
   const ort = self.ort;
-  const binName = findInputName(session, 'bin');
-  const globalName = findInputName(session, 'global');
+
+  const spatialName = inputName(session, 'InputSpatial', /spatial|bin|plane/i);
+  const globalName = inputName(session, 'InputGlobal', /global/i);
+  const maskName = inputName(session, 'InputMask', /mask/i);
+  const metaName = inputName(session, 'InputMeta', /meta/i);
+  if (!spatialName || !globalName || !maskName) {
+    throw new Error('KataGo ONNX input contract mismatch');
+  }
+  if (metaName) {
+    throw new Error('Human-style KataGo models with InputMeta are not supported');
+  }
+
   const feeds = {};
-  feeds[binName] = new ort.Tensor('float32', encoded.binInput, encoded.shape);
+  feeds[spatialName] = new ort.Tensor('float32', encoded.binInput, encoded.shape);
   feeds[globalName] = new ort.Tensor('float32', encoded.globalInput, encoded.globalShape);
+  feeds[maskName] = new ort.Tensor('float32', encoded.mask, encoded.maskShape);
 
   const outputs = await session.run(feeds);
-  const policyTensor = findPolicyTensor(outputs);
-  if (!policyTensor?.data) throw new Error('KataGo ONNX model returned no policy tensor');
-
-  const candidates = neuralCandidates(message.state, seat, policyTensor.data, 14);
+  const policy = extractBasePolicy(outputs);
+  const candidates = neuralCandidates(message.state, seat, policy, 14);
   const selected = rerankWithTactics(message.state, seat, candidates);
+
   return {
     move: selected.move,
     diagnostics: {
