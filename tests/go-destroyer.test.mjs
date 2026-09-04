@@ -13,7 +13,13 @@ const encoderSource = fs.readFileSync(new URL('../games/go-ai/neural-encoder.js'
 const neuralWorkerSource = fs.readFileSync(new URL('../games/go-ai/neural-worker.js', import.meta.url), 'utf8');
 const verifiedModelUrl = new URL('../games/go-ai/models/katago-b6c96.onnx', import.meta.url);
 const verifiedModelShaUrl = new URL('../games/go-ai/models/katago-b6c96.onnx.sha256', import.meta.url);
+const ortVendorDir = new URL('../games/go-ai/vendor/ort/', import.meta.url);
 const VERIFIED_MODEL_SHA256 = '0f86dd3bc0403ebf9787f8a857f9fad04881e54191af1d7d4c2b71fa91de6511';
+const VERIFIED_ORT_SHA256 = {
+  'ort.min.js': '79a344bf4f5dbfd4b214d5d7960896e1da1c4daa7e9ce9cd671b0b52ea4abaf9',
+  'ort-wasm-simd-threaded.mjs': '5a15f1fd086b3f6c2baf1f35105b8f502653b567e165cef80028870b39748747',
+  'ort-wasm-simd-threaded.wasm': 'ec8580a9d7b9476ceee52e10a7f94124e4dc71a019d666ed6d4726697c109a4d'
+};
 
 function loadDestroyer() {
   const context = { performance: { now: () => Date.now() } };
@@ -57,6 +63,15 @@ test('verified KataGo ONNX model is shipped byte-for-byte with its locked checks
   assert.equal(bytes.length, 4133564);
   assert.equal(digest, VERIFIED_MODEL_SHA256);
   assert.equal(checksumFile, `${VERIFIED_MODEL_SHA256}  katago-b6c96.onnx`);
+});
+
+test('vendored ONNX Runtime Web is pinned and byte-for-byte locked', () => {
+  assert.equal(fs.readFileSync(new URL('VERSION', ortVendorDir), 'utf8').trim(), 'onnxruntime-web 1.29.0');
+  for (const [name, expectedSha] of Object.entries(VERIFIED_ORT_SHA256)) {
+    const bytes = fs.readFileSync(new URL(name, ortVendorDir));
+    const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+    assert.equal(digest, expectedSha, `${name} checksum drifted`);
+  }
 });
 
 test('Go rules persist real move history for KataGo V7 history planes', () => {
@@ -108,10 +123,13 @@ test('KataGo encoder matches V7 core feature semantics for 19x19 positional-supe
   assert.equal(afterPass.globalInput[14], 1, 'another pass would end the phase');
 });
 
-test('KataGo neural worker feeds official ONNX contract and combines board/pass policy', () => {
-  assert.match(neuralWorkerSource, /onnxruntime-web@\$\{ORT_VERSION\}/);
-  assert.match(neuralWorkerSource, /const ORT_VERSION = '1\.28\.0'/);
-  assert.match(neuralWorkerSource, /VERIFIED_LOCAL_MODEL = '\.\/models\/katago-b6c96\.onnx'/);
+test('KataGo neural worker uses same-origin ORT and feeds the official ONNX contract', () => {
+  assert.match(neuralWorkerSource, /const ORT_VERSION = '1\.29\.0'/);
+  assert.match(neuralWorkerSource, /new URL\('\.\/vendor\/ort\/', self\.location\.href\)/);
+  assert.match(neuralWorkerSource, /new URL\('ort\.min\.js', ORT_BASE\)/);
+  assert.doesNotMatch(neuralWorkerSource, /cdn\.jsdelivr\.net|unpkg\.com/);
+  assert.match(neuralWorkerSource, /models\/katago-b6c96\.onnx/);
+  assert.match(neuralWorkerSource, /env\.wasm\.wasmPaths = ORT_BASE/);
   assert.match(neuralWorkerSource, /env\.wasm\.numThreads = 1/);
   assert.match(neuralWorkerSource, /InferenceSession\.create/);
   assert.match(neuralWorkerSource, /InputSpatial/);
