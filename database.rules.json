@@ -19,6 +19,11 @@
         "chat": { ".indexOn": ["createdAt"] }
       }
     },
+    "threeKingdomsRooms": {
+      ".read": true,
+      ".indexOn": ["status"],
+      "$room": { ".write": true }
+    },
     "caroRooms": {
       ".read": true,
       ".indexOn": ["status"],
