@@ -1,0 +1,36 @@
+import {test,expect} from '@playwright/test';
+import {spawn} from 'node:child_process';
+
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+test('Bùm Chíu PvP lets two browsers join one server-authoritative 5v5 room',async({browser})=>{
+  const port=20500+Math.floor(Math.random()*500);
+  const server=spawn(process.execPath,['server/boom-chiu-server.js'],{env:{...process.env,PORT:String(port)},stdio:['ignore','pipe','pipe']});
+  let ready=false;server.stdout.on('data',d=>{if(String(d).includes('listening'))ready=true});
+  for(let i=0;i<60&&!ready;i++)await wait(50);
+  expect(ready).toBe(true);
+  const baseURL='http://127.0.0.1:4173',wsUrl=`ws://127.0.0.1:${port}`;
+  const c1=await browser.newContext({baseURL,viewport:{width:390,height:844},hasTouch:true});
+  const c2=await browser.newContext({baseURL,viewport:{width:390,height:844},hasTouch:true});
+  const p1=await c1.newPage(),p2=await c2.newPage();
+  const errors=[];p1.on('pageerror',e=>errors.push('p1:'+e.message));p2.on('pageerror',e=>errors.push('p2:'+e.message));
+  try{
+    await p1.goto(`/games/boom-chiu-pvp.html?server=${encodeURIComponent(wsUrl)}`);
+    await p1.locator('#name').fill('Huy');
+    await p1.locator('#create').click();
+    await expect.poll(()=>p1.evaluate(()=>window.BoomChiuPvP?.joined),{timeout:6000}).toBe(true);
+    const room=await p1.evaluate(()=>window.BoomChiuPvP.room);
+    expect(room).toMatch(/^[A-Z0-9]{6}$/);
+    await p2.goto(`/games/boom-chiu-pvp.html?server=${encodeURIComponent(wsUrl)}&room=${room}`);
+    await p2.locator('#name').fill('Bạn Huy');
+    await p2.locator('#join').click();
+    await expect.poll(()=>p2.evaluate(()=>window.BoomChiuPvP?.joined),{timeout:6000}).toBe(true);
+    await expect.poll(()=>p1.evaluate(()=>window.BoomChiuPvP.actors.filter(a=>a.human).length),{timeout:6000}).toBe(2);
+    await expect.poll(()=>p2.evaluate(()=>window.BoomChiuPvP.actors.length),{timeout:6000}).toBe(10);
+    const teams=await p2.evaluate(()=>({blue:window.BoomChiuPvP.actors.filter(a=>a.team==='blue').length,red:window.BoomChiuPvP.actors.filter(a=>a.team==='red').length,humans:window.BoomChiuPvP.actors.filter(a=>a.human).length}));
+    expect(teams).toEqual({blue:5,red:5,humans:2});
+    expect(errors).toEqual([]);
+  }finally{
+    await c1.close();await c2.close();server.kill('SIGTERM');
+  }
+});
