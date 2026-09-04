@@ -58,3 +58,10 @@ test('Bùm Chíu homepage is online-first and both online/local pages use Vietna
   assert.match(online,/id="create"[^>]*>[^<]*TẠO PHÒNG 5V5/);
   assert.match(online,/boom-chiu-pvp\.js/);
 });
+
+test('Bùm Chíu production client defaults to the public Render WebSocket server',()=>{
+  const pvp=fs.readFileSync(new URL('../games/boom-chiu-pvp.js',import.meta.url),'utf8');
+  assert.match(pvp,/wss:\/\/boom-chiu-pvp\.onrender\.com/);
+  assert.doesNotMatch(pvp,/\|\|'ws:\/\/localhost:8787'/);
+  assert.match(pvp,/params\.get\('server'\)\|\|localStorage\.getItem\('boom-chiu-server'\)/);
+});
