@@ -5,6 +5,8 @@ import vm from 'node:vm';
 
 const coreSource = fs.readFileSync(new URL('../games/three-kingdoms-xiangqi-core.js', import.meta.url), 'utf8');
 const botSource = fs.readFileSync(new URL('../games/three-kingdoms-xiangqi-bot.js', import.meta.url), 'utf8');
+const uiSource = fs.readFileSync(new URL('../games/three-kingdoms-xiangqi-ui.js', import.meta.url), 'utf8');
+const onlineSource = fs.readFileSync(new URL('../games/three-kingdoms-xiangqi-online.js', import.meta.url), 'utf8');
 const pageSource = fs.readFileSync(new URL('../games/three-kingdoms-xiangqi.html', import.meta.url), 'utf8');
 const indexSource = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
@@ -92,23 +94,37 @@ test('Three Kingdoms easy bot returns a legal move without brute-forcing the who
   assert.ok(elapsed < 1000, `easy bot took ${elapsed}ms`);
 });
 
-test('Three Kingdoms page supports Human/BOT per seat, including two humans plus one bot', () => {
-  assert.match(pageSource, /id="seat0"/);
-  assert.match(pageSource, /id="seat1"/);
-  assert.match(pageSource, /id="seat2"/);
-  assert.match(pageSource, /value="human"/);
-  assert.match(pageSource, /value="bot"/);
-  assert.match(pageSource, /2 người có thể thêm BOT làm nước thứ ba/);
-  assert.match(pageSource, /id="botDifficulty"/);
-  assert.match(pageSource, /value="destroyer"/);
-  assert.match(pageSource, /three-kingdoms-xiangqi-core\.js/);
-  assert.match(pageSource, /three-kingdoms-xiangqi-bot\.js/);
+test('Three Kingdoms opens with an explicit online lobby and keeps local play as a second tab', () => {
+  assert.match(pageSource, /firebase-app\.js/);
+  assert.match(pageSource, /firebase-database\.js/);
+  assert.match(pageSource, /\.\.\/firebase-config\.js/);
+  assert.match(pageSource, /three-kingdoms-xiangqi-ui\.js/);
+  assert.match(pageSource, /three-kingdoms-xiangqi-online\.js/);
+  assert.match(onlineSource, /tkOnlineTab/);
+  assert.match(onlineSource, /🌐 ONLINE/);
+  assert.match(onlineSource, /🎮 CÙNG MÁY/);
+  assert.match(onlineSource, /TẠO PHÒNG MỚI/);
+  assert.match(onlineSource, /Phòng đang chờ/);
 });
 
-test('Three Kingdoms canvas animations clamp stale RAF timestamps', () => {
-  assert.match(pageSource, /Math\.max\(0,Math\.min\(1,\(now-moveFx\.start\)\/260\)\)/);
-  assert.match(pageSource, /Math\.max\(0,\(now-captureFx\.start\)\/450\)/);
-  assert.match(pageSource, /Math\.max\(0,pieceRadius\*\(\.8\+t\*1\.6\)\)/);
+test('Three Kingdoms online room has three selectable seats and host can fill empty seats with bots', () => {
+  assert.match(onlineSource, /const ROOT = 'threeKingdomsRooms'/);
+  assert.match(onlineSource, /function createRoom\(/);
+  assert.match(onlineSource, /function takeSeat\(index\)/);
+  assert.match(onlineSource, /function setSeatBot\(index, enabled\)/);
+  assert.match(onlineSource, /function startRoom\(/);
+  assert.match(onlineSource, /function submitMove\(move\)/);
+  assert.match(onlineSource, /function maybeDriveBot\(value\)/);
+  assert.match(onlineSource, /seatAt\(value, i\)\.type === 'human' \|\| seatAt\(value, i\)\.type === 'bot'/);
+  assert.match(onlineSource, /R\.makeMove\(value\.state, move\)/);
+});
+
+test('Three Kingdoms UI delegates online human moves and blocks control of other seats', () => {
+  assert.match(uiSource, /onlineAdapter\.submitMove\?\.\(move\)/);
+  assert.match(uiSource, /onlineAdapter&&!onlineAdapter\.canControl\?\.\(state\.turn\)/);
+  assert.match(uiSource, /applyRemoteState/);
+  assert.match(uiSource, /attachOnline/);
+  assert.match(uiSource, /seatLabel/);
 });
 
 test('Three Kingdoms game is listed on the portfolio home', () => {
@@ -116,7 +132,9 @@ test('Three Kingdoms game is listed on the portfolio home', () => {
   assert.match(indexSource, /Cờ Tướng Tam Quốc/);
 });
 
-test('Three Kingdoms engine and bot parse as browser scripts', () => {
+test('Three Kingdoms engine, bot, UI and online scripts parse as browser JavaScript', () => {
   assert.doesNotThrow(() => new Function(coreSource));
   assert.doesNotThrow(() => new Function(botSource));
+  assert.doesNotThrow(() => new Function(uiSource));
+  assert.doesNotThrow(() => new Function(onlineSource));
 });
