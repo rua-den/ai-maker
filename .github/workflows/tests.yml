@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: 22
       - name: Install pinned ONNX Runtime Web
-        run: npm install --no-save --ignore-scripts onnxruntime-web@1.28.0
+        run: npm install --no-save --ignore-scripts onnxruntime-web@1.29.0
       - name: Vendor same-origin runtime assets
         run: |
           set -euxo pipefail
@@ -39,7 +39,7 @@ jobs:
           cp "$SRC/ort.min.js" "$DEST/ort.min.js"
           cp "$SRC/ort-wasm-simd-threaded.mjs" "$DEST/ort-wasm-simd-threaded.mjs"
           cp "$SRC/ort-wasm-simd-threaded.wasm" "$DEST/ort-wasm-simd-threaded.wasm"
-          printf 'onnxruntime-web 1.28.0\n' > "$DEST/VERSION"
+          printf 'onnxruntime-web 1.29.0\n' > "$DEST/VERSION"
           sha256sum "$DEST/ort.min.js" "$DEST/ort-wasm-simd-threaded.mjs" "$DEST/ort-wasm-simd-threaded.wasm" > "$DEST/SHA256SUMS"
           ls -lh "$DEST"
       - name: Commit vendored runtime
@@ -47,5 +47,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add games/go-ai/vendor/ort
-          git commit -m 'chore: vendor ONNX Runtime Web 1.28.0'
+          git commit -m 'chore: vendor ONNX Runtime Web 1.29.0'
           git push origin HEAD:main
