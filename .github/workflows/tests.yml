@@ -54,15 +54,21 @@ jobs:
           katago-src/cpp/build/katago dumponnx -model "$MODEL" -out "$OUT" -nn-x-len 19 -nn-y-len 19
           sha256sum "$OUT" | tee generated-katago-model/katago-b6c96.onnx.sha256
           ls -lh generated-katago-model
-      - name: Verify exported model with KataGo canaries
+      - name: Verify ONNX exactly reproduces source network
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/deps/ort/lib
         run: |
-          cp katago-src/cpp/configs/gtp_example.cfg /tmp/katago-onnx.cfg
-          printf '\nonnxProvider = cpu\n' >> /tmp/katago-onnx.cfg
-          katago-src/cpp/build/katago runnnevalcanarytests \
-            -model generated-katago-model/katago-b6c96.onnx \
-            -config /tmp/katago-onnx.cfg
+          KATAGO=katago-src/cpp/build/katago
+          BINGZ=katago-src/cpp/tests/models/g170-b6c96-s175395328-d26788732.bin.gz
+          ONNX=generated-katago-model/katago-b6c96.onnx
+          mkdir -p /tmp/katago-verify
+          "$KATAGO" runnnsymmetriestest "$BINGZ" false false false > /tmp/katago-verify/source.txt
+          "$KATAGO" runnnsymmetriestest "$ONNX" false false false > /tmp/katago-verify/onnx.txt
+          FILTER='nnModelFile|nnRandSeed|ONNX backend|Building internal onnx'
+          grep -Ev "$FILTER" /tmp/katago-verify/source.txt > /tmp/katago-verify/source.filtered.txt
+          grep -Ev "$FILTER" /tmp/katago-verify/onnx.txt > /tmp/katago-verify/onnx.filtered.txt
+          diff -u /tmp/katago-verify/source.filtered.txt /tmp/katago-verify/onnx.filtered.txt
+          echo 'Verified: exported ONNX reproduces the official g170 .bin.gz evaluations exactly.'
       - name: Upload verified model
         uses: actions/upload-artifact@v4
         with:
