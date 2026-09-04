@@ -12,10 +12,16 @@
     .xiangqiRailTitle{font-size:13px!important;letter-spacing:.55px!important;margin-bottom:9px!important}
     .xiangqiClockRow{gap:7px 9px!important;padding:8px 0!important}
     .xiangqiClockSide{font-size:14px!important;font-weight:1000!important}
-    .xiangqiClockMain{font-size:21px!important;line-height:1.05!important}
-    .xiangqiTurnClock{grid-column:1/-1!important;font-size:15px!important;line-height:1.15!important;font-weight:950!important;opacity:.58!important;text-align:center!important;padding:5px 7px!important;border-radius:8px!important;background:rgba(255,255,255,.045)!important}
-    .xiangqiClockRow.active .xiangqiTurnClock{font-size:26px!important;opacity:1!important;color:#ffe26f!important;background:rgba(255,226,111,.12)!important;border:1px solid rgba(255,226,111,.22)!important;text-shadow:0 1px 6px rgba(0,0,0,.7)!important}
-    .xiangqiClockRow.danger .xiangqiTurnClock{color:#ff8876!important;background:rgba(255,91,72,.13)!important;border-color:rgba(255,91,72,.3)!important}
+    .xiangqiClockMain{font-size:24px!important;line-height:1.05!important}
+    .xiangqiTurnClock{grid-column:1/-1!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;line-height:1!important;font-weight:950!important;opacity:.68!important;text-align:center!important;padding:6px 8px!important;border-radius:9px!important;background:rgba(255,255,255,.045)!important}
+    .xiangqiTurnClock span{font-size:12px!important;letter-spacing:.4px!important;text-transform:uppercase!important}
+    .xiangqiTurnClock b{font-size:26px!important;line-height:1!important;font-weight:1000!important}
+    .xiangqiClockRow.active .xiangqiTurnClock{opacity:1!important;color:#ffe26f!important;background:rgba(255,226,111,.14)!important;border:2px solid rgba(255,226,111,.32)!important;box-shadow:0 0 0 2px rgba(255,226,111,.05),0 8px 20px rgba(0,0,0,.28)!important;text-shadow:0 1px 6px rgba(0,0,0,.7)!important}
+    .xiangqiClockRow.active .xiangqiTurnClock span{font-size:13px!important}
+    .xiangqiClockRow.active .xiangqiTurnClock b{font-size:40px!important;letter-spacing:-2px!important}
+    .xiangqiClockRow.danger .xiangqiTurnClock{color:#ff8876!important;background:rgba(255,91,72,.16)!important;border-color:rgba(255,91,72,.48)!important;animation:xiangqiClockPulse .72s ease-in-out infinite alternate!important}
+    @keyframes xiangqiClockPulse{from{transform:scale(1)}to{transform:scale(1.035)}}
+    .xiangqiClockOff{font-size:16px!important;padding:14px 8px!important}
     .capturedLabel{font-size:12px!important;margin-bottom:6px!important}
     .capturedEmpty{font-size:11px!important}
     .capturedChip{min-width:30px!important;height:30px!important;font-size:19px!important}
@@ -30,9 +36,11 @@
       .xiangqiRailCard{padding:9px!important}
       .xiangqiRailTitle{font-size:12px!important}
       .xiangqiClockSide{font-size:12px!important}
-      .xiangqiClockMain{font-size:18px!important}
-      .xiangqiTurnClock{font-size:13px!important;padding:4px!important}
-      .xiangqiClockRow.active .xiangqiTurnClock{font-size:22px!important}
+      .xiangqiClockMain{font-size:20px!important}
+      .xiangqiTurnClock{padding:5px 6px!important}
+      .xiangqiTurnClock span{font-size:11px!important}
+      .xiangqiTurnClock b{font-size:22px!important}
+      .xiangqiClockRow.active .xiangqiTurnClock b{font-size:34px!important}
       .capturedLabel{font-size:11px!important}.capturedChip{min-width:27px!important;height:27px!important;font-size:17px!important}
       #xiangqiAssistRail #topBar #turnLabel{font-size:12px!important}#xiangqiAssistRail #topBar button{font-size:11px!important}
       #xiangqiAssistRail #xiangqiSuggestPanel{font-size:11px!important}
@@ -42,9 +50,13 @@
       .xiangqiRailTitle{font-size:11px!important;margin-bottom:6px!important}
       .xiangqiClockRow{gap:3px!important;padding:6px 0!important}
       .xiangqiClockSide{font-size:11px!important}
-      .xiangqiClockMain{font-size:16px!important}
-      .xiangqiTurnClock{font-size:12px!important;text-align:left!important;padding:4px 5px!important}
-      .xiangqiClockRow.active .xiangqiTurnClock{font-size:20px!important;text-align:center!important;padding:6px 4px!important}
+      .xiangqiClockMain{font-size:18px!important}
+      .xiangqiTurnClock{padding:5px!important}
+      .xiangqiTurnClock span{font-size:9px!important}
+      .xiangqiTurnClock b{font-size:20px!important}
+      .xiangqiClockRow.active .xiangqiTurnClock{padding:7px 4px!important}
+      .xiangqiClockRow.active .xiangqiTurnClock span{font-size:10px!important}
+      .xiangqiClockRow.active .xiangqiTurnClock b{font-size:30px!important;letter-spacing:-1px!important}
       .capturedLabel{font-size:10px!important}.capturedEmpty{font-size:9px!important}.capturedChip{min-width:25px!important;height:25px!important;font-size:15px!important}
       #xiangqiAssistRail #topBar #turnLabel{font-size:11px!important}#xiangqiAssistRail #topBar button{font-size:10px!important}
       #xiangqiAssistRail #onlineBadge{font-size:10px!important}
