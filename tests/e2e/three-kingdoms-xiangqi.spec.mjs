@@ -82,3 +82,46 @@ test('Three Kingdoms Xiangqi can run local bot versus bot and advances the game'
   expect(status).toMatch(/Thục|Ngụy|Ngô/);
   expect(pageErrors).toEqual([]);
 });
+
+test('Three Kingdoms Online can create, fill and start a real Firebase room', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  let createdRoomId = null;
+
+  await page.goto('/games/three-kingdoms-xiangqi.html');
+  try {
+    await expect.poll(() => page.evaluate(() => !!window.firebase && !!window.ThreeKingdomsOnline), { timeout: 12000 }).toBe(true);
+
+    const name = 'E2E-' + Date.now().toString(36).slice(-6);
+    await page.fill('#tkOnlineName', name);
+    await page.selectOption('#tkCreateSeat', '0');
+    await page.click('#tkCreateRoom');
+    await expect(page.locator('#tkRoomDetail')).toHaveClass(/show/, { timeout: 12000 });
+
+    createdRoomId = await page.evaluate(() => window.ThreeKingdomsOnline?.roomId || null);
+    expect(createdRoomId).toBeTruthy();
+    await expect(page.locator('#tkRoomCode')).toContainText('Phòng #');
+
+    const botButtons = page.locator('.tkSeatBtn.bot', { hasText: '+ BOT' });
+    await expect(botButtons).toHaveCount(2);
+    await botButtons.first().click();
+    await expect(page.locator('.tkSeatBtn.bot', { hasText: '+ BOT' })).toHaveCount(1);
+    await page.locator('.tkSeatBtn.bot', { hasText: '+ BOT' }).first().click();
+
+    await expect(page.locator('#tkStartRoom')).toBeEnabled({ timeout: 8000 });
+    const shareUrl = await page.evaluate(() => window.ThreeKingdomsOnline.roomShareUrl(window.ThreeKingdomsOnline.roomId));
+    expect(shareUrl).toContain('room=');
+
+    await page.click('#tkStartRoom');
+    await expect(page.locator('#setupModal')).not.toHaveClass(/show/, { timeout: 10000 });
+    await expect(page.locator('#tkOnlineBadge')).toBeVisible();
+    expect(pageErrors).toEqual([]);
+  } finally {
+    if (createdRoomId) {
+      await page.evaluate(async id => {
+        if (!window.firebase) return;
+        await window.firebase.database().ref('xiangqiRooms/threeKingdoms').child(id).remove();
+      }, createdRoomId).catch(() => {});
+    }
+  }
+});
