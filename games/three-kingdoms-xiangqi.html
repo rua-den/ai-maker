@@ -190,22 +190,17 @@
       ctx.save();ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.lineTo(cx,cy);ctx.lineTo(p3.x,p3.y);ctx.closePath();ctx.fill();ctx.restore();
     }
 
-    // Y-shaped river and central neutral zone.
     ctx.save();ctx.strokeStyle='rgba(72,128,151,.36)';ctx.lineWidth=Math.max(15,pieceRadius*1.05);ctx.lineCap='round';for(let s=0;s<3;s++){const p=nodePos.get(R.key(s,4,4));ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);ctx.stroke()}ctx.restore();
     ctx.save();const cg=ctx.createRadialGradient(cx,cy,2,cx,cy,pieceRadius*2.6);cg.addColorStop(0,'rgba(227,187,116,.26)');cg.addColorStop(1,'rgba(18,14,10,.72)');ctx.fillStyle=cg;ctx.beginPath();ctx.arc(cx,cy,pieceRadius*2.25,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(242,205,139,.65)';ctx.font=`900 ${Math.max(16,pieceRadius)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('三國',cx,cy);ctx.restore();
 
     for(let s=0;s<3;s++){
-      // Rank and file grid.
       for(let r=0;r<5;r++)drawPolyline(pathPoints(Array.from({length:9},(_,f)=>R.key(s,r,f))),'rgba(244,211,158,.38)',1.25);
       for(let f=0;f<9;f++)drawPolyline(pathPoints(Array.from({length:5},(_,r)=>R.key(s,r,f))),'rgba(244,211,158,.38)',1.25);
-      // Palace crosses.
       drawPolyline(pathPoints([R.key(s,0,3),R.key(s,1,4),R.key(s,2,5)]),'rgba(249,219,166,.52)',1.4);
       drawPolyline(pathPoints([R.key(s,0,5),R.key(s,1,4),R.key(s,2,3)]),'rgba(249,219,166,.52)',1.4);
-      // Kingdom calligraphy.
       const label=nodePos.get(R.key(s,1,4));ctx.save();ctx.globalAlpha=.15;ctx.fillStyle='#fff4dc';ctx.font=`1000 ${Math.max(28,pieceRadius*2)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(R.KINGDOMS[s].han,label.x,label.y);ctx.restore();
     }
 
-    // Faint fork continuations across the river; these are the modern Y convention.
     ctx.save();ctx.setLineDash([4,5]);for(let s=0;s<3;s++){for(const f of [0,2,4,6,8]){const a=nodePos.get(R.key(s,4,f));for(const o of [(s+1)%3,(s+2)%3]){const b=nodePos.get(R.key(o,4,8-f));const mx=(a.x+b.x+cx)/3,my=(a.y+b.y+cy)/3;ctx.strokeStyle='rgba(209,185,143,.11)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(mx,my,b.x,b.y);ctx.stroke()}}}ctx.restore();
   }
 
@@ -219,7 +214,7 @@
 
   function pieceDisplayPosition(piece,now){
     const target=nodePos.get(R.key(piece.sector,piece.r,piece.f));
-    if(moveFx&&moveFx.pieceId===piece.id){const t=Math.min(1,(now-moveFx.start)/260);if(t<1){const e=1-Math.pow(1-t,3);return{x:lerp(moveFx.from.x,target.x,e),y:lerp(moveFx.from.y,target.y,e),lift:Math.sin(Math.PI*t)*7}}moveFx=null}
+    if(moveFx&&moveFx.pieceId===piece.id){const t=Math.max(0,Math.min(1,(now-moveFx.start)/260));if(t<1){const e=1-Math.pow(1-t,3);return{x:lerp(moveFx.from.x,target.x,e),y:lerp(moveFx.from.y,target.y,e),lift:Math.sin(Math.PI*t)*7}}moveFx=null}
     return{x:target.x,y:target.y,lift:0}
   }
 
@@ -238,7 +233,7 @@
     if(state.lastMove){const a=nodePos.get(state.lastMove.from),b=nodePos.get(state.lastMove.to);if(a&&b){ctx.save();ctx.strokeStyle='rgba(255,217,119,.18)';ctx.lineWidth=pieceRadius*1.35;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}}
     drawHighlights(now);
     for(const piece of state.pieces)drawPiece(piece,now);
-    if(captureFx){const t=(now-captureFx.start)/450;if(t<1){ctx.save();ctx.globalAlpha=1-t;ctx.strokeStyle='#ffcf72';ctx.lineWidth=3*(1-t)+1;ctx.beginPath();ctx.arc(captureFx.x,captureFx.y,pieceRadius*(.8+t*1.6),0,Math.PI*2);ctx.stroke();ctx.restore()}else captureFx=null}
+    if(captureFx){const t=Math.max(0,(now-captureFx.start)/450);if(t<1){ctx.save();ctx.globalAlpha=1-t;ctx.strokeStyle='#ffcf72';ctx.lineWidth=3*(1-t)+1;ctx.beginPath();ctx.arc(captureFx.x,captureFx.y,Math.max(0,pieceRadius*(.8+t*1.6)),0,Math.PI*2);ctx.stroke();ctx.restore()}else captureFx=null}
     requestAnimationFrame(render);
   }
 
