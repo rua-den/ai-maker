@@ -45,6 +45,10 @@
   }
   function sideName(color) { return color === 'r' ? 'Đỏ' : 'Đen'; }
   function opposite(color) { return color === 'r' ? 'b' : 'r'; }
+  function isTimeControlEnabled(control) {
+    if (!control || control.enabled === false) return false;
+    return (Number(control.totalSeconds) || 0) > 0 && (Number(control.turnSeconds) || 0) > 0;
+  }
 
   const style = document.createElement('style');
   style.id = 'xiangqi-match-ui-style';
@@ -58,9 +62,9 @@
     #xiangqiAssistRail #xiangqiSuggestPanel{position:static!important;left:auto!important;top:auto!important;width:100%!important;max-width:none!important;margin:0!important;padding:9px!important;max-height:230px;overflow:auto}
     .xiangqiRailCard{width:100%;padding:9px 10px;border-radius:12px;background:rgba(18,12,8,.96);border:1px solid rgba(255,214,149,.22);box-shadow:0 8px 22px rgba(0,0,0,.34);color:#fff}
     .xiangqiRailTitle{font-size:11px;font-weight:1000;color:#ffd792;text-transform:uppercase;letter-spacing:.45px;margin-bottom:7px}
-    .xiangqiClockRow{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center;padding:5px 0;border-top:1px solid rgba(255,255,255,.08)}.xiangqiClockRow:first-of-type{border-top:0}.xiangqiClockSide{font-size:11px;font-weight:900}.xiangqiClockMain{font:900 17px ui-monospace,SFMono-Regular,Consolas,monospace;text-align:right}.xiangqiTurnClock{grid-column:1/-1;font-size:10px;opacity:.76;text-align:right}.xiangqiClockRow.active .xiangqiClockMain{color:#ffe26f}.xiangqiClockRow.danger .xiangqiClockMain,.xiangqiClockRow.danger .xiangqiTurnClock{color:#ff8876}
+    .xiangqiClockRow{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center;padding:5px 0;border-top:1px solid rgba(255,255,255,.08)}.xiangqiClockRow:first-of-type{border-top:0}.xiangqiClockSide{font-size:11px;font-weight:900}.xiangqiClockMain{font:900 17px ui-monospace,SFMono-Regular,Consolas,monospace;text-align:right}.xiangqiTurnClock{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:10px;opacity:.76;text-align:right}.xiangqiTurnClock b{font:1000 18px ui-monospace,SFMono-Regular,Consolas,monospace}.xiangqiClockRow.active .xiangqiClockMain{color:#ffe26f}.xiangqiClockRow.danger .xiangqiClockMain,.xiangqiClockRow.danger .xiangqiTurnClock{color:#ff8876}.xiangqiClockOff{padding:12px 6px;text-align:center;font-size:14px;font-weight:1000;color:#ffe7b5;border:1px dashed rgba(255,226,111,.25);border-radius:10px;background:rgba(255,226,111,.06)}
     .capturedGroup{margin-top:7px}.capturedGroup:first-of-type{margin-top:0}.capturedLabel{font-size:10px;font-weight:900;opacity:.72;margin-bottom:4px}.capturedList{display:flex;gap:4px;flex-wrap:wrap}.capturedChip{min-width:27px;height:27px;padding:0 5px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.11);font-size:17px;font-weight:900}.capturedEmpty{font-size:10px;opacity:.52;font-style:italic}
-    #xiangqiTimeSettings{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:9px;border-radius:11px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)}.xiangqiTimeField{display:flex;flex-direction:column;gap:5px}.xiangqiTimeField label{font-size:10px;font-weight:900;opacity:.72;text-transform:uppercase}.xiangqiTimeField select{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:#fff7e9;color:#2b190c;padding:8px 7px;font-size:12px;font-weight:900;outline:none}
+    #xiangqiTimeSettings{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:9px;border-radius:11px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)}.xiangqiTimeField{display:flex;flex-direction:column;gap:5px}.xiangqiTimeField label{font-size:10px;font-weight:900;opacity:.72;text-transform:uppercase}.xiangqiTimeField select{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:#fff7e9;color:#2b190c;padding:8px 7px;font-size:12px;font-weight:900;outline:none}.xiangqiTimeField select:disabled{opacity:.45;cursor:not-allowed}
     #xiangqiUndoDialog{position:absolute;inset:0;z-index:110;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,5,3,.68);backdrop-filter:blur(5px)}#xiangqiUndoDialog.show{display:flex}.xiangqiUndoCard{width:min(360px,calc(100vw - 32px));padding:20px;border-radius:16px;background:#24170e;border:1px solid rgba(255,218,157,.28);box-shadow:0 22px 60px rgba(0,0,0,.6);text-align:center}.xiangqiUndoCard h3{margin:0 0 8px;font-size:21px}.xiangqiUndoCard p{margin:0 0 15px;font-size:13px;line-height:1.5;opacity:.86}.xiangqiUndoActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.xiangqiUndoActions button{min-height:43px;border-radius:9px;font-size:13px;font-weight:1000;cursor:pointer}.xiangqiUndoAccept{border:0;background:linear-gradient(180deg,#79df88,#45b85a);color:#0a3511}.xiangqiUndoReject{border:1px solid rgba(255,137,117,.35);background:rgba(133,42,28,.45);color:#ffe1d9}
     #xiangqiToast{position:absolute;left:50%;bottom:18px;z-index:120;transform:translate(-50%,18px);opacity:0;pointer-events:none;max-width:min(430px,calc(100vw - 30px));padding:9px 13px;border-radius:999px;background:rgba(8,7,6,.94);border:1px solid rgba(255,220,165,.23);color:#fff1d6;font-size:12px;font-weight:850;text-align:center;transition:opacity .18s,transform .18s}#xiangqiToast.show{opacity:1;transform:translate(-50%,0)}
     #board{filter:none!important;opacity:1!important;image-rendering:auto;outline:1px solid rgba(255,225,178,.15)}
@@ -69,7 +73,7 @@
     #xiangqiLiveChat.collapsed .liveChatHead{box-shadow:0 7px 20px rgba(0,0,0,.38)}
     #globalMusicBtn{right:max(12px,env(safe-area-inset-right))!important;bottom:max(12px,env(safe-area-inset-bottom))!important}
     @media(max-width:760px){#xiangqiAssistRail{width:142px;top:58px}.xiangqiRailCard{padding:7px 8px}.xiangqiClockMain{font-size:14px}#xiangqiAssistRail #topBar{padding:8px!important}#xiangqiAssistRail #topBar button{font-size:11px!important;padding:7px 5px!important}}
-    @media(max-width:520px){#xiangqiAssistRail{width:104px;left:6px;top:58px;gap:6px}.xiangqiRailTitle{font-size:9px}.xiangqiClockRow{grid-template-columns:1fr;gap:2px;padding:4px 0}.xiangqiClockMain{text-align:left;font-size:13px}.xiangqiTurnClock{grid-column:auto;text-align:left;font-size:8px}.capturedChip{min-width:23px;height:23px;font-size:14px;padding:0 3px}#xiangqiAssistRail #topBar #turnLabel{font-size:10px}#xiangqiAssistRail #topBar button{font-size:10px!important;padding:6px 3px!important}#xiangqiAssistRail #xiangqiSuggestPanel{font-size:9px!important;padding:6px!important;max-height:170px}#xiangqiTimeSettings{grid-template-columns:1fr;padding:7px}.xiangqiTimeField select{padding:7px 6px;font-size:11px}#xiangqiLiveChat{height:min(420px,55vh)!important;right:8px!important;bottom:8px!important;width:calc(100vw - 16px)!important}#xiangqiLiveChat.collapsed{bottom:64px!important;width:min(230px,calc(100vw - 118px))!important}.liveChatTitle{font-size:11px!important}}
+    @media(max-width:520px){#xiangqiAssistRail{width:104px;left:6px;top:58px;gap:6px}.xiangqiRailTitle{font-size:9px}.xiangqiClockRow{grid-template-columns:1fr;gap:2px;padding:4px 0}.xiangqiClockMain{text-align:left;font-size:13px}.xiangqiTurnClock{grid-column:auto;text-align:left;font-size:8px}.xiangqiTurnClock b{font-size:18px}.capturedChip{min-width:23px;height:23px;font-size:14px;padding:0 3px}#xiangqiAssistRail #topBar #turnLabel{font-size:10px}#xiangqiAssistRail #topBar button{font-size:10px!important;padding:6px 3px!important}#xiangqiAssistRail #xiangqiSuggestPanel{font-size:9px!important;padding:6px!important;max-height:170px}#xiangqiTimeSettings{grid-template-columns:1fr;padding:7px}.xiangqiTimeField select{padding:7px 6px;font-size:11px}#xiangqiLiveChat{height:min(420px,55vh)!important;right:8px!important;bottom:8px!important;width:calc(100vw - 16px)!important}#xiangqiLiveChat.collapsed{bottom:64px!important;width:min(230px,calc(100vw - 118px))!important}.liveChatTitle{font-size:11px!important}}
   `;
   document.head.appendChild(style);
 
@@ -118,32 +122,45 @@
 
   let totalSelect = null;
   let turnSelect = null;
-  function storedNumber(key, fallback) {
-    const value = Number(readLocal(key));
-    return Number.isFinite(value) && value > 0 ? value : fallback;
+  function storedNumber(key, fallback, allowZero = false) {
+    const raw = readLocal(key);
+    if (raw == null || raw === '') return fallback;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return fallback;
+    if (allowZero ? value >= 0 : value > 0) return value;
+    return fallback;
   }
   function selectedControl() {
+    const total = totalSelect ? Number(totalSelect.value) : storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS, true);
+    const enabled = Number.isFinite(total) && total > 0;
+    const turnSeconds = enabled
+      ? (turnSelect ? Number(turnSelect.value) : storedNumber(TIME_TURN_KEY, DEFAULT_TURN_SECONDS))
+      : 0;
     return {
-      totalSeconds: Number(totalSelect?.value) || storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS),
-      turnSeconds: Number(turnSelect?.value) || storedNumber(TIME_TURN_KEY, DEFAULT_TURN_SECONDS)
+      enabled,
+      totalSeconds: enabled ? total : 0,
+      turnSeconds: enabled && Number.isFinite(turnSeconds) && turnSeconds > 0 ? turnSeconds : (enabled ? DEFAULT_TURN_SECONDS : 0)
     };
   }
   if (setupPanel) {
     const settings = document.createElement('div');
     settings.id = 'xiangqiTimeSettings';
     settings.innerHTML = `
-      <div class="xiangqiTimeField"><label for="xiangqiTotalTime">Thời gian mỗi bên</label><select id="xiangqiTotalTime"><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option></select></div>
+      <div class="xiangqiTimeField"><label for="xiangqiTotalTime">Thời gian mỗi bên</label><select id="xiangqiTotalTime"><option value="0">∞ Không tính giờ</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option></select></div>
       <div class="xiangqiTimeField"><label for="xiangqiTurnTime">Giới hạn mỗi lượt</label><select id="xiangqiTurnTime"><option value="15">15 giây</option><option value="30">30 giây</option><option value="60">60 giây</option><option value="120">120 giây</option></select></div>`;
     const firstModeRow = setupPanel.querySelector('.modeRow');
     if (firstModeRow) firstModeRow.insertAdjacentElement('afterend', settings); else setupPanel.prepend(settings);
     totalSelect = settings.querySelector('#xiangqiTotalTime');
     turnSelect = settings.querySelector('#xiangqiTurnTime');
-    totalSelect.value = String(storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS));
+    totalSelect.value = String(storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS, true));
     turnSelect.value = String(storedNumber(TIME_TURN_KEY, DEFAULT_TURN_SECONDS));
+    const syncTurnAvailability = () => { turnSelect.disabled = totalSelect.value === '0'; };
     const persist = () => {
       writeLocal(TIME_TOTAL_KEY, totalSelect.value);
       writeLocal(TIME_TURN_KEY, turnSelect.value);
+      syncTurnAvailability();
     };
+    syncTurnAvailability();
     totalSelect.addEventListener('change', persist);
     turnSelect.addEventListener('change', persist);
     document.getElementById('createRoomBtn')?.addEventListener('click', persist);
@@ -251,6 +268,7 @@
   function initLocalClock() {
     const control = selectedControl();
     localClock = {
+      enabled: control.enabled,
       totalSeconds: control.totalSeconds,
       turnSeconds: control.turnSeconds,
       rMs: control.totalSeconds * 1000,
@@ -261,14 +279,15 @@
   }
   function localClockSnapshot() { return localClock ? cloneValue(localClock) : null; }
   function localRemaining(color, now = Date.now()) {
-    if (!localClock) return { total: 0, turn: 0 };
+    if (!localClock) return { total: 0, turn: 0, disabled: false };
+    if (localClock.enabled === false) return { total: 0, turn: 0, disabled: true };
     const base = Number(localClock[color + 'Ms']) || 0;
     const active = localClock.turn === color && gameState === 'playing';
     const elapsed = active ? Math.max(0, now - localClock.turnStartedAt) : 0;
-    return { total: Math.max(0, base - elapsed), turn: Math.max(0, localClock.turnSeconds * 1000 - elapsed) };
+    return { total: Math.max(0, base - elapsed), turn: Math.max(0, localClock.turnSeconds * 1000 - elapsed), disabled: false };
   }
   function finishLocalTimeout(loser, reason) {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || localClock?.enabled === false) return;
     gameState = 'over';
     winner = opposite(loser);
     overTitle.textContent = (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen') + ' thắng! (' + reason + ')';
@@ -298,17 +317,24 @@
   let lastResolvedUndoId = null;
   let resolvingUndo = false;
   let timeoutLock = null;
+  let clockSyncLock = null;
 
   function onlineRemaining(room, color, now = Date.now()) {
     const clock = room?.clock;
     const control = room?.timeControl;
-    if (!clock || !control) return { total: 0, turn: 0 };
+    if (!isTimeControlEnabled(control)) return { total: 0, turn: 0, disabled: true, synchronized: true };
+    if (!clock) return { total: control.totalSeconds * 1000, turn: control.turnSeconds * 1000, disabled: false, synchronized: false };
     const base = Number(clock[color + 'Ms']) || 0;
     const active = room.status === 'playing' && room.turn === color;
-    const elapsed = active ? Math.max(0, now - (Number(clock.turnStartedAt) || now)) : 0;
+    const synchronized = !clock.lastTurn || clock.lastTurn === room.turn;
+    const provisionalStart = Number(room.updatedAt) || Number(clock.turnStartedAt) || now;
+    const startedAt = synchronized ? (Number(clock.turnStartedAt) || provisionalStart) : provisionalStart;
+    const elapsed = active ? Math.max(0, now - startedAt) : 0;
     return {
       total: Math.max(0, base - elapsed),
-      turn: Math.max(0, (Number(control.turnSeconds) || DEFAULT_TURN_SECONDS) * 1000 - elapsed)
+      turn: Math.max(0, Number(control.turnSeconds) * 1000 - elapsed),
+      disabled: false,
+      synchronized
     };
   }
 
@@ -316,7 +342,9 @@
     let red;
     let black;
     let activeTurn = null;
-    if (room?.clock && room?.timeControl) {
+    if (room?.timeControl && !isTimeControlEnabled(room.timeControl)) {
+      red = black = { disabled: true, total: 0, turn: 0 };
+    } else if (room?.clock && room?.timeControl) {
       red = onlineRemaining(room, 'r');
       black = onlineRemaining(room, 'b');
       activeTurn = room.status === 'playing' ? room.turn : null;
@@ -326,13 +354,18 @@
       try { activeTurn = gameState === 'playing' ? turn : null; } catch (_) { activeTurn = null; }
     } else {
       const fallback = selectedControl();
-      red = black = { total: fallback.totalSeconds * 1000, turn: fallback.turnSeconds * 1000 };
+      if (!fallback.enabled) red = black = { disabled: true, total: 0, turn: 0 };
+      else red = black = { disabled: false, total: fallback.totalSeconds * 1000, turn: fallback.turnSeconds * 1000 };
     }
     clockRows.innerHTML = '';
+    if (red?.disabled && black?.disabled) {
+      clockRows.innerHTML = '<div class="xiangqiClockOff">∞ Không tính giờ</div>';
+      return;
+    }
     [['r', red], ['b', black]].forEach(([color, value]) => {
       const row = document.createElement('div');
       row.className = 'xiangqiClockRow' + (activeTurn === color ? ' active' : '') + (activeTurn === color && Math.min(value.total, value.turn) <= 10000 ? ' danger' : '');
-      row.innerHTML = '<div class="xiangqiClockSide">' + (color === 'r' ? '🔴 Đỏ' : '⚫ Đen') + '</div><div class="xiangqiClockMain">' + formatClock(value.total) + '</div><div class="xiangqiTurnClock">Lượt: ' + formatClock(value.turn) + '</div>';
+      row.innerHTML = '<div class="xiangqiClockSide">' + (color === 'r' ? '🔴 Đỏ' : '⚫ Đen') + '</div><div class="xiangqiClockMain">' + formatClock(value.total) + '</div><div class="xiangqiTurnClock"><span>Lượt</span><b>' + formatClock(value.turn) + '</b></div>';
       clockRows.appendChild(row);
     });
   }
@@ -348,16 +381,40 @@
     if (!room.timeControl && me === 'r') {
       const control = selectedControl();
       try {
-        await roomRef.child('timeControl').transaction(value => value || { totalSeconds: control.totalSeconds, turnSeconds: control.turnSeconds });
+        await roomRef.child('timeControl').transaction(value => value || { enabled: control.enabled, totalSeconds: control.totalSeconds, turnSeconds: control.turnSeconds });
       } catch (_) {}
       return;
     }
-    if (room.status === 'playing' && room.timeControl && !room.clock) {
-      const total = Math.max(1, Number(room.timeControl.totalSeconds) || DEFAULT_TOTAL_SECONDS) * 1000;
+    if (room.status === 'playing' && isTimeControlEnabled(room.timeControl) && !room.clock) {
+      const total = Number(room.timeControl.totalSeconds) * 1000;
       try {
         await roomRef.child('clock').transaction(value => value || { rMs: total, bMs: total, turnStartedAt: Date.now(), lastTurn: room.turn || 'r' });
       } catch (_) {}
     }
+  }
+
+  async function syncClockTurn(room) {
+    if (!roomRef || !room?.clock || !isTimeControlEnabled(room.timeControl) || room.status !== 'playing') return;
+    const previousTurn = room.clock.lastTurn;
+    if (!previousTurn || previousTurn === room.turn) return;
+    const moveAt = Number(room.updatedAt) || Date.now();
+    const signature = previousTurn + '>' + room.turn + ':' + moveAt;
+    if (clockSyncLock === signature) return;
+    clockSyncLock = signature;
+    try {
+      await roomRef.transaction(current => {
+        if (!current?.clock || current.status !== 'playing' || !isTimeControlEnabled(current.timeControl)) return;
+        if (current.turn !== room.turn || current.clock.lastTurn !== previousTurn || Number(current.updatedAt) !== moveAt) return;
+        const startedAt = Number(current.clock.turnStartedAt) || moveAt;
+        const elapsed = Math.max(0, moveAt - startedAt);
+        const field = previousTurn + 'Ms';
+        current.clock[field] = Math.max(0, (Number(current.clock[field]) || 0) - elapsed);
+        current.clock.turnStartedAt = moveAt;
+        current.clock.lastTurn = current.turn;
+        return current;
+      }, undefined, false);
+    } catch (_) {}
+    clockSyncLock = null;
   }
 
   function moveRecordKey(room, move) {
@@ -393,7 +450,7 @@
           current.captures = current.captures || {};
           current.captures[key] = { piece: cloneValue(captured), capturedBy: mover, from: cloneValue(move.from), to: cloneValue(move.to), at: record.movedAt };
         }
-        if (before.clock && current.clock && current.timeControl && current.clock.lastTurn === mover) {
+        if (before.clock && current.clock && isTimeControlEnabled(current.timeControl) && current.clock.lastTurn === mover) {
           const moveAt = record.movedAt;
           const startedAt = Number(before.clock.turnStartedAt) || moveAt;
           const elapsed = Math.max(0, moveAt - startedAt);
@@ -416,6 +473,7 @@
     renderClock(room);
     renderCaptured(capturesFromRoom(room));
     ensureTimeControl(room);
+    syncClockTurn(room);
 
     if (roomShadow && room && room.turn !== roomShadow.turn && Number(room.updatedAt) !== Number(roomShadow.updatedAt) && !isUndoTransition(room)) {
       const move = room.lastMove;
@@ -523,7 +581,7 @@
         room.board = cloneValue(hist.boardBefore);
         room.turn = hist.turnBefore;
         room.lastMove = cloneValue(hist.lastMoveBefore || null);
-        if (hist.clockBefore) {
+        if (hist.clockBefore && isTimeControlEnabled(room.timeControl)) {
           room.clock = cloneValue(hist.clockBefore);
           room.clock.turnStartedAt = now;
           room.clock.lastTurn = hist.turnBefore;
@@ -566,9 +624,11 @@
   }
 
   async function enforceOnlineTimeout(room) {
-    if (!roomRef || !room?.clock || !room?.timeControl || room.status !== 'playing') return false;
+    if (!roomRef || !room?.clock || !isTimeControlEnabled(room?.timeControl) || room.status !== 'playing') return false;
+    if (room.clock.lastTurn && room.clock.lastTurn !== room.turn) return false;
     const loser = room.turn;
     const remain = onlineRemaining(room, loser);
+    if (remain.disabled || !remain.synchronized) return false;
     const reason = remain.total <= 0 ? 'hết giờ tổng' : remain.turn <= 0 ? 'hết giờ lượt' : null;
     if (!reason) return false;
     const signature = loser + ':' + room.clock.turnStartedAt + ':' + reason;
@@ -576,13 +636,17 @@
     timeoutLock = signature;
     try {
       await roomRef.transaction(value => {
-        if (!value || value.status !== 'playing' || value.turn !== loser || Number(value.clock?.turnStartedAt) !== Number(room.clock.turnStartedAt)) return;
+        if (!value || value.status !== 'playing' || value.turn !== loser || !isTimeControlEnabled(value.timeControl)) return;
+        if (value.clock?.lastTurn && value.clock.lastTurn !== value.turn) return;
+        if (Number(value.clock?.turnStartedAt) !== Number(room.clock.turnStartedAt)) return;
         const check = onlineRemaining(value, loser);
+        if (check.disabled || !check.synchronized) return;
         const finalReason = check.total <= 0 ? 'hết giờ tổng' : check.turn <= 0 ? 'hết giờ lượt' : null;
         if (!finalReason) return;
         const now = Date.now();
         value.status = 'finished';
         value.winner = opposite(loser);
+        value.timeoutLoser = loser;
         value.endReason = finalReason;
         value.finishedAt = now;
         value.updatedAt = now;
@@ -597,20 +661,20 @@
     const basePerformMove = performMove;
     performMove = function(from, to) {
       if (currentMode() === 'online') {
-        if (lastRoom && lastRoom.status === 'playing') {
+        if (lastRoom && lastRoom.status === 'playing' && isTimeControlEnabled(lastRoom.timeControl)) {
           const remain = onlineRemaining(lastRoom, lastRoom.turn);
-          if (remain.total <= 0 || remain.turn <= 0) { enforceOnlineTimeout(lastRoom); return; }
+          if (!remain.disabled && remain.synchronized && (remain.total <= 0 || remain.turn <= 0)) { enforceOnlineTimeout(lastRoom); return; }
         }
         return basePerformMove(from, to);
       }
       const mover = turn;
       if (!localClock) initLocalClock();
       const remain = localRemaining(mover);
-      if (remain.total <= 0 || remain.turn <= 0) { finishLocalTimeout(mover, remain.total <= 0 ? 'hết giờ tổng' : 'hết giờ lượt'); return; }
+      if (!remain.disabled && (remain.total <= 0 || remain.turn <= 0)) { finishLocalTimeout(mover, remain.total <= 0 ? 'hết giờ tổng' : 'hết giờ lượt'); return; }
       const captured = cloneValue(board?.[to[0]]?.[to[1]] || null);
       const clockBefore = localClockSnapshot();
       const at = Date.now();
-      localClock[mover + 'Ms'] = remain.total;
+      if (!remain.disabled) localClock[mover + 'Ms'] = remain.total;
       localMoveLog.push({ captured: !!captured, clockBefore });
       if (captured) {
         localCaptures.push({ piece: captured, capturedBy: mover, from: cloneValue(from), to: cloneValue(to), at });
@@ -647,13 +711,16 @@
     syncRail();
     if (lastRoom?.status === 'playing') {
       renderClock(lastRoom);
-      enforceOnlineTimeout(lastRoom);
+      if (isTimeControlEnabled(lastRoom.timeControl)) {
+        syncClockTurn(lastRoom);
+        enforceOnlineTimeout(lastRoom);
+      }
     } else if (localClock) {
       renderClock();
-      if (gameState === 'playing') {
+      if (gameState === 'playing' && localClock.enabled !== false) {
         const current = turn;
         const remain = localRemaining(current);
-        if (remain.total <= 0 || remain.turn <= 0) finishLocalTimeout(current, remain.total <= 0 ? 'hết giờ tổng' : 'hết giờ lượt');
+        if (!remain.disabled && (remain.total <= 0 || remain.turn <= 0)) finishLocalTimeout(current, remain.total <= 0 ? 'hết giờ tổng' : 'hết giờ lượt');
       }
     }
   }, 250);
