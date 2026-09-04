@@ -2,10 +2,10 @@
 
 importScripts('./destroyer-core.js', './neural-encoder.js');
 
-const ORT_VERSION = '1.28.0';
-const ORT_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
-const ORT_SCRIPT = ORT_BASE + 'ort.min.js';
-const VERIFIED_LOCAL_MODEL = './models/katago-b6c96.onnx';
+const ORT_VERSION = '1.29.0';
+const ORT_BASE = new URL('./vendor/ort/', self.location.href).href;
+const ORT_SCRIPT = new URL('ort.min.js', ORT_BASE).href;
+const VERIFIED_LOCAL_MODEL = new URL('./models/katago-b6c96.onnx', self.location.href).href;
 const DEFAULT_MODEL = VERIFIED_LOCAL_MODEL;
 
 let sessionPromise = null;
@@ -23,12 +23,17 @@ function ensureOrt() {
   return self.ort;
 }
 
+function resolveModelUrl(modelUrl) {
+  return new URL(modelUrl || DEFAULT_MODEL, self.location.href).href;
+}
+
 async function ensureSession(modelUrl = DEFAULT_MODEL) {
-  if (!modelUrl) throw new Error('No verified KataGo ONNX model configured');
-  if (sessionPromise && loadedModelUrl === modelUrl) return sessionPromise;
+  const resolvedModelUrl = resolveModelUrl(modelUrl);
+  if (!resolvedModelUrl) throw new Error('No verified KataGo ONNX model configured');
+  if (sessionPromise && loadedModelUrl === resolvedModelUrl) return sessionPromise;
   const ort = ensureOrt();
-  loadedModelUrl = modelUrl;
-  sessionPromise = ort.InferenceSession.create(modelUrl, {
+  loadedModelUrl = resolvedModelUrl;
+  sessionPromise = ort.InferenceSession.create(resolvedModelUrl, {
     executionProviders: ['wasm'],
     graphOptimizationLevel: 'all'
   }).catch(error => {
@@ -120,7 +125,7 @@ function rerankWithTactics(state, seat, candidates) {
 async function choose(message) {
   const started = performance.now();
   const seat = message.seat === 'A' ? 'A' : 'B';
-  const modelUrl = message.modelUrl || DEFAULT_MODEL;
+  const modelUrl = resolveModelUrl(message.modelUrl || DEFAULT_MODEL);
   const session = await ensureSession(modelUrl);
   const encoded = self.GoNeuralEncoder.encode(message.state, seat, 7.5);
   const ort = self.ort;
@@ -150,6 +155,7 @@ async function choose(message) {
     move: selected.move,
     diagnostics: {
       provider: 'katago-onnx',
+      ortVersion: ORT_VERSION,
       model: modelUrl.split('/').pop(),
       neuralCandidates: candidates.length,
       tacticalNodes: selected.tacticalNodes,
