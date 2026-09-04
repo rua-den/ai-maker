@@ -107,8 +107,14 @@ test('Three Kingdoms opens with an explicit online lobby and keeps local play as
   assert.match(onlineSource, /Phòng đang chờ/);
 });
 
+test('Three Kingdoms online rooms use the already-deployed Xiangqi Firebase namespace', () => {
+  assert.match(onlineSource, /const ROOT = 'xiangqiRooms\/threeKingdoms'/);
+  assert.match(onlineSource, /roomsRef\.limitToLast\(40\)/);
+  assert.match(onlineSource, /value\.status === 'waiting'/);
+  assert.doesNotMatch(onlineSource, /orderByChild\('status'\)\.equalTo\('waiting'\)/);
+});
+
 test('Three Kingdoms online room has three selectable seats and host can fill empty seats with bots', () => {
-  assert.match(onlineSource, /const ROOT = 'threeKingdomsRooms'/);
   assert.match(onlineSource, /function createRoom\(/);
   assert.match(onlineSource, /function takeSeat\(index\)/);
   assert.match(onlineSource, /function setSeatBot\(index, enabled\)/);
@@ -119,12 +125,24 @@ test('Three Kingdoms online room has three selectable seats and host can fill em
   assert.match(onlineSource, /R\.makeMove\(value\.state, move\)/);
 });
 
+test('Three Kingdoms room sharing uses a full join URL that can restore the exact room', () => {
+  assert.match(onlineSource, /url\.searchParams\.set\('room', id\)/);
+  assert.match(onlineSource, /new URLSearchParams\(window\.location\.search\)\.get\('room'\)/);
+  assert.match(onlineSource, /🔗 Link phòng/);
+  assert.match(onlineSource, /bindRoom\(requestedRoom\)/);
+});
+
 test('Three Kingdoms UI delegates online human moves and blocks control of other seats', () => {
   assert.match(uiSource, /onlineAdapter\.submitMove\?\.\(move\)/);
   assert.match(uiSource, /onlineAdapter&&!onlineAdapter\.canControl\?\.\(state\.turn\)/);
   assert.match(uiSource, /applyRemoteState/);
   assert.match(uiSource, /attachOnline/);
   assert.match(uiSource, /seatLabel/);
+});
+
+test('Three Kingdoms canvas animations clamp time and radius to safe ranges', () => {
+  assert.match(uiSource, /Math\.max\(0,Math\.min\(1,\(now-moveFx\.start\)\/260\)\)/);
+  assert.match(uiSource, /Math\.max\(0,pieceRadius\*\(\.8\+t\*1\.6\)\)/);
 });
 
 test('Three Kingdoms game is listed on the portfolio home', () => {
