@@ -5,7 +5,11 @@ importScripts('./destroyer-core.js', './neural-encoder.js');
 const ORT_VERSION = '1.29.0';
 const ORT_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
 const ORT_SCRIPT = ORT_BASE + 'ort.min.js';
-const DEFAULT_MODEL = 'https://hdkz-dev.github.io/multi-game-engines/assets/katago/1.14/katago-b6c96.onnx';
+// Never silently fall back to a third-party/random-weight model. A real model
+// must be explicitly configured by the runtime until the verified local asset
+// games/go-ai/models/katago-b6c96.onnx is committed.
+const DEFAULT_MODEL = null;
+const VERIFIED_LOCAL_MODEL = './models/katago-b6c96.onnx';
 
 let sessionPromise = null;
 let loadedModelUrl = null;
@@ -25,6 +29,7 @@ function ensureOrt() {
 }
 
 async function ensureSession(modelUrl = DEFAULT_MODEL) {
+  if (!modelUrl) throw new Error('No verified KataGo ONNX model configured');
   if (sessionPromise && loadedModelUrl === modelUrl) return sessionPromise;
   const ort = ensureOrt();
   loadedModelUrl = modelUrl;
