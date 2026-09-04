@@ -102,6 +102,12 @@ test('Three Kingdoms page supports Human/BOT per seat, including two humans plus
   assert.match(pageSource, /three-kingdoms-xiangqi-bot\.js/);
 });
 
+test('Three Kingdoms canvas animations clamp stale RAF timestamps', () => {
+  assert.match(pageSource, /Math\.max\(0,Math\.min\(1,\(now-moveFx\.start\)\/260\)\)/);
+  assert.match(pageSource, /Math\.max\(0,\(now-captureFx\.start\)\/450\)/);
+  assert.match(pageSource, /Math\.max\(0,pieceRadius\*\(\.8\+t\*1\.6\)\)/);
+});
+
 test('Three Kingdoms game is listed on the portfolio home', () => {
   assert.match(indexSource, /games\/three-kingdoms-xiangqi\.html/);
   assert.match(indexSource, /Cờ Tướng Tam Quốc/);
