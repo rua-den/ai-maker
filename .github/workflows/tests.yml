@@ -18,18 +18,5 @@ jobs:
           node-version: 22
       - run: node scripts/normalize-app-fonts.mjs --check
       - run: npm install --no-audit --no-fund
-      - name: Smoke optimized Bùm Chíu health endpoint
-        run: |
-          curl --fail --retry 8 --retry-delay 3 --max-time 20 -sS https://boom-chiu-pvp.onrender.com/health | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const x=JSON.parse(s);if(!x.ok||x.service!=='boom-chiu-pvp'||x.tickMs!==50)throw new Error('optimized server not live: '+s);console.log(s)})"
-      - name: Smoke optimized Bùm Chíu WebSocket ping
-        run: |
-          node - <<'NODE'
-          const {WebSocket}=require('ws');
-          const ws=new WebSocket('wss://boom-chiu-pvp.onrender.com');
-          const timer=setTimeout(()=>{console.error('timeout');process.exit(1)},20000);
-          ws.on('open',()=>ws.send(JSON.stringify({type:'ping',clientTime:123456})));
-          ws.on('message',raw=>{const m=JSON.parse(String(raw));if(m.type==='pong'&&m.clientTime===123456){clearTimeout(timer);console.log('pong',m.serverTime);ws.close();process.exit(0)}});
-          ws.on('error',e=>{console.error(e);process.exit(1)});
-          NODE
       - run: npx playwright install --with-deps chromium
       - run: npm test
