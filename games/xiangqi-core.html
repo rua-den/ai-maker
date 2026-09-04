@@ -107,6 +107,9 @@
     border-radius: 999px; background: rgba(0,0,0,0.5); color: #ffd08a; z-index: 20;
   }
 </style>
+
+<!-- Global Vietnamese/CJK-safe font stack -->
+<link rel="stylesheet" href="../assets/app-fonts.css">
 </head>
 <body>
 <div id="gameContainer">
@@ -572,7 +575,7 @@ function drawGridLines() {
 
   // river text
   ctx.fillStyle = 'rgba(60,35,10,0.55)';
-  ctx.font = '700 22px Segoe UI, sans-serif';
+  ctx.font = '700 22px Noto Sans SC, Noto Sans, Microsoft YaHei, PingFang SC, sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const [rx,ry] = boardToPx(4.5, 2);
   ctx.fillText('楚 河', rx, ry);
@@ -619,7 +622,7 @@ function drawPieceAt(px, py, piece, r, faded) {
   ctx.stroke();
   // glyph
   ctx.fillStyle = piece.color === 'r' ? '#c23b1f' : '#22201d';
-  ctx.font = '800 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+  ctx.font = '800 24px Noto Sans SC, Noto Sans, Microsoft YaHei, PingFang SC, sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(GLYPH[piece.color][piece.type], px, py + 1);
   ctx.restore();
