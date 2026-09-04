@@ -16,3 +16,57 @@ jobs:
       - run: npm install
       - run: npx playwright install --with-deps chromium
       - run: npm test
+
+  build-katago-model:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[katago-model]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout KataGo v1.18.2 source
+        uses: actions/checkout@v4
+        with:
+          repository: lightvector/KataGo
+          ref: fd0723fdbc0e9d82cf269c9630af8c27c57c07c4
+          path: katago-src
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build protobuf-compiler libprotobuf-dev zlib1g-dev
+      - name: Fetch ONNX Runtime CPU
+        run: |
+          mkdir -p deps/ort
+          curl -fsSL --retry 3 https://github.com/microsoft/onnxruntime/releases/download/v1.28.0/onnxruntime-linux-x64-1.28.0.tgz -o /tmp/ort.tgz
+          tar -xzf /tmp/ort.tgz -C deps/ort --strip-components=1
+      - name: Build KataGo ONNX backend
+        run: |
+          cmake -S katago-src/cpp -B katago-src/cpp/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DUSE_BACKEND=ONNX \
+            -DONNXRUNTIME_ROOT="$GITHUB_WORKSPACE/deps/ort"
+          cmake --build katago-src/cpp/build --target katago
+      - name: Export official g170 b6c96 as 19x19 ONNX
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/deps/ort/lib
+        run: |
+          mkdir -p generated-katago-model
+          MODEL=katago-src/cpp/tests/models/g170-b6c96-s175395328-d26788732.bin.gz
+          OUT=generated-katago-model/katago-b6c96.onnx
+          katago-src/cpp/build/katago dumponnx -model "$MODEL" -out "$OUT" -nn-x-len 19 -nn-y-len 19
+          sha256sum "$OUT" | tee generated-katago-model/katago-b6c96.onnx.sha256
+          ls -lh generated-katago-model
+      - name: Verify exported model with KataGo canaries
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/deps/ort/lib
+        run: |
+          cp katago-src/cpp/configs/gtp_example.cfg /tmp/katago-onnx.cfg
+          printf '\nonnxProvider = cpu\n' >> /tmp/katago-onnx.cfg
+          katago-src/cpp/build/katago runnnevalcanarytests \
+            -model generated-katago-model/katago-b6c96.onnx \
+            -config /tmp/katago-onnx.cfg
+      - name: Upload verified model
+        uses: actions/upload-artifact@v4
+        with:
+          name: katago-b6c96-onnx-verified
+          path: generated-katago-model/
+          if-no-files-found: error
+          retention-days: 30
