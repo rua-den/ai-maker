@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Tam Quốc Kỳ — Cờ Tướng 3 Nước</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#090b0f;color:#fff}
+  body{background:
+    radial-gradient(circle at 50% 45%,rgba(170,114,48,.16),transparent 34%),
+    radial-gradient(circle at 20% 20%,rgba(32,81,141,.16),transparent 32%),
+    radial-gradient(circle at 80% 25%,rgba(48,117,70,.14),transparent 30%),
+    linear-gradient(145deg,#080a0e,#15100c 48%,#07090c)}
+  #app{position:relative;width:100%;height:100%;isolation:isolate}
+  #app::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:28px 28px;mask-image:radial-gradient(circle,#000 20%,transparent 78%)}
+  #board{position:absolute;inset:0;width:100%;height:100%;touch-action:none;z-index:1}
+
+  .topbar{position:absolute;z-index:20;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}
+  .brand,.actions,.turnCard{pointer-events:auto}
+  .brand{display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid rgba(255,223,170,.2);border-radius:15px;background:rgba(13,11,10,.76);backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  .seal{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#c99a57,#5d341a);border:1px solid rgba(255,230,181,.42);box-shadow:inset 0 1px rgba(255,255,255,.28),0 6px 18px rgba(0,0,0,.35);font-family:serif;font-size:22px;font-weight:900}
+  .brand h1{font-size:15px;margin:0;letter-spacing:.5px}.brand small{display:block;font-size:10px;opacity:.62;margin-top:2px}
+  .actions{display:flex;gap:6px}
+  .iconBtn{width:41px;height:41px;border:1px solid rgba(255,255,255,.14);border-radius:13px;background:rgba(12,12,14,.76);color:#fff;font-size:17px;cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 8px 20px rgba(0,0,0,.22)}
+  .iconBtn:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+
+  .kingdomBar{position:absolute;z-index:18;left:50%;transform:translateX(-50%);top:max(70px,calc(env(safe-area-inset-top) + 64px));display:flex;gap:7px;width:min(620px,calc(100vw - 24px));justify-content:center;pointer-events:none}
+  .kingdom{min-width:0;flex:1;max-width:190px;border-radius:14px;padding:8px 10px;background:rgba(10,11,14,.72);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);box-shadow:0 9px 26px rgba(0,0,0,.24);transition:.2s;pointer-events:auto}
+  .kingdom.active{transform:translateY(3px) scale(1.03);border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent),0 10px 28px rgba(0,0,0,.35)}
+  .kingdom.dead{opacity:.28;filter:grayscale(.8)}
+  .kingdomHead{display:flex;align-items:center;gap:7px}.kingdomSeal{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-family:serif;font-weight:1000;border:2px solid rgba(255,255,255,.45);box-shadow:0 4px 10px rgba(0,0,0,.3)}
+  .kingdomName{font-size:12px;font-weight:1000;white-space:nowrap}.kingdomMeta{font-size:9px;opacity:.62;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kingdomPieces{font-size:9px;opacity:.7;text-align:right;margin-left:auto}
+
+  .bottomStatus{position:absolute;z-index:16;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(620px,calc(100vw - 24px));display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .turnCard{display:flex;align-items:center;gap:10px;max-width:100%;padding:9px 14px;border-radius:999px;background:rgba(9,10,12,.82);border:1px solid rgba(255,224,174,.18);backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.32)}
+  #turnDot{width:11px;height:11px;border-radius:50%;background:#e85846;box-shadow:0 0 15px currentColor}.turnMain{font-size:12px;font-weight:1000;white-space:nowrap}.turnEvent{font-size:10px;opacity:.64;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:330px}
+  .thinking::after{content:"";display:inline-block;width:12px;text-align:left;animation:dots 1s steps(4,end) infinite}@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
+
+  .modal{position:absolute;z-index:80;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,5,7,.72);backdrop-filter:blur(10px)}
+  .modal.show{display:flex}
+  .panel{width:min(620px,100%);max-height:min(760px,calc(100vh - 28px));overflow:auto;border-radius:24px;padding:22px;background:linear-gradient(145deg,rgba(36,29,23,.98),rgba(11,13,17,.98));border:1px solid rgba(255,221,167,.22);box-shadow:0 30px 90px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.06)}
+  .panelTitle{text-align:center;margin-bottom:17px}.panelTitle .bigSeal{font-family:serif;font-size:52px;font-weight:1000;line-height:1;color:#e8ba73;text-shadow:0 5px 22px rgba(0,0,0,.55)}.panelTitle h2{margin:7px 0 2px;font-size:24px}.panelTitle p{margin:0;font-size:11px;opacity:.62;line-height:1.55}
+  .seatGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.seat{padding:12px;border-radius:15px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}.seatTitle{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:1000;margin-bottom:8px}.seatDot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  select,.selectLike{width:100%;min-height:40px;border:1px solid rgba(255,255,255,.13);border-radius:10px;background:#1b1b1e;color:#fff;padding:0 10px;font-weight:850;font-size:12px;outline:none}
+  .settings{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0 16px}.setting{padding:11px;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(255,255,255,.035)}.setting label{display:block;font-size:10px;font-weight:900;opacity:.65;margin-bottom:7px;text-transform:uppercase}.checkRow{display:flex;align-items:center;gap:9px;min-height:40px;font-size:12px;font-weight:850}.checkRow input{width:19px;height:19px;accent-color:#d7a35a}
+  .startBtn{width:100%;min-height:50px;border:0;border-radius:14px;background:linear-gradient(180deg,#e0b46e,#a66b2f);color:#21150b;font-size:14px;font-weight:1000;cursor:pointer;box-shadow:0 10px 25px rgba(177,112,48,.25)}
+  .startBtn:hover{filter:brightness(1.07)}
+
+  .rules h3{font-size:13px;color:#efc47f;margin:16px 0 6px}.rules p,.rules li{font-size:11px;line-height:1.65;opacity:.78}.rules ul{padding-left:18px}.sourceNote{padding:10px 12px;border-radius:10px;background:rgba(255,218,146,.06);border-left:3px solid #c8944d;font-size:10px;line-height:1.55;opacity:.7}
+  .closeBtn{float:right;border:0;background:rgba(255,255,255,.08);color:#fff;border-radius:9px;padding:8px 11px;cursor:pointer;font-weight:900}
+
+  #gameOver .panel{text-align:center;width:min(430px,100%)}#winnerSeal{font-family:serif;font-size:72px;font-weight:1000;margin:5px 0;text-shadow:0 9px 30px rgba(0,0,0,.55)}#winnerText{font-size:24px;font-weight:1000;margin-bottom:7px}#winnerSub{font-size:11px;opacity:.65;margin-bottom:18px}
+  .overActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.secondaryBtn{min-height:45px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font-weight:900;cursor:pointer}
+
+  @media(max-width:700px){
+    .brand{padding:7px 9px}.brand h1{font-size:12px}.brand small{display:none}.seal{width:34px;height:34px;font-size:18px}.iconBtn{width:38px;height:38px}
+    .kingdomBar{top:max(61px,calc(env(safe-area-inset-top) + 56px));gap:4px}.kingdom{padding:6px}.kingdomSeal{width:23px;height:23px;font-size:12px}.kingdomName{font-size:10px}.kingdomMeta{font-size:8px}.kingdomPieces{display:none}
+    .turnCard{padding:8px 11px}.turnMain{font-size:10px}.turnEvent{font-size:9px;max-width:42vw}
+    .panel{padding:17px;border-radius:19px}.seatGrid{grid-template-columns:1fr}.seat{display:grid;grid-template-columns:1fr 130px;align-items:center;gap:8px}.seatTitle{margin:0}.settings{grid-template-columns:1fr}.panelTitle .bigSeal{font-size:43px}.panelTitle h2{font-size:20px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="board" aria-label="Bàn Cờ Tướng Tam Quốc"></canvas>
+
+  <div class="topbar">
+    <div class="brand"><div class="seal">三</div><div><h1>TAM QUỐC KỲ</h1><small>Sān-guó-qí · Cờ Tướng 3 Nước</small></div></div>
+    <div class="actions">
+      <button class="iconBtn" id="rulesBtn" title="Luật chơi">?</button>
+      <button class="iconBtn" id="restartBtn" title="Ván mới">↻</button>
+      <button class="iconBtn" id="homeBtn" title="Về trang game">⌂</button>
+    </div>
+  </div>
+
+  <div class="kingdomBar" id="kingdomBar"></div>
+  <div class="bottomStatus"><div class="turnCard"><span id="turnDot"></span><div><div class="turnMain" id="turnMain">Chuẩn bị Tam Quốc</div><div class="turnEvent" id="turnEvent">Chọn người chơi và BOT để bắt đầu.</div></div></div></div>
+
+  <div class="modal show" id="setupModal">
+    <div class="panel">
+      <div class="panelTitle"><div class="bigSeal">三國</div><h2>Cờ Tướng Tam Quốc</h2><p>Thục · Ngụy · Ngô — ba chiến tuyến, một thiên hạ.<br>Chọn Người/BOT cho từng nước; 2 người có thể thêm BOT làm nước thứ ba.</p></div>
+      <div class="seatGrid">
+        <div class="seat" style="--accent:#e95a4b"><div class="seatTitle"><span class="seatDot"></span>蜀 Thục</div><select id="seat0"><option value="human">👤 Người</option><option value="bot">🤖 BOT</option></select></div>
+        <div class="seat" style="--accent:#4f88d8"><div class="seatTitle"><span class="seatDot"></span>魏 Ngụy</div><select id="seat1"><option value="bot">🤖 BOT</option><option value="human">👤 Người</option></select></div>
+        <div class="seat" style="--accent:#46a96a"><div class="seatTitle"><span class="seatDot"></span>吳 Ngô</div><select id="seat2"><option value="bot">🤖 BOT</option><option value="human">👤 Người</option></select></div>
+      </div>
+      <div class="settings">
+        <div class="setting"><label for="botDifficulty">Độ khó BOT</label><select id="botDifficulty"><option value="easy">Vừa</option><option value="hard" selected>Khó</option><option value="destroyer">☠ Hủy diệt</option></select></div>
+        <div class="setting"><label>Luật Tam Quốc</label><div class="checkRow"><input type="checkbox" id="specialPieces" checked><span>Dùng quân đặc biệt 火 / 旗 / 風</span></div></div>
+      </div>
+      <button class="startBtn" id="startBtn">⚔ KHAI CHIẾN</button>
+    </div>
+  </div>
+
+  <div class="modal" id="rulesModal">
+    <div class="panel rules"><button class="closeBtn" id="closeRules">Đóng</button><h2>Luật Tam Quốc Kỳ</h2>
+      <div class="sourceNote">Bản này theo San-kwo-k’i / Game of the Three Kingdoms: 3 nước Thục–Ngụy–Ngô, mỗi bên bộ Cờ Tướng chuẩn + 2 quân đặc biệt; Tướng bị loại thì toàn bộ quân còn lại về tay người hạ Tướng. Do nguồn lịch sử không còn mô tả tuyệt đối kết nối ở tâm bàn, game dùng quy ước Y-river đối xứng, nhất quán cho mọi quân.</div>
+      <h3>🎯 Mục tiêu</h3><p>Giữ Tướng của mình sống sót cuối cùng. Khi một nước bị chiếu bí hoặc Tướng bị bắt, nước đó bị loại; quân còn lại chuyển quyền điều khiển cho người hạ họ.</p>
+      <h3>🔁 Lượt</h3><p>Thục (Đỏ) đi trước, sau đó Ngụy (Xanh), Ngô (Lục), rồi lặp lại. Nước đã bị loại sẽ được bỏ qua.</p>
+      <h3>♟ Quân chuẩn</h3><ul><li>車 Xe: đi thẳng không giới hạn.</li><li>炮 Pháo: đi như Xe; khi ăn phải nhảy đúng một quân làm ngòi.</li><li>馬 Mã: đi chữ nhật 1×2, bị cản chân Mã.</li><li>象 Tượng: chéo 2 điểm, bị cản mắt Tượng và không qua sông.</li><li>士 Sĩ: chéo 1 điểm trong cung.</li><li>蜀/魏/吳 Tướng: ngang/dọc 1 điểm trong cung; áp dụng lộ Tướng xuyên chiến tuyến.</li><li>兵 Tốt: tiến 1; qua sông được đi ngang.</li></ul>
+      <h3>🔥 旗 風 Quân Tam Quốc</h3><p>Mỗi nước có hai quân đặc biệt: Hỏa của Thục, Kỳ của Ngụy, Phong của Ngô. Đi kiểu “Mã mở rộng”: 3×1 hoặc 1×3 và nhảy thẳng tới đích.</p>
+      <h3>🌊 Tâm bàn Y-river</h3><p>Khi một đường tiến tới tâm, nó có thể rẽ sang một trong hai nước đối diện. Các điểm hợp lệ luôn được game tô sáng, nên không cần đoán đường nối ở tâm.</p>
+    </div>
+  </div>
+
+  <div class="modal" id="gameOver"><div class="panel"><div id="winnerSeal">蜀</div><div id="winnerText">Thục thống nhất Tam Quốc!</div><div id="winnerSub">Thiên hạ đã định.</div><div class="overActions"><button class="secondaryBtn" id="changeSeatsBtn">Đổi người chơi</button><button class="startBtn" id="playAgainBtn">Đánh lại</button></div></div></div>
+</div>
+
+<script src="./three-kingdoms-xiangqi-core.js"></script>
+<script src="./three-kingdoms-xiangqi-bot.js"></script>
+<script>
+(() => {
+  'use strict';
+  const R = window.ThreeKingdomsXiangqi;
+  const Bot = window.ThreeKingdomsBot;
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const setupModal = document.getElementById('setupModal');
+  const rulesModal = document.getElementById('rulesModal');
+  const gameOver = document.getElementById('gameOver');
+  const kingdomBar = document.getElementById('kingdomBar');
+  const turnMain = document.getElementById('turnMain');
+  const turnEvent = document.getElementById('turnEvent');
+  const turnDot = document.getElementById('turnDot');
+  const COLORS = ['#e85848','#4c82d0','#43a263'];
+  const DARK = ['#6e211c','#183b70','#1c6336'];
+  const LABELS = ['Thục','Ngụy','Ngô'];
+  let state = R.initialState(true);
+  let seats = ['human','bot','bot'];
+  let difficulty = 'hard';
+  let selected = null;
+  let selectedMoves = [];
+  let botTimer = null;
+  let botThinking = false;
+  let dpr = 1;
+  let W = 0, H = 0;
+  let nodePos = new Map();
+  let pieceRadius = 22;
+  let moveFx = null;
+  let captureFx = null;
+
+  function lerp(a,b,t){return a+(b-a)*t}
+  function rgba(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`}
+
+  function resize(){
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    W = Math.max(320, rect.width); H = Math.max(480, rect.height);
+    canvas.width = Math.floor(W*dpr); canvas.height = Math.floor(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    buildGeometry();
+  }
+
+  function buildGeometry(){
+    nodePos = new Map();
+    const min = Math.min(W, H*1.05);
+    const cx = W/2;
+    const cy = H/2 + (H<650?18:24);
+    const backRadius = Math.min(min*.405, H*.39);
+    const frontRadius = backRadius*.37;
+    const baseGap = backRadius*.115;
+    pieceRadius = Math.max(14, Math.min(26, baseGap*.72));
+    const angles = [Math.PI/2, Math.PI*7/6, Math.PI*11/6];
+    for(let s=0;s<3;s++){
+      const a=angles[s]; const hv={x:Math.cos(a),y:Math.sin(a)}; const lv={x:Math.cos(a+Math.PI/2),y:Math.sin(a+Math.PI/2)};
+      for(let r=0;r<5;r++){
+        const t=r/4; const radial=lerp(backRadius,frontRadius,t); const scale=lerp(1,.68,t); const gap=baseGap*scale;
+        for(let f=0;f<9;f++){
+          const lateral=(f-4)*gap;
+          nodePos.set(R.key(s,r,f),{x:cx+hv.x*radial+lv.x*lateral,y:cy+hv.y*radial+lv.y*lateral});
+        }
+      }
+    }
+  }
+
+  function pathPoints(keys){return keys.map(k=>nodePos.get(k)).filter(Boolean)}
+  function drawPolyline(points,stroke,width=1,alpha=1){if(points.length<2)return;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.stroke();ctx.restore()}
+
+  function drawBoard(){
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2, cy=H/2+(H<650?18:24);
+    const back=nodePos.get('0:0:4'); const centerR=Math.hypot(back.x-cx,back.y-cy); const outer=centerR+pieceRadius*2.5;
+    const hex=[];for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3;hex.push({x:cx+Math.cos(a)*outer,y:cy+Math.sin(a)*outer})}
+    ctx.save();ctx.shadowColor='rgba(0,0,0,.65)';ctx.shadowBlur=38;ctx.fillStyle='#1a130d';ctx.beginPath();ctx.moveTo(hex[0].x,hex[0].y);for(let i=1;i<6;i++)ctx.lineTo(hex[i].x,hex[i].y);ctx.closePath();ctx.fill();ctx.restore();
+
+    for(let s=0;s<3;s++){
+      const p0=nodePos.get(R.key(s,0,0)),p1=nodePos.get(R.key(s,0,8)),p2=nodePos.get(R.key(s,4,8)),p3=nodePos.get(R.key(s,4,0));
+      const grad=ctx.createLinearGradient(p0.x,p0.y,cx,cy);grad.addColorStop(0,rgba(COLORS[s],.34));grad.addColorStop(1,'rgba(84,54,27,.30)');
+      ctx.save();ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.lineTo(cx,cy);ctx.lineTo(p3.x,p3.y);ctx.closePath();ctx.fill();ctx.restore();
+    }
+
+    // Y-shaped river and central neutral zone.
+    ctx.save();ctx.strokeStyle='rgba(72,128,151,.36)';ctx.lineWidth=Math.max(15,pieceRadius*1.05);ctx.lineCap='round';for(let s=0;s<3;s++){const p=nodePos.get(R.key(s,4,4));ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);ctx.stroke()}ctx.restore();
+    ctx.save();const cg=ctx.createRadialGradient(cx,cy,2,cx,cy,pieceRadius*2.6);cg.addColorStop(0,'rgba(227,187,116,.26)');cg.addColorStop(1,'rgba(18,14,10,.72)');ctx.fillStyle=cg;ctx.beginPath();ctx.arc(cx,cy,pieceRadius*2.25,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(242,205,139,.65)';ctx.font=`900 ${Math.max(16,pieceRadius)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('三國',cx,cy);ctx.restore();
+
+    for(let s=0;s<3;s++){
+      // Rank and file grid.
+      for(let r=0;r<5;r++)drawPolyline(pathPoints(Array.from({length:9},(_,f)=>R.key(s,r,f))),'rgba(244,211,158,.38)',1.25);
+      for(let f=0;f<9;f++)drawPolyline(pathPoints(Array.from({length:5},(_,r)=>R.key(s,r,f))),'rgba(244,211,158,.38)',1.25);
+      // Palace crosses.
+      drawPolyline(pathPoints([R.key(s,0,3),R.key(s,1,4),R.key(s,2,5)]),'rgba(249,219,166,.52)',1.4);
+      drawPolyline(pathPoints([R.key(s,0,5),R.key(s,1,4),R.key(s,2,3)]),'rgba(249,219,166,.52)',1.4);
+      // Kingdom calligraphy.
+      const label=nodePos.get(R.key(s,1,4));ctx.save();ctx.globalAlpha=.15;ctx.fillStyle='#fff4dc';ctx.font=`1000 ${Math.max(28,pieceRadius*2)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(R.KINGDOMS[s].han,label.x,label.y);ctx.restore();
+    }
+
+    // Faint fork continuations across the river; these are the modern Y convention.
+    ctx.save();ctx.setLineDash([4,5]);for(let s=0;s<3;s++){for(const f of [0,2,4,6,8]){const a=nodePos.get(R.key(s,4,f));for(const o of [(s+1)%3,(s+2)%3]){const b=nodePos.get(R.key(o,4,8-f));const mx=(a.x+b.x+cx)/3,my=(a.y+b.y+cy)/3;ctx.strokeStyle='rgba(209,185,143,.11)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(mx,my,b.x,b.y);ctx.stroke()}}}ctx.restore();
+  }
+
+  function drawHighlights(now){
+    if(!selected)return;
+    const p=state.pieces.find(x=>x.id===selected);if(!p)return;const origin=nodePos.get(R.key(p.sector,p.r,p.f));
+    ctx.save();ctx.strokeStyle='rgba(255,221,128,.95)';ctx.lineWidth=2.2;ctx.shadowColor='rgba(255,199,78,.7)';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(origin.x,origin.y,pieceRadius*1.18,0,Math.PI*2);ctx.stroke();ctx.restore();
+    for(const m of selectedMoves){const pos=nodePos.get(m.to);const occupied=state.pieces.some(x=>R.key(x.sector,x.r,x.f)===m.to);ctx.save();ctx.fillStyle=occupied?'rgba(255,91,74,.44)':'rgba(255,225,137,.28)';ctx.strokeStyle=occupied?'rgba(255,119,101,.88)':'rgba(255,225,137,.74)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(pos.x,pos.y,occupied?pieceRadius*.74:Math.max(5,pieceRadius*.27),0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore()}
+    const pulse=.5+.5*Math.sin(now/260);if(R.isInCheck(state,state.turn)){const g=state.pieces.find(p=>p.type==='K'&&p.home===state.turn);if(g){const pos=nodePos.get(R.key(g.sector,g.r,g.f));ctx.save();ctx.strokeStyle=`rgba(255,70,55,${.45+.45*pulse})`;ctx.lineWidth=4;ctx.beginPath();ctx.arc(pos.x,pos.y,pieceRadius*(1.25+.1*pulse),0,Math.PI*2);ctx.stroke();ctx.restore()}}
+  }
+
+  function pieceDisplayPosition(piece,now){
+    const target=nodePos.get(R.key(piece.sector,piece.r,piece.f));
+    if(moveFx&&moveFx.pieceId===piece.id){const t=Math.min(1,(now-moveFx.start)/260);if(t<1){const e=1-Math.pow(1-t,3);return{x:lerp(moveFx.from.x,target.x,e),y:lerp(moveFx.from.y,target.y,e),lift:Math.sin(Math.PI*t)*7}}moveFx=null}
+    return{x:target.x,y:target.y,lift:0}
+  }
+
+  function drawPiece(piece,now){
+    const pos=pieceDisplayPosition(piece,now);const c=COLORS[piece.controller];const dark=DARK[piece.controller];const r=pieceRadius;
+    ctx.save();ctx.translate(pos.x,pos.y-pos.lift);ctx.shadowColor='rgba(0,0,0,.58)';ctx.shadowBlur=10;ctx.shadowOffsetY=5;
+    const g=ctx.createRadialGradient(-r*.35,-r*.45,r*.12,0,0,r);g.addColorStop(0,'#fff4d3');g.addColorStop(.13,c);g.addColorStop(1,dark);ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.shadowColor='transparent';
+    ctx.strokeStyle='rgba(255,239,204,.72)';ctx.lineWidth=Math.max(1.2,r*.07);ctx.beginPath();ctx.arc(0,0,r*.82,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='rgba(0,0,0,.32)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,r*.7,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#fff6df';ctx.font=`1000 ${Math.floor(r*1.04)}px "Noto Serif CJK SC","Songti SC",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(piece.glyph,0,1);
+    if(piece.home!==piece.controller){ctx.fillStyle=COLORS[piece.home];ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(r*.68,-r*.66,Math.max(3,r*.18),0,Math.PI*2);ctx.fill();ctx.stroke()}
+    ctx.restore();
+  }
+
+  function render(now=performance.now()){
+    drawBoard();
+    if(state.lastMove){const a=nodePos.get(state.lastMove.from),b=nodePos.get(state.lastMove.to);if(a&&b){ctx.save();ctx.strokeStyle='rgba(255,217,119,.18)';ctx.lineWidth=pieceRadius*1.35;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore()}}
+    drawHighlights(now);
+    for(const piece of state.pieces)drawPiece(piece,now);
+    if(captureFx){const t=(now-captureFx.start)/450;if(t<1){ctx.save();ctx.globalAlpha=1-t;ctx.strokeStyle='#ffcf72';ctx.lineWidth=3*(1-t)+1;ctx.beginPath();ctx.arc(captureFx.x,captureFx.y,pieceRadius*(.8+t*1.6),0,Math.PI*2);ctx.stroke();ctx.restore()}else captureFx=null}
+    requestAnimationFrame(render);
+  }
+
+  function updateHud(){
+    kingdomBar.innerHTML='';
+    for(let k=0;k<3;k++){
+      const el=document.createElement('div');el.className='kingdom'+(state.turn===k&&state.alive[k]?' active':'')+(!state.alive[k]?' dead':'');el.style.setProperty('--accent',COLORS[k]);
+      const count=state.pieces.filter(p=>p.controller===k).length;const type=seats[k]==='bot'?'🤖 BOT':'👤 Người';
+      el.innerHTML=`<div class="kingdomHead"><div class="kingdomSeal">${R.KINGDOMS[k].han}</div><div><div class="kingdomName">${LABELS[k]}</div><div class="kingdomMeta">${state.alive[k]?type:'Đã bị thu phục'}</div></div><div class="kingdomPieces">${count} quân</div></div>`;kingdomBar.appendChild(el)
+    }
+    const turn=state.winner!=null?state.winner:state.turn;turnDot.style.background=COLORS[turn];turnDot.style.color=COLORS[turn];
+    if(state.winner!=null){turnMain.textContent=`🏆 ${LABELS[state.winner]} thắng`;turnEvent.textContent=state.lastEvent;turnMain.classList.remove('thinking');return}
+    turnMain.textContent=`${R.KINGDOMS[state.turn].han} ${LABELS[state.turn]} · ${seats[state.turn]==='bot'?'BOT':'Người'}`;
+    turnMain.classList.toggle('thinking',botThinking);turnEvent.textContent=botThinking?'BOT đang đọc thế trận':(state.lastEvent||'Tới lượt đi.');
+  }
+
+  function clearBot(){if(botTimer){clearTimeout(botTimer);botTimer=null}}
+  function scheduleBot(){
+    clearBot();if(state.winner!=null||seats[state.turn]!=='bot')return;botThinking=true;updateHud();
+    botTimer=setTimeout(()=>{botTimer=null;if(state.winner!=null||seats[state.turn]!=='bot')return;const mover=state.turn;const move=Bot.choose(state,mover,difficulty);botThinking=false;if(!move){updateHud();return}commitMove(move)},Math.max(360,difficulty==='destroyer'?620:450));
+  }
+
+  function commitMove(move){
+    const moving=state.pieces.find(p=>p.id===move.pieceId);const from=moving?nodePos.get(R.key(moving.sector,moving.r,moving.f)):null;const captured=state.pieces.find(p=>R.key(p.sector,p.r,p.f)===move.to);const capPos=captured?nodePos.get(move.to):null;
+    const result=R.makeMove(state,move);if(!result.ok){turnEvent.textContent=result.reason;return}
+    state=result.state;selected=null;selectedMoves=[];if(from)moveFx={pieceId:move.pieceId,from,start:performance.now()};if(capPos)captureFx={x:capPos.x,y:capPos.y,start:performance.now()};
+    updateHud();if(state.winner!=null){showWinner();return}scheduleBot();
+  }
+
+  function findNearestNode(x,y){let best=null,bestD=Infinity;for(const [k,p] of nodePos){const d=Math.hypot(x-p.x,y-p.y);if(d<bestD){bestD=d;best=k}}return bestD<=pieceRadius*1.35?best:null}
+  canvas.addEventListener('pointerdown',e=>{
+    if(setupModal.classList.contains('show')||rulesModal.classList.contains('show')||gameOver.classList.contains('show')||state.winner!=null||seats[state.turn]==='bot')return;
+    const rect=canvas.getBoundingClientRect();const node=findNearestNode(e.clientX-rect.left,e.clientY-rect.top);if(!node)return;
+    if(selected){const move=selectedMoves.find(m=>m.to===node);if(move){commitMove(move);return}}
+    const piece=state.pieces.find(p=>R.key(p.sector,p.r,p.f)===node&&p.controller===state.turn);
+    if(piece){selected=piece.id;selectedMoves=R.legalMoves(state,state.turn).filter(m=>m.pieceId===piece.id)}else{selected=null;selectedMoves=[]}
+  });
+
+  function startGame(){
+    clearBot();seats=[0,1,2].map(i=>document.getElementById('seat'+i).value);difficulty=document.getElementById('botDifficulty').value;state=R.initialState(document.getElementById('specialPieces').checked);selected=null;selectedMoves=[];botThinking=false;setupModal.classList.remove('show');gameOver.classList.remove('show');updateHud();scheduleBot();
+  }
+  function showWinner(){const k=state.winner;document.getElementById('winnerSeal').textContent=R.KINGDOMS[k].han;document.getElementById('winnerSeal').style.color=COLORS[k];document.getElementById('winnerText').textContent=LABELS[k]+' thống nhất Tam Quốc!';document.getElementById('winnerSub').textContent=`Kết thúc sau ${state.moveNo} nước. ${state.eliminated.length} nước đã bị thu phục.`;gameOver.classList.add('show')}
+
+  document.getElementById('startBtn').addEventListener('click',startGame);
+  document.getElementById('restartBtn').addEventListener('click',()=>{clearBot();setupModal.classList.add('show')});
+  document.getElementById('homeBtn').addEventListener('click',()=>location.href='../index.html');
+  document.getElementById('rulesBtn').addEventListener('click',()=>rulesModal.classList.add('show'));
+  document.getElementById('closeRules').addEventListener('click',()=>rulesModal.classList.remove('show'));
+  document.getElementById('changeSeatsBtn').addEventListener('click',()=>{gameOver.classList.remove('show');setupModal.classList.add('show')});
+  document.getElementById('playAgainBtn').addEventListener('click',startGame);
+  rulesModal.addEventListener('pointerdown',e=>{if(e.target===rulesModal)rulesModal.classList.remove('show')});
+  window.addEventListener('keydown',e=>{if(e.key==='Escape')rulesModal.classList.remove('show')});
+  window.addEventListener('resize',resize);
+
+  resize();updateHud();requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
