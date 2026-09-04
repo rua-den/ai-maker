@@ -3,42 +3,93 @@
 
   if (typeof window === 'undefined' || !window.GoBot || !window.GoRules) return;
 
-  let worker = null;
+  let destroyerWorker = null;
+  let neuralWorker = null;
   let requestSeq = 0;
   let generation = 0;
-  const pending = new Map();
+  let neuralWarm = false;
+  let neuralFailedForSession = false;
+  const destroyerPending = new Map();
+  const neuralPending = new Map();
   let fallbackNoticeShown = false;
+  let neuralFallbackNoticeShown = false;
 
-  function destroyWorker(reason = 'cancelled') {
-    if (worker) {
-      worker.terminate();
-      worker = null;
-    }
-    for (const { reject, timer } of pending.values()) {
+  function rejectPending(map, reason) {
+    for (const { reject, timer } of map.values()) {
       clearTimeout(timer);
       reject(new Error(reason));
     }
-    pending.clear();
+    map.clear();
   }
 
-  function ensureWorker() {
-    if (worker) return worker;
+  function destroyDestroyerWorker(reason = 'cancelled') {
+    if (destroyerWorker) {
+      destroyerWorker.terminate();
+      destroyerWorker = null;
+    }
+    rejectPending(destroyerPending, reason);
+  }
+
+  function destroyNeuralWorker(reason = 'cancelled') {
+    if (neuralWorker) {
+      neuralWorker.terminate();
+      neuralWorker = null;
+    }
+    rejectPending(neuralPending, reason);
+  }
+
+  function destroyWorkers(reason = 'cancelled') {
+    destroyDestroyerWorker(reason);
+    destroyNeuralWorker(reason);
+  }
+
+  function ensureDestroyerWorker() {
+    if (destroyerWorker) return destroyerWorker;
     if (typeof Worker === 'undefined') throw new Error('Web Worker is not supported');
-    worker = new Worker('./go-ai/destroyer-worker.js');
-    worker.onmessage = event => {
+    destroyerWorker = new Worker('./go-ai/destroyer-worker.js');
+    destroyerWorker.onmessage = event => {
       const message = event.data || {};
-      const slot = pending.get(message.id);
+      const slot = destroyerPending.get(message.id);
       if (!slot) return;
-      pending.delete(message.id);
+      destroyerPending.delete(message.id);
       clearTimeout(slot.timer);
       if (message.type === 'result') slot.resolve({ move: message.move, diagnostics: message.diagnostics || null, provider: 'destroyer-worker' });
       else slot.reject(new Error(message.error || 'Destroyer worker failed'));
     };
-    worker.onerror = event => {
-      const message = event?.message || 'Destroyer worker crashed';
-      destroyWorker(message);
+    destroyerWorker.onerror = event => {
+      destroyDestroyerWorker(event?.message || 'Destroyer worker crashed');
     };
-    return worker;
+    return destroyerWorker;
+  }
+
+  function ensureNeuralWorker() {
+    if (neuralWorker) return neuralWorker;
+    if (window.GO_AI_DISABLE_NEURAL === true) throw new Error('Neural provider disabled');
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new Error('Offline');
+    if (neuralFailedForSession) throw new Error('Neural provider disabled after previous failure');
+    if (typeof Worker === 'undefined') throw new Error('Web Worker is not supported');
+
+    neuralWorker = new Worker('./go-ai/neural-worker.js');
+    neuralWorker.onmessage = event => {
+      const message = event.data || {};
+      const slot = neuralPending.get(message.id);
+      if (!slot) return;
+      neuralPending.delete(message.id);
+      clearTimeout(slot.timer);
+      if (message.type === 'result') {
+        neuralWarm = true;
+        slot.resolve({ move: message.move, diagnostics: message.diagnostics || null, provider: 'katago-onnx' });
+      } else {
+        neuralFailedForSession = true;
+        slot.reject(new Error(message.error || 'KataGo ONNX worker failed'));
+        destroyNeuralWorker(message.error || 'KataGo ONNX worker failed');
+      }
+    };
+    neuralWorker.onerror = event => {
+      neuralFailedForSession = true;
+      destroyNeuralWorker(event?.message || 'KataGo ONNX worker crashed');
+    };
+    return neuralWorker;
   }
 
   function workerBudget() {
@@ -53,14 +104,14 @@
   function chooseDestroyer(state, seat) {
     return new Promise((resolve, reject) => {
       let active;
-      try { active = ensureWorker(); } catch (error) { reject(error); return; }
+      try { active = ensureDestroyerWorker(); } catch (error) { reject(error); return; }
       const id = ++requestSeq;
       const timeoutMs = Math.max(1800, workerBudget() * 3);
       const timer = setTimeout(() => {
-        pending.delete(id);
+        destroyerPending.delete(id);
         reject(new Error('Destroyer worker timed out'));
       }, timeoutMs);
-      pending.set(id, { resolve, reject, timer });
+      destroyerPending.set(id, { resolve, reject, timer });
       active.postMessage({
         type: 'choose',
         id,
@@ -71,15 +122,56 @@
     });
   }
 
+  function chooseNeural(state, seat) {
+    return new Promise((resolve, reject) => {
+      let active;
+      try { active = ensureNeuralWorker(); } catch (error) { reject(error); return; }
+      const id = ++requestSeq;
+      const timeoutMs = neuralWarm ? 8000 : 22000;
+      const timer = setTimeout(() => {
+        neuralPending.delete(id);
+        neuralFailedForSession = true;
+        destroyNeuralWorker('KataGo ONNX timed out');
+        reject(new Error('KataGo ONNX timed out'));
+      }, timeoutMs);
+      neuralPending.set(id, { resolve, reject, timer });
+      active.postMessage({
+        type: 'choose',
+        id,
+        state,
+        seat,
+        modelUrl: typeof window.GO_AI_MODEL_URL === 'string' ? window.GO_AI_MODEL_URL : undefined
+      });
+    });
+  }
+
   async function choose(state, seat = 'B', level = 2) {
     const n = Number(level) || 2;
     if (n < 5) return { move: GoBot.choose(state, seat, n), diagnostics: null, provider: 'classic' };
+
+    let neuralError = null;
     try {
-      return await chooseDestroyer(state, seat);
+      return await chooseNeural(state, seat);
+    } catch (error) {
+      neuralError = error;
+    }
+
+    try {
+      const local = await chooseDestroyer(state, seat);
+      local.diagnostics = {
+        ...(local.diagnostics || {}),
+        neuralFallback: true,
+        neuralError: neuralError?.message || String(neuralError || 'neural unavailable')
+      };
+      return local;
     } catch (error) {
       return {
         move: GoBot.choose(state, seat, 4),
-        diagnostics: { fallback: true, error: error?.message || String(error || 'worker failed') },
+        diagnostics: {
+          fallback: true,
+          neuralError: neuralError?.message || String(neuralError || 'neural unavailable'),
+          error: error?.message || String(error || 'worker failed')
+        },
         provider: 'classic-fallback'
       };
     }
@@ -89,11 +181,14 @@
     choose,
     providers: {
       classic: { levels: [1, 2, 3, 4] },
-      destroyer: { levels: [5], mode: 'worker', neuralReady: false }
+      katagoOnnx: { levels: [5], mode: 'lazy-worker', model: 'b6c96', runtime: 'onnxruntime-web' },
+      destroyer: { levels: [5], mode: 'worker-fallback' }
     },
     reset() {
       generation++;
-      destroyWorker('Go AI reset');
+      neuralWarm = false;
+      neuralFailedForSession = false;
+      destroyWorkers('Go AI reset');
     }
   };
 
@@ -109,6 +204,9 @@
     stopBotTimer();
     botThinking = true;
     renderBot();
+    resultNote.textContent = neuralFailedForSession || window.GO_AI_DISABLE_NEURAL === true
+      ? '☠️ Hủy Diệt đang đọc chiến thuật trong Worker…'
+      : '🧠 Hủy Diệt đang chạy KataGo neural policy… lần đầu có thể cần tải model.';
     const token = ++generation;
     const snapshot = GoRules.normalize(botState);
 
@@ -121,6 +219,13 @@
       let move = result.move;
       let applied = GoRules.apply(botState, move, 'B');
       if (!applied && result.provider !== 'classic-fallback') {
+        try {
+          const local = await chooseDestroyer(botState, 'B');
+          move = local.move;
+          applied = GoRules.apply(botState, move, 'B');
+        } catch (_) {}
+      }
+      if (!applied) {
         move = GoBot.choose(botState, 'B', 4);
         applied = GoRules.apply(botState, move, 'B');
       }
@@ -140,13 +245,20 @@
       botTurn = applied.nextTurn || 'A';
       renderBot();
 
-      if (result.provider === 'classic-fallback' && !fallbackNoticeShown) {
+      const ms = Math.round(Number(result.diagnostics?.elapsedMs) || 0);
+      if (result.provider === 'katago-onnx') {
+        const candidates = Number(result.diagnostics?.neuralCandidates) || 0;
+        resultNote.textContent += ' · 🧠 KataGo NN ' + candidates + ' ứng viên / ' + ms + 'ms';
+      } else if (result.provider === 'destroyer-worker') {
+        const nodes = Number(result.diagnostics?.nodes) || 0;
+        if (nodes > 0) resultNote.textContent += ' · ☠️ đọc ' + nodes.toLocaleString('vi-VN') + ' nhánh / ' + ms + 'ms';
+        if (result.diagnostics?.neuralFallback && !neuralFallbackNoticeShown) {
+          neuralFallbackNoticeShown = true;
+          showNotice('🧠 Neural không tải được — Hủy Diệt đang dùng engine local mạnh hơn Siêu khó.');
+        }
+      } else if (result.provider === 'classic-fallback' && !fallbackNoticeShown) {
         fallbackNoticeShown = true;
         showNotice('☠️ Engine Hủy Diệt lỗi trên thiết bị này — đã fallback Siêu khó.');
-      } else if (result.diagnostics && !result.diagnostics.fallback) {
-        const nodes = Number(result.diagnostics.nodes) || 0;
-        const ms = Math.round(Number(result.diagnostics.elapsedMs) || 0);
-        if (nodes > 0) resultNote.textContent += ' · ☠️ đọc ' + nodes.toLocaleString('vi-VN') + ' nhánh / ' + ms + 'ms';
       }
     }, 70);
   };
@@ -154,7 +266,7 @@
   if (classicExitBot) {
     exitBot = function() {
       generation++;
-      destroyWorker('Left Go bot game');
+      destroyWorkers('Left Go bot game');
       return classicExitBot();
     };
   }
