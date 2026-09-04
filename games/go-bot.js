@@ -8,7 +8,8 @@
     1: { key: 'easy', label: 'Dễ' },
     2: { key: 'medium', label: 'Vừa' },
     3: { key: 'hard', label: 'Khó' },
-    4: { key: 'expert', label: 'Siêu khó' }
+    4: { key: 'expert', label: 'Siêu khó' },
+    5: { key: 'destroyer', label: 'Hủy Diệt' }
   };
 
   const SIZE = R.SIZE;
@@ -186,6 +187,8 @@
   }
 
   function choose(state, seat = 'B', level = 2, rng = Math.random) {
+    // Level 5 is handled asynchronously by go-ai-runtime.js. If that runtime
+    // cannot start, clamping here gives it a safe Siêu khó fallback.
     const n = Math.max(1, Math.min(4, Number(level) || 2));
     const s = R.normalize(state);
     const moves = scoredMoves(s, seat);
@@ -233,6 +236,19 @@
       const pass = document.getElementById('passBtn');
       if (pass) pass.textContent = 'Pass / Chấm điểm';
 
+      const difficulty = document.getElementById('botDifficulty');
+      if (difficulty && !difficulty.querySelector('option[value="5"]')) {
+        const destroyer = document.createElement('option');
+        destroyer.value = '5';
+        destroyer.textContent = '☠️ Hủy Diệt';
+        difficulty.appendChild(destroyer);
+      }
+      if (difficulty) {
+        try {
+          if (Number(localStorage.getItem('goBotDifficulty')) === 5) difficulty.value = '5';
+        } catch (_) {}
+      }
+
       const rules = document.querySelector('.rules.onlineOnly');
       if (rules) rules.textContent = '⚫ Đen đi trước · luật Chinese/AGA: cấm tự sát, positional Superko, tính điểm theo diện tích, Trắng komi 7.5. Hai bên Pass liên tiếp là kết thúc và chấm điểm ngay.';
 
@@ -248,12 +264,27 @@
       }
 
       const hint = document.querySelector('.botHint');
-      if (hint) hint.textContent = 'Bạn cầm Đen. Bot biết Pass khi endgame đã hết điểm đáng tranh và có thể xin thua khi thế cờ quá chênh; không còn cố rải quân vô nghĩa để kéo dài ván.';
+      if (hint) hint.textContent = 'Bạn cầm Đen. 💀 Siêu khó dùng bot chiến thuật hiện tại; ☠️ Hủy Diệt chạy engine riêng trong Web Worker và tự fallback an toàn nếu thiết bị không hỗ trợ.';
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', update, { once: true });
     else update();
   }
 
+  function installDestroyerRuntime() {
+    if (typeof document === 'undefined') return;
+    const inject = () => {
+      if (document.querySelector('script[data-go-ai-runtime]')) return;
+      const script = document.createElement('script');
+      script.src = './go-ai-runtime.js';
+      script.async = false;
+      script.dataset.goAiRuntime = '1';
+      document.body.appendChild(script);
+    };
+    if (document.readyState === 'complete') setTimeout(inject, 0);
+    else window.addEventListener('load', inject, { once: true });
+  }
+
   installRulesCopy();
+  installDestroyerRuntime();
   window.GoBot = { LEVELS, candidateIndices, evaluateMove, scoredMoves, scoreMargin, endgameAssessment, shouldPass, shouldResign, choose };
 })();
