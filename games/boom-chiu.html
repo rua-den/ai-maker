@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bùm Chíu — Team FPS</title>
+<link rel="stylesheet" href="../assets/app-fonts.css">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1117;color:#fff;touch-action:none}
+  body{font-family:var(--app-font-sans,"Noto Sans","Segoe UI",sans-serif)}
+  #game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#111}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;text-shadow:0 2px 5px rgba(0,0,0,.72)}
+  .topbar{position:absolute;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:14px;background:rgba(5,9,14,.72);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);font-weight:900}
+  .blue{color:#5eb6ff}.red{color:#ff6b66}.score{font-size:20px}.timer{font-size:12px;opacity:.82;min-width:46px;text-align:center}
+  #minimap{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(12px,calc(env(safe-area-inset-top) + 54px));width:126px;height:126px;border-radius:12px;background:rgba(3,8,12,.58);border:1px solid rgba(255,255,255,.12)}
+  #killFeed{position:absolute;right:max(10px,env(safe-area-inset-right));top:max(62px,calc(env(safe-area-inset-top) + 54px));width:min(330px,46vw);display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:11px;font-weight:800}
+  .kill{padding:4px 8px;border-radius:8px;background:rgba(0,0,0,.4)}
+  .bottomLeft{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:10px;align-items:flex-end}
+  .stat{min-width:72px;padding:8px 10px;border-radius:12px;background:rgba(4,8,13,.68);border:1px solid rgba(255,255,255,.1)}
+  .stat b{display:block;font-size:22px;line-height:1}.stat small{font-size:9px;opacity:.66;font-weight:800;letter-spacing:.7px}
+  .bottomRight{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));text-align:right;padding:9px 12px;border-radius:12px;background:rgba(4,8,13,.68);border:1px solid rgba(255,255,255,.1)}
+  #ammo{font-size:25px;font-weight:1000}#weaponName{font-size:10px;opacity:.7;font-weight:900}
+  #crosshair{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%)}
+  #crosshair:before,#crosshair:after{content:"";position:absolute;background:rgba(255,255,255,.92);box-shadow:0 0 3px #000}
+  #crosshair:before{left:10px;top:2px;width:2px;height:18px}#crosshair:after{left:2px;top:10px;width:18px;height:2px}
+  #hitmarker{position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%) rotate(45deg);opacity:0;transition:opacity .08s}
+  #hitmarker:before,#hitmarker:after{content:"";position:absolute;background:#fff}#hitmarker:before{left:12px;top:1px;width:2px;height:24px}#hitmarker:after{top:12px;left:1px;height:2px;width:24px}
+  #damageFlash{position:absolute;inset:0;background:radial-gradient(circle,transparent 25%,rgba(255,0,0,.35));opacity:0;transition:opacity .12s}
+  #banner{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);font-size:clamp(26px,5vw,58px);font-weight:1000;text-align:center;opacity:0;transition:opacity .2s;letter-spacing:1px}
+
+  #menu{position:fixed;z-index:30;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(145deg,rgba(4,9,14,.93),rgba(28,18,14,.94));backdrop-filter:blur(8px)}
+  #menu.hidden{display:none}.panel{width:min(720px,100%);border-radius:24px;padding:24px;background:linear-gradient(145deg,#17202a,#0d1117);border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 90px rgba(0,0,0,.55)}
+  .logo{text-align:center;margin-bottom:18px}.logo .gun{font-size:46px}.logo h1{margin:3px 0;font-size:clamp(32px,8vw,56px);letter-spacing:2px}.logo p{margin:0;opacity:.65;font-size:12px;line-height:1.5}
+  .mapGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.mapCard{position:relative;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:15px;background:rgba(255,255,255,.04);color:#fff;cursor:pointer;text-align:left}.mapCard.active{border-color:#f0b35c;box-shadow:inset 0 0 0 1px #f0b35c;background:rgba(240,179,92,.09)}.mapCard b{display:block;font-size:15px}.mapCard small{display:block;opacity:.58;margin-top:3px;line-height:1.3}
+  .settings{display:grid;grid-template-columns:1fr 1fr;gap:10px}.setting{padding:12px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}.setting label{font-size:10px;opacity:.65;font-weight:900;display:block;margin-bottom:7px;text-transform:uppercase}.setting select{width:100%;min-height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#171d24;color:#fff;padding:0 10px;font:inherit;font-weight:800}
+  #startBtn{margin-top:14px;width:100%;min-height:54px;border:0;border-radius:14px;background:linear-gradient(180deg,#ffc86d,#d9892d);color:#241404;font-size:16px;font-weight:1000;cursor:pointer;box-shadow:0 8px 25px rgba(217,137,45,.25)}
+  .help{margin-top:12px;font-size:10px;opacity:.58;text-align:center;line-height:1.55}
+  #homeBtn{position:absolute;left:14px;top:14px;color:#fff;text-decoration:none;font-size:22px;opacity:.75}
+
+  #touchUI{display:none;position:fixed;inset:0;z-index:16;pointer-events:none}.stick{position:absolute;left:22px;bottom:30px;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);pointer-events:auto}.knob{position:absolute;left:36px;top:36px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.25)}
+  .touchBtn{position:absolute;border:1px solid rgba(255,255,255,.2);background:rgba(8,13,18,.52);color:white;border-radius:50%;font-weight:1000;pointer-events:auto;backdrop-filter:blur(6px)}#fireBtn{right:24px;bottom:38px;width:82px;height:82px;font-size:15px}#reloadBtn{right:116px;bottom:29px;width:52px;height:52px;font-size:11px}#lookPad{position:absolute;right:0;top:0;width:55%;height:72%;pointer-events:auto}
+  @media(pointer:coarse),(max-width:780px){#touchUI.playing{display:block}.mapGrid{grid-template-columns:1fr}.settings{grid-template-columns:1fr}.panel{max-height:calc(100vh - 24px);overflow:auto;padding:18px}.logo .gun{font-size:36px}.logo h1{font-size:34px}#minimap{width:94px;height:94px}.bottomLeft{bottom:150px}.bottomRight{bottom:132px}.topbar{font-size:11px}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Bùm Chíu team FPS"></canvas>
+<div id="hud">
+  <div class="topbar"><span class="blue">XANH</span><span class="score" id="blueScore">0</span><span class="timer" id="timer">05:00</span><span class="score" id="redScore">0</span><span class="red">ĐỎ</span></div>
+  <canvas id="minimap" width="160" height="160"></canvas>
+  <div id="killFeed"></div>
+  <div class="bottomLeft"><div class="stat"><b id="health">100</b><small>MÁU</small></div><div class="stat"><b id="kd">0 / 0</b><small>K / D</small></div></div>
+  <div class="bottomRight"><div id="ammo">30 / 90</div><div id="weaponName">RÙA-47</div></div>
+  <div id="crosshair"></div><div id="hitmarker"></div><div id="damageFlash"></div><div id="banner"></div>
+</div>
+
+<div id="menu">
+  <a id="homeBtn" href="../index.html" title="Về trang chủ">🐢</a>
+  <div class="panel">
+    <div class="logo"><div class="gun">🔫💥</div><h1>BÙM CHÍU</h1><p>Team FPS 5v5 · Player + BOT vs BOT<br>Map và đồ họa nguyên bản, chỉ lấy cảm hứng nhịp đấu đội cổ điển.</p></div>
+    <div class="mapGrid" id="mapGrid"></div>
+    <div class="settings">
+      <div class="setting"><label for="difficulty">Độ khó BOT</label><select id="difficulty"><option value="easy">Vừa</option><option value="hard" selected>Khó</option><option value="destroyer">☠ Hủy diệt</option></select></div>
+      <div class="setting"><label for="targetScore">Mục tiêu hạ gục</label><select id="targetScore"><option value="20">20 mạng</option><option value="30" selected>30 mạng</option><option value="50">50 mạng</option></select></div>
+    </div>
+    <button id="startBtn">▶ VÀO TRẬN 5v5</button>
+    <div class="help">Desktop: WASD di chuyển · Chuột ngắm · Click bắn · R thay đạn · ESC mở chuột.<br>Mobile: joystick trái · vuốt nửa phải để ngắm · BẮN / NẠP.</div>
+  </div>
+</div>
+
+<div id="touchUI"><div id="lookPad"></div><div class="stick" id="stick"><div class="knob" id="knob"></div></div><button class="touchBtn" id="reloadBtn">NẠP</button><button class="touchBtn" id="fireBtn">BẮN</button></div>
+
+<script src="./boom-chiu-core.js"></script>
+<script src="./boom-chiu.js"></script>
+</body>
+</html>
