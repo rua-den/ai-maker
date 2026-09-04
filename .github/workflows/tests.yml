@@ -71,7 +71,10 @@ jobs:
           ONNX13=/tmp/katago-verify/katago-b6c96-13x13.onnx
           "$KATAGO" runnnsymmetriestest "$BINGZ" false false false > /tmp/katago-verify/source.txt
           "$KATAGO" runnnsymmetriestest "$ONNX13" false false false > /tmp/katago-verify/onnx.txt
-          diff -u /tmp/katago-verify/source.txt /tmp/katago-verify/onnx.txt
+          FILTER='building ONNX graph from model weights|Building internal onnx model|using the graph from .* as-is'
+          grep -Ev "$FILTER" /tmp/katago-verify/source.txt > /tmp/katago-verify/source.filtered.txt
+          grep -Ev "$FILTER" /tmp/katago-verify/onnx.txt > /tmp/katago-verify/onnx.filtered.txt
+          diff -u /tmp/katago-verify/source.filtered.txt /tmp/katago-verify/onnx.filtered.txt
           echo 'Verified: dumped 13x13 ONNX exactly reproduces official g170 evaluations.'
       - name: Smoke-test shipped 19x19 model
         env:
