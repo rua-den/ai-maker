@@ -44,13 +44,17 @@ test('Bùm Chíu weapon contract supports a 30-round team FPS rifle',()=>{
   assert.ok(C.WEAPON.fireDelay>=80);
 });
 
-test('Bùm Chíu homepage and page use the shared Vietnamese-safe font stack',()=>{
+test('Bùm Chíu homepage is online-first and both online/local pages use Vietnamese-safe fonts',()=>{
   const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  const page=fs.readFileSync(new URL('../games/boom-chiu.html',import.meta.url),'utf8');
-  assert.match(index,/games\/boom-chiu\.html/);
-  assert.match(index,/Bùm Chíu/);
-  assert.match(page,/\.\.\/assets\/app-fonts\.css/);
-  assert.match(page,/VÀO TRẬN 5v5/);
-  assert.match(page,/boom-chiu-core\.js/);
-  assert.match(page,/boom-chiu\.js/);
+  const local=fs.readFileSync(new URL('../games/boom-chiu.html',import.meta.url),'utf8');
+  const online=fs.readFileSync(new URL('../games/boom-chiu-pvp.html',import.meta.url),'utf8');
+  assert.match(index,/games\/boom-chiu-pvp\.html/);
+  assert.match(index,/Bùm Chíu Online/);
+  assert.match(local,/\.\.\/assets\/app-fonts\.css/);
+  assert.match(local,/VÀO TRẬN 5v5/);
+  assert.match(local,/boom-chiu-core\.js/);
+  assert.match(local,/boom-chiu\.js/);
+  assert.match(online,/\.\.\/assets\/app-fonts\.css/);
+  assert.match(online,/TẠO PHÒNG 5v5/);
+  assert.match(online,/boom-chiu-pvp\.js/);
 });
