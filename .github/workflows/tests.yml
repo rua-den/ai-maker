@@ -83,7 +83,9 @@ jobs:
           KATAGO=katago-src/cpp/build/katago
           MODEL=generated-katago-model/katago-b6c96.onnx
           cp katago-src/cpp/configs/gtp_example.cfg /tmp/katago-19x19.cfg
-          printf '\nonnxProvider = cpu\nmaxBoardSizeForNNBuffer = 19\nmaxVisits = 1\nnumSearchThreads = 1\n' >> /tmp/katago-19x19.cfg
+          sed -i 's/^maxVisits *=.*/maxVisits = 1/' /tmp/katago-19x19.cfg
+          sed -i 's/^numSearchThreads *=.*/numSearchThreads = 1/' /tmp/katago-19x19.cfg
+          printf '\nonnxProvider = cpu\n' >> /tmp/katago-19x19.cfg
           printf 'boardsize 19\nclear_board\ngenmove b\nquit\n' | \
             "$KATAGO" gtp -model "$MODEL" -config /tmp/katago-19x19.cfg | tee /tmp/katago-verify/gtp.txt
           grep -Eq '^= ([A-T][0-9]+|pass)$' /tmp/katago-verify/gtp.txt
