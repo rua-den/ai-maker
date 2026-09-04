@@ -4,7 +4,7 @@ importScripts('./destroyer-core.js', './neural-encoder.js');
 
 const ORT_VERSION = '1.29.0';
 const ORT_BASE = new URL('./vendor/ort/', self.location.href).href;
-const ORT_SCRIPT = new URL('ort.min.js', ORT_BASE).href;
+const ORT_SCRIPT = new URL('ort.wasm.min.js', ORT_BASE).href;
 const VERIFIED_LOCAL_MODEL = new URL('./models/katago-b6c96.onnx', self.location.href).href;
 const DEFAULT_MODEL = VERIFIED_LOCAL_MODEL;
 
