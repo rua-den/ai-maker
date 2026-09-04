@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: boom-chiu-pvp
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev --no-audit --no-fund
+    startCommand: npm run start:boom-chiu-server
+    healthCheckPath: /health
+    autoDeployTrigger: commit
