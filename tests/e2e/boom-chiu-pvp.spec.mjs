@@ -3,6 +3,15 @@ import {spawn} from 'node:child_process';
 
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
+test('Bùm Chíu PvP migrates stale localhost server settings to the public Render server',async({page})=>{
+  await page.goto('/games/boom-chiu-pvp.html');
+  await page.evaluate(()=>localStorage.setItem('boom-chiu-server','ws://localhost:8787'));
+  await page.reload();
+  await expect(page.locator('#server')).toHaveValue('wss://boom-chiu-pvp.onrender.com');
+  await expect.poll(()=>page.evaluate(()=>window.BoomChiuPvP?.server)).toBe('wss://boom-chiu-pvp.onrender.com');
+  expect(await page.evaluate(()=>localStorage.getItem('boom-chiu-server'))).toBeNull();
+});
+
 test('Bùm Chíu PvP lets two browsers join one server-authoritative 5v5 room',async({browser})=>{
   const port=20500+Math.floor(Math.random()*500);
   const server=spawn(process.execPath,['server/boom-chiu-server.js'],{env:{...process.env,PORT:String(port)},stdio:['ignore','pipe','pipe']});
