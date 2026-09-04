@@ -1,3 +1,4 @@
+# Reproducible local model build. A change to this workflow intentionally reruns the verifier.
 name: Build verified KataGo model
 
 on:
