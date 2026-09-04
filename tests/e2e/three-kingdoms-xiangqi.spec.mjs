@@ -84,8 +84,13 @@ test('Three Kingdoms Xiangqi can run local bot versus bot and advances the game'
 });
 
 test('Three Kingdoms Online supports two real players plus a host-added bot in Firebase', async ({ browser }) => {
-  const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
-  const guestContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const contextOptions = {
+    baseURL: 'http://127.0.0.1:4173',
+    viewport: { width: 390, height: 844 },
+    hasTouch: true
+  };
+  const hostContext = await browser.newContext(contextOptions);
+  const guestContext = await browser.newContext(contextOptions);
   const host = await hostContext.newPage();
   const guest = await guestContext.newPage();
   const hostErrors = [];
