@@ -10,11 +10,12 @@ test('Xiangqi loads clock and timeout fix after match UI', () => {
   assert.ok(loader.indexOf('xiangqi-match-ui.js') < loader.indexOf('xiangqi-clock-timeout-fix.js'));
 });
 
-test('Xiangqi active per-turn countdown is visually prominent', () => {
-  assert.match(fix, /\.xiangqiClockRow\.active \.xiangqiTurnClock\{font-size:26px!important/);
-  assert.match(fix, /@media\(max-width:520px\)[\s\S]*\.xiangqiClockRow\.active \.xiangqiTurnClock\{font-size:20px!important/);
-  assert.match(fix, /\.xiangqiClockMain\{font-size:21px!important/);
-  assert.match(fix, /\.xiangqiClockSide\{font-size:14px!important/);
+test('Xiangqi active per-turn countdown is visually huge and mobile-readable', () => {
+  assert.match(fix, /\.xiangqiClockRow\.active \.xiangqiTurnClock b\{font-size:40px!important/);
+  assert.match(fix, /@media\(max-width:760px\)[\s\S]*\.xiangqiClockRow\.active \.xiangqiTurnClock b\{font-size:34px!important/);
+  assert.match(fix, /@media\(max-width:520px\)[\s\S]*\.xiangqiClockRow\.active \.xiangqiTurnClock b\{font-size:30px!important/);
+  assert.match(fix, /\.xiangqiClockMain\{font-size:24px!important/);
+  assert.match(fix, /@keyframes xiangqiClockPulse/);
 });
 
 test('Xiangqi timeout result always makes the timed-out side lose', () => {
