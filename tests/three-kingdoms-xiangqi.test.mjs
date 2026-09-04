@@ -80,13 +80,16 @@ test('capturing a General eliminates that kingdom and transfers its surviving ar
   assert.equal(result.state.pieces.find(p => p.id === 'bp').controller, 0, 'surviving Wei piece transfers to conqueror');
 });
 
-test('Three Kingdoms bot returns a legal move', () => {
+test('Three Kingdoms easy bot returns a legal move without brute-forcing the whole tree', () => {
   const { rules: R, bot } = loadGame();
   const state = R.initialState(true);
   const legal = R.legalMoves(state, state.turn);
+  const started = Date.now();
   const move = bot.choose(state, state.turn, 'easy');
+  const elapsed = Date.now() - started;
   assert.ok(move);
   assert.ok(legal.some(candidate => candidate.pieceId === move.pieceId && candidate.to === move.to));
+  assert.ok(elapsed < 1000, `easy bot took ${elapsed}ms`);
 });
 
 test('Three Kingdoms page supports Human/BOT per seat, including two humans plus one bot', () => {
