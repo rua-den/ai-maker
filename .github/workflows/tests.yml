@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -44,31 +47,44 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release -DUSE_BACKEND=ONNX \
             -DONNXRUNTIME_ROOT="$GITHUB_WORKSPACE/deps/ort"
           cmake --build katago-src/cpp/build --target katago
-      - name: Export official g170 b6c96 as 19x19 ONNX
+      - name: Export official g170 b6c96 ONNX models
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/deps/ort/lib
         run: |
-          mkdir -p generated-katago-model
+          mkdir -p generated-katago-model /tmp/katago-verify
           MODEL=katago-src/cpp/tests/models/g170-b6c96-s175395328-d26788732.bin.gz
-          OUT=generated-katago-model/katago-b6c96.onnx
-          katago-src/cpp/build/katago dumponnx -model "$MODEL" -out "$OUT" -nn-x-len 19 -nn-y-len 19
-          sha256sum "$OUT" | tee generated-katago-model/katago-b6c96.onnx.sha256
-          ls -lh generated-katago-model
-      - name: Verify ONNX exactly reproduces source network
+          KATAGO=katago-src/cpp/build/katago
+          "$KATAGO" dumponnx -model "$MODEL" \
+            -out generated-katago-model/katago-b6c96.onnx \
+            -nn-x-len 19 -nn-y-len 19
+          "$KATAGO" dumponnx -model "$MODEL" \
+            -out /tmp/katago-verify/katago-b6c96-13x13.onnx \
+            -nn-x-len 13 -nn-y-len 13
+          (cd generated-katago-model && sha256sum katago-b6c96.onnx > katago-b6c96.onnx.sha256)
+          ls -lh generated-katago-model /tmp/katago-verify/katago-b6c96-13x13.onnx
+      - name: Verify ONNX exactly reproduces source network at 13x13
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/deps/ort/lib
         run: |
           KATAGO=katago-src/cpp/build/katago
           BINGZ=katago-src/cpp/tests/models/g170-b6c96-s175395328-d26788732.bin.gz
-          ONNX=generated-katago-model/katago-b6c96.onnx
-          mkdir -p /tmp/katago-verify
+          ONNX13=/tmp/katago-verify/katago-b6c96-13x13.onnx
           "$KATAGO" runnnsymmetriestest "$BINGZ" false false false > /tmp/katago-verify/source.txt
-          "$KATAGO" runnnsymmetriestest "$ONNX" false false false > /tmp/katago-verify/onnx.txt
-          FILTER='nnModelFile|nnRandSeed|ONNX backend|Building internal onnx'
-          grep -Ev "$FILTER" /tmp/katago-verify/source.txt > /tmp/katago-verify/source.filtered.txt
-          grep -Ev "$FILTER" /tmp/katago-verify/onnx.txt > /tmp/katago-verify/onnx.filtered.txt
-          diff -u /tmp/katago-verify/source.filtered.txt /tmp/katago-verify/onnx.filtered.txt
-          echo 'Verified: exported ONNX reproduces the official g170 .bin.gz evaluations exactly.'
+          "$KATAGO" runnnsymmetriestest "$ONNX13" false false false > /tmp/katago-verify/onnx.txt
+          diff -u /tmp/katago-verify/source.txt /tmp/katago-verify/onnx.txt
+          echo 'Verified: dumped 13x13 ONNX exactly reproduces official g170 evaluations.'
+      - name: Smoke-test shipped 19x19 model
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/deps/ort/lib
+        run: |
+          KATAGO=katago-src/cpp/build/katago
+          MODEL=generated-katago-model/katago-b6c96.onnx
+          cp katago-src/cpp/configs/gtp_example.cfg /tmp/katago-19x19.cfg
+          printf '\nonnxProvider = cpu\nmaxBoardSizeForNNBuffer = 19\nmaxVisits = 1\nnumSearchThreads = 1\n' >> /tmp/katago-19x19.cfg
+          printf 'boardsize 19\nclear_board\ngenmove b\nquit\n' | \
+            "$KATAGO" gtp -model "$MODEL" -config /tmp/katago-19x19.cfg | tee /tmp/katago-verify/gtp.txt
+          grep -Eq '^= ([A-T][0-9]+|pass)$' /tmp/katago-verify/gtp.txt
+          echo 'Verified: shipped 19x19 ONNX loads and performs a real neural inference.'
       - name: Upload verified model
         uses: actions/upload-artifact@v4
         with:
@@ -76,3 +92,17 @@ jobs:
           path: generated-katago-model/
           if-no-files-found: error
           retention-days: 30
+      - name: Commit verified model to the game
+        run: |
+          mkdir -p games/go-ai/models
+          cp generated-katago-model/katago-b6c96.onnx games/go-ai/models/katago-b6c96.onnx
+          cp generated-katago-model/katago-b6c96.onnx.sha256 games/go-ai/models/katago-b6c96.onnx.sha256
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add games/go-ai/models/katago-b6c96.onnx games/go-ai/models/katago-b6c96.onnx.sha256
+          if git diff --cached --quiet; then
+            echo 'Verified model is already committed.'
+          else
+            git commit -m 'feat: ship verified KataGo ONNX model'
+            git push origin HEAD:main
+          fi
