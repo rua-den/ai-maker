@@ -44,6 +44,24 @@ test('Xiangqi tracks captured pieces chronologically and renders capture effects
   assert.match(matchUi, /drawPieceAt\(0, 0, fx\.piece/);
 });
 
+test('Xiangqi supports an explicit untimed mode', () => {
+  assert.match(matchUi, /option value="0">∞ Không tính giờ/);
+  assert.match(matchUi, /function isTimeControlEnabled/);
+  assert.match(matchUi, /enabled:\s*control\.enabled/);
+  assert.match(matchUi, /xiangqiClockOff/);
+  assert.match(matchUi, /∞ Không tính giờ/);
+  assert.match(matchUi, /turnSelect\.disabled = totalSelect\.value === '0'/);
+});
+
+test('Xiangqi prevents false timeout while a newly switched turn clock is still syncing', () => {
+  assert.match(matchUi, /const synchronized = !clock\.lastTurn \|\| clock\.lastTurn === room\.turn/);
+  assert.match(matchUi, /const provisionalStart = Number\(room\.updatedAt\)/);
+  assert.match(matchUi, /function syncClockTurn\(room\)/);
+  assert.match(matchUi, /if \(room\.clock\.lastTurn && room\.clock\.lastTurn !== room\.turn\) return false/);
+  assert.match(matchUi, /if \(remain\.disabled \|\| !remain\.synchronized\) return false/);
+  assert.match(matchUi, /current\.clock\.lastTurn = current\.turn/);
+});
+
 test('Xiangqi exposes pre-game total and per-turn time controls with timeout enforcement', () => {
   assert.match(matchUi, /id="xiangqiTotalTime"/);
   assert.match(matchUi, /option value="600">10 phút/);
