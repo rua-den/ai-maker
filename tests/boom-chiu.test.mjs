@@ -55,6 +55,6 @@ test('Bùm Chíu homepage is online-first and both online/local pages use Vietna
   assert.match(local,/boom-chiu-core\.js/);
   assert.match(local,/boom-chiu\.js/);
   assert.match(online,/\.\.\/assets\/app-fonts\.css/);
-  assert.match(online,/TẠO PHÒNG 5v5/);
+  assert.match(online,/id="create"[^>]*>[^<]*TẠO PHÒNG 5V5/);
   assert.match(online,/boom-chiu-pvp\.js/);
 });
