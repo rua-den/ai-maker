@@ -1,13 +1,30 @@
 import { test, expect } from '@playwright/test';
 
-test('Three Kingdoms Xiangqi starts as two humans plus one bot without browser errors', async ({ page }) => {
+test('Three Kingdoms opens in Online lobby and keeps local play one tap away', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/games/three-kingdoms-xiangqi.html');
   await expect(page.locator('#setupModal')).toHaveClass(/show/);
   await expect(page.locator('#board')).toBeVisible();
+  await expect(page.locator('#tkOnlineTab')).toHaveClass(/active/);
+  await expect(page.locator('#tkCreateRoom')).toBeVisible();
+  await expect(page.locator('#tkRooms')).toBeVisible();
+  await expect(page.locator('#tkLocalSetup')).toBeHidden();
 
+  await page.click('#tkLocalTab');
+  await expect(page.locator('#tkLocalTab')).toHaveClass(/active/);
+  await expect(page.locator('#tkLocalSetup')).toBeVisible();
+  await expect(page.locator('#tkOnlinePanel')).toBeHidden();
+  expect(pageErrors).toEqual([]);
+});
+
+test('Three Kingdoms Xiangqi starts locally as two humans plus one bot without browser errors', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await page.goto('/games/three-kingdoms-xiangqi.html');
+  await page.click('#tkLocalTab');
   await page.selectOption('#seat0', 'human');
   await page.selectOption('#seat1', 'human');
   await page.selectOption('#seat2', 'bot');
@@ -43,11 +60,12 @@ test('Three Kingdoms Xiangqi starts as two humans plus one bot without browser e
   expect(pageErrors).toEqual([]);
 });
 
-test('Three Kingdoms Xiangqi can run bot versus bot and advances the game', async ({ page }) => {
+test('Three Kingdoms Xiangqi can run local bot versus bot and advances the game', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/games/three-kingdoms-xiangqi.html');
+  await page.click('#tkLocalTab');
   await page.selectOption('#seat0', 'bot');
   await page.selectOption('#seat1', 'bot');
   await page.selectOption('#seat2', 'bot');
