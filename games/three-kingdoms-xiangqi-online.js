@@ -1,7 +1,10 @@
 (() => {
   'use strict';
 
-  const ROOT = 'threeKingdomsRooms';
+  // Keep Tam Quốc rooms under the already-deployed Xiangqi realtime namespace.
+  // This makes the feature work immediately on the current Firebase project
+  // without requiring a separate rules deployment just for a new root.
+  const ROOT = 'xiangqiRooms/threeKingdoms';
   const CLIENT_KEY = 'threeKingdomsClientId';
   const NAME_KEY = 'threeKingdomsOnlineName';
   const ROOM_KEY = 'threeKingdomsActiveRoom';
@@ -29,7 +32,7 @@
     .tkLobbyHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px}.tkLobbyHead strong{font-size:11px;letter-spacing:.45px;text-transform:uppercase;color:#efc47f}.tkRefresh{border:0;background:transparent;color:#d7d9df;font-size:11px;font-weight:850;cursor:pointer;padding:5px 0}.tkRooms{display:flex;flex-direction:column;gap:7px;max-height:270px;overflow:auto}.tkEmpty{padding:15px 11px;text-align:center;border:1px dashed rgba(255,255,255,.12);border-radius:12px;font-size:10px;line-height:1.5;opacity:.6}.tkRoomRow{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;padding:10px 11px;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09)}.tkRoomName{font-size:12px;font-weight:950}.tkRoomMeta{font-size:9px;opacity:.58;margin-top:3px}.tkRoomJoin{min-width:82px;min-height:36px;border-radius:9px;border:1px solid rgba(115,174,244,.35);background:rgba(74,126,196,.16);color:#dcecff;font-weight:950;font-size:10px;cursor:pointer}
     .tkStatus{min-height:18px;font-size:10px;line-height:1.45;color:#ffd99b}.tkRoomDetail{display:none;flex-direction:column;gap:10px}.tkRoomDetail.show{display:flex}.tkRoomTop{display:flex;align-items:center;justify-content:space-between;gap:8px}.tkRoomCode{font-size:12px;font-weight:1000;color:#ffd691}.tkRoomSub{font-size:9px;opacity:.58;margin-top:2px}.tkLeave{border:1px solid rgba(255,116,100,.28);background:rgba(138,51,38,.24);color:#ffd9d3;border-radius:9px;min-height:35px;padding:0 10px;font-weight:900;font-size:10px;cursor:pointer}
     .tkSeatGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tkOnlineSeat{padding:10px;border-radius:13px;border:1px solid color-mix(in srgb,var(--accent) 32%,rgba(255,255,255,.08));background:rgba(255,255,255,.04);min-width:0}.tkSeatHead{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:1000}.tkSeatDot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px color-mix(in srgb,var(--accent) 55%,transparent)}.tkSeatWho{height:30px;margin:7px 0;font-size:10px;line-height:1.35;opacity:.76;overflow:hidden}.tkSeatActions{display:flex;gap:5px;flex-wrap:wrap}.tkSeatBtn{min-height:31px;padding:0 8px;font-size:9px;flex:1}.tkSeatBtn.bot{border-color:rgba(232,186,115,.34);color:#ffd693}.tkSeatBtn.mine{border-color:rgba(101,222,134,.34);color:#bff2cb}.tkSeatBadge{display:inline-flex;align-items:center;min-height:25px;padding:0 7px;border-radius:8px;background:rgba(255,255,255,.06);font-size:9px;font-weight:900}
-    .tkHostSettings{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tkHostField{padding:9px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}.tkHostField label{display:block;font-size:9px;opacity:.6;font-weight:900;text-transform:uppercase;margin-bottom:6px}.tkHostField .tkSelect{min-height:38px;font-size:10px}.tkCheck{display:flex;align-items:center;gap:7px;min-height:38px;font-size:10px;font-weight:850}.tkCheck input{width:18px;height:18px;accent-color:#d6a158}.tkRoomActions{display:grid;grid-template-columns:1fr auto;gap:8px}.tkPrimary{min-height:46px}.tkCopy{min-width:92px}
+    .tkHostSettings{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tkHostField{padding:9px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}.tkHostField label{display:block;font-size:9px;opacity:.6;font-weight:900;text-transform:uppercase;margin-bottom:6px}.tkHostField .tkSelect{min-height:38px;font-size:10px}.tkCheck{display:flex;align-items:center;gap:7px;min-height:38px;font-size:10px;font-weight:850}.tkCheck input{width:18px;height:18px;accent-color:#d6a158}.tkRoomActions{display:grid;grid-template-columns:1fr auto;gap:8px}.tkPrimary{min-height:46px}.tkCopy{min-width:102px}
     .tkOnlineBadge{position:absolute;z-index:22;right:max(12px,env(safe-area-inset-right));bottom:max(13px,env(safe-area-inset-bottom));padding:7px 10px;border-radius:999px;background:rgba(10,12,15,.82);border:1px solid rgba(105,166,238,.28);font-size:9px;font-weight:900;color:#dcecff;backdrop-filter:blur(10px);display:none}
     @media(max-width:700px){.tkNameRow{grid-template-columns:1fr}.tkSeatGrid{grid-template-columns:1fr}.tkOnlineSeat{display:grid;grid-template-columns:92px 1fr auto;align-items:center;gap:7px}.tkSeatWho{height:auto;margin:0}.tkSeatActions{min-width:88px}.tkHostSettings{grid-template-columns:1fr}.tkRooms{max-height:220px}}
   `;
@@ -65,7 +68,7 @@
         <div class="tkHostField"><label>Luật</label><label class="tkCheck"><input type="checkbox" id="tkSpecialPieces" checked><span>Dùng quân đặc biệt 火 / 旗 / 風</span></label></div>
       </div>
       <div class="tkStatus" id="tkRoomStatus"></div>
-      <div class="tkRoomActions"><button class="tkPrimary" id="tkStartRoom" type="button">⚔ KHAI CHIẾN</button><button class="tkSecondary tkCopy" id="tkCopyRoom" type="button">🔗 Mã phòng</button></div>
+      <div class="tkRoomActions"><button class="tkPrimary" id="tkStartRoom" type="button">⚔ KHAI CHIẾN</button><button class="tkSecondary tkCopy" id="tkCopyRoom" type="button">🔗 Link phòng</button></div>
     </div>`;
   localWrap.insertAdjacentElement('beforebegin', onlinePanel);
 
@@ -189,7 +192,7 @@
   function renderLobby(rows) {
     roomsEl.innerHTML = '';
     if (!rows.length) {
-      roomsEl.innerHTML = '<div class="tkEmpty">Chưa có phòng nào đang chờ.<br>Tạo phòng mới rồi gửi mã cho hai ông kia.</div>';
+      roomsEl.innerHTML = '<div class="tkEmpty">Chưa có phòng nào đang chờ.<br>Tạo phòng mới rồi gửi link cho hai ông kia.</div>';
       return;
     }
     for (const item of rows) {
@@ -211,12 +214,16 @@
 
   function watchLobby() {
     if (!roomsRef || lobbyQuery) return;
-    lobbyQuery = roomsRef.orderByChild('status').equalTo('waiting').limitToLast(30);
+    // Nested compatibility namespace does not need a new .indexOn deployment.
+    // Read the newest room keys and filter waiting rooms client-side.
+    lobbyQuery = roomsRef.limitToLast(40);
     lobbyHandler = snap => {
       const rows = [];
       snap.forEach(child => {
         const value = child.val() || {};
-        if (Date.now() - (Number(value.createdAt) || 0) <= 45 * 60 * 1000) rows.push({ id: child.key, room: value });
+        if (value.status === 'waiting' && Date.now() - (Number(value.createdAt) || 0) <= 45 * 60 * 1000) {
+          rows.push({ id: child.key, room: value });
+        }
       });
       rows.sort((a, b) => (Number(b.room.createdAt) || 0) - (Number(a.room.createdAt) || 0));
       renderLobby(rows);
@@ -586,16 +593,30 @@
     watchLobby();
   }
 
+  function roomShareUrl(id) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', id);
+    return url.href;
+  }
+
   function copyRoomCode() {
     if (!roomId) return;
     const code = roomId.slice(-5).toUpperCase();
-    const text = 'Tam Quốc Kỳ · Phòng #' + code;
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => setRoomStatus('Đã copy mã phòng #' + code));
-    else setRoomStatus('Mã phòng: #' + code);
+    const text = roomShareUrl(roomId);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => setRoomStatus('Đã copy link phòng #' + code));
+    } else {
+      setRoomStatus('Link phòng: ' + text);
+    }
   }
 
   function restoreSession() {
     if (!roomsRef) return;
+    const requestedRoom = new URLSearchParams(window.location.search).get('room');
+    if (requestedRoom) {
+      bindRoom(requestedRoom);
+      return;
+    }
     let id = null;
     try { id = localStorage.getItem(ROOM_KEY); } catch (_) {}
     if (!id) return;
@@ -637,6 +658,7 @@
     startRoom,
     submitMove,
     leaveRoom,
+    roomShareUrl,
     get roomId() { return roomId; },
     get room() { return room; },
     get seat() { return mySeat; }
