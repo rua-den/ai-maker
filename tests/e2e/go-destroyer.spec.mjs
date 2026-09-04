@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test('Go Hủy Diệt loads lazily and replies from its worker', async ({ page }) => {
+test('Go Hủy Diệt loads lazily and replies from its worker when neural is unavailable', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
+  await page.addInitScript(() => { window.GO_AI_DISABLE_NEURAL = true; });
 
   await page.route('https://www.gstatic.com/firebasejs/**', route =>
     route.fulfill({
@@ -47,5 +48,6 @@ test('Go Hủy Diệt loads lazily and replies from its worker', async ({ page }
 
   const status = await page.locator('#roomCode').textContent();
   expect(status).toContain('Hủy Diệt');
+  await expect(page.locator('#resultNote')).toContainText('☠️ đọc');
   expect(pageErrors).toEqual([]);
 });
