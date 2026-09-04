@@ -8,6 +8,22 @@
   const other = seat => seat === 'A' ? 'B' : 'A';
   const emptyBoard = () => '.'.repeat(POINTS);
 
+  function normalizeMoveHistory(value) {
+    if (!Array.isArray(value)) return [];
+    const out = [];
+    for (const item of value.slice(-512)) {
+      const seat = item?.seat === 'A' ? 'A' : item?.seat === 'B' ? 'B' : null;
+      if (!seat) continue;
+      if (item?.pass === true) {
+        out.push({ seat, pass: true, idx: -1 });
+        continue;
+      }
+      const idx = Number(item?.idx);
+      if (Number.isInteger(idx) && idx >= 0 && idx < POINTS) out.push({ seat, pass: false, idx });
+    }
+    return out;
+  }
+
   function initialState() {
     const board = emptyBoard();
     return {
@@ -15,6 +31,7 @@
       board,
       previousBoard: null,
       positionHistory: [board],
+      moveHistory: [],
       captures: { A: 0, B: 0 },
       passes: 0,
       moveNo: 0,
@@ -36,6 +53,7 @@
       board,
       previousBoard,
       positionHistory,
+      moveHistory: normalizeMoveHistory(state?.moveHistory),
       captures: {
         A: Math.max(0, Number(state?.captures?.A) || 0),
         B: Math.max(0, Number(state?.captures?.B) || 0)
@@ -99,14 +117,10 @@
       }
     }
 
-    // Suicide is illegal unless the move first captures enough opposing stones
-    // to leave the newly placed group with at least one liberty.
     const mine = group(board, idx);
     if (!mine.liberties.length) return null;
 
-    // Positional superko: do not allow any earlier whole-board position to
-    // repeat, not merely the immediately previous board. This is stricter and
-    // prevents long repetition cycles that simple-ko misses.
+    // Positional superko: the whole-board position may never repeat.
     if (s.positionHistory.includes(board)) return null;
 
     const captures = { ...s.captures };
@@ -116,6 +130,7 @@
       board,
       previousBoard: s.board,
       positionHistory: [...s.positionHistory, board],
+      moveHistory: [...s.moveHistory, { seat, pass: false, idx }],
       captures,
       passes: 0,
       moveNo: s.moveNo + 1,
@@ -152,8 +167,6 @@
       }
     }
 
-    // Chinese/AGA-style area scoring: living stones + surrounded empty points.
-    // Captures are shown in the UI but are not added again to area score.
     const black = stonesA + territoryA;
     const white = stonesB + territoryB + KOMI;
     return {
@@ -184,6 +197,7 @@
       const nextState = {
         ...s,
         previousBoard: s.board,
+        moveHistory: [...s.moveHistory, { seat, pass: true, idx: -1 }],
         passes,
         moveNo: s.moveNo + 1,
         last: -1,
