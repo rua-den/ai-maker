@@ -10,7 +10,7 @@ test('Firebase rules keep the database closed by default', () => {
 });
 
 test('game data roots needed by the site are readable and writable', () => {
-  const roomRoots = ['xiangqiRooms', 'caroRooms', 'connect4Rooms', 'tictactoeRooms', 'reversiRooms'];
+  const roomRoots = ['xiangqiRooms', 'threeKingdomsRooms', 'caroRooms', 'connect4Rooms', 'tictactoeRooms', 'reversiRooms'];
   for (const root of roomRoots) {
     assert.equal(rules[root]['.read'], true, root + ' must be readable');
     assert.equal(rules[root].$room['.write'], true, root + ' rooms must be writable');
