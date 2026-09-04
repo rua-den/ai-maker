@@ -14,9 +14,9 @@ function loadCore(){
 const C=loadCore();
 
 test('Bùm Chíu ships three original connected team maps',()=>{
-  assert.deepEqual(C.validateMaps(),[]);
+  assert.equal(C.validateMaps().length,0);
   assert.equal(Object.keys(C.MAPS).length,3);
-  assert.deepEqual(Object.values(C.MAPS).map(m=>m.name),['Cát Cháy','Chợ Đêm','Phố Cổ']);
+  assert.deepEqual(Array.from(Object.values(C.MAPS),m=>m.name),['Cát Cháy','Chợ Đêm','Phố Cổ']);
   for(const map of Object.values(C.MAPS)){
     assert.ok(C.spawns(map,C.TEAM_BLUE).length>=8);
     assert.ok(C.spawns(map,C.TEAM_RED).length>=8);
