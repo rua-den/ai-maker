@@ -83,45 +83,69 @@ test('Three Kingdoms Xiangqi can run local bot versus bot and advances the game'
   expect(pageErrors).toEqual([]);
 });
 
-test('Three Kingdoms Online can create, fill and start a real Firebase room', async ({ page }) => {
-  const pageErrors = [];
-  page.on('pageerror', error => pageErrors.push(error.message));
+test('Three Kingdoms Online supports two real players plus a host-added bot in Firebase', async ({ browser }) => {
+  const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const guestContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  const hostErrors = [];
+  const guestErrors = [];
+  host.on('pageerror', error => hostErrors.push(error.message));
+  guest.on('pageerror', error => guestErrors.push(error.message));
   let createdRoomId = null;
 
-  await page.goto('/games/three-kingdoms-xiangqi.html');
   try {
-    await expect.poll(() => page.evaluate(() => !!window.firebase && !!window.ThreeKingdomsOnline), { timeout: 12000 }).toBe(true);
+    await host.goto('/games/three-kingdoms-xiangqi.html');
+    await expect.poll(() => host.evaluate(() => !!window.firebase && !!window.ThreeKingdomsOnline), { timeout: 12000 }).toBe(true);
 
-    const name = 'E2E-' + Date.now().toString(36).slice(-6);
-    await page.fill('#tkOnlineName', name);
-    await page.selectOption('#tkCreateSeat', '0');
-    await page.click('#tkCreateRoom');
-    await expect(page.locator('#tkRoomDetail')).toHaveClass(/show/, { timeout: 12000 });
+    const stamp = Date.now().toString(36).slice(-6);
+    await host.fill('#tkOnlineName', 'Host-' + stamp);
+    await host.selectOption('#tkCreateSeat', '0');
+    await host.click('#tkCreateRoom');
+    await expect(host.locator('#tkRoomDetail')).toHaveClass(/show/, { timeout: 12000 });
 
-    createdRoomId = await page.evaluate(() => window.ThreeKingdomsOnline?.roomId || null);
+    createdRoomId = await host.evaluate(() => window.ThreeKingdomsOnline?.roomId || null);
     expect(createdRoomId).toBeTruthy();
-    await expect(page.locator('#tkRoomCode')).toContainText('Phòng #');
-
-    const botButtons = page.locator('.tkSeatBtn.bot', { hasText: '+ BOT' });
-    await expect(botButtons).toHaveCount(2);
-    await botButtons.first().click();
-    await expect(page.locator('.tkSeatBtn.bot', { hasText: '+ BOT' })).toHaveCount(1);
-    await page.locator('.tkSeatBtn.bot', { hasText: '+ BOT' }).first().click();
-
-    await expect(page.locator('#tkStartRoom')).toBeEnabled({ timeout: 8000 });
-    const shareUrl = await page.evaluate(() => window.ThreeKingdomsOnline.roomShareUrl(window.ThreeKingdomsOnline.roomId));
+    const shareUrl = await host.evaluate(() => window.ThreeKingdomsOnline.roomShareUrl(window.ThreeKingdomsOnline.roomId));
     expect(shareUrl).toContain('room=');
 
-    await page.click('#tkStartRoom');
-    await expect(page.locator('#setupModal')).not.toHaveClass(/show/, { timeout: 10000 });
-    await expect(page.locator('#tkOnlineBadge')).toBeVisible();
-    expect(pageErrors).toEqual([]);
+    await guest.goto(shareUrl);
+    await expect.poll(() => guest.evaluate(() => !!window.firebase && !!window.ThreeKingdomsOnline), { timeout: 12000 }).toBe(true);
+    await expect(guest.locator('#tkCreateRoom')).toContainText('VÀO PHÒNG ĐƯỢC MỜI');
+    await guest.fill('#tkOnlineName', 'Guest-' + stamp);
+    await guest.click('#tkCreateRoom');
+    await expect(guest.locator('#tkRoomDetail')).toHaveClass(/show/, { timeout: 12000 });
+
+    // Host owns Shu. Guest explicitly takes Wei.
+    const weiSeat = guest.locator('.tkOnlineSeat').nth(1);
+    await expect(weiSeat).toContainText('Ngụy');
+    await weiSeat.getByRole('button', { name: 'Ngồi ghế' }).click();
+    await expect(weiSeat).toContainText('Ghế của bạn', { timeout: 8000 });
+
+    // Only Wu remains open, so host fills that third seat with a BOT.
+    await expect(host.locator('.tkSeatBtn.bot', { hasText: '+ BOT' })).toHaveCount(1, { timeout: 8000 });
+    await host.locator('.tkSeatBtn.bot', { hasText: '+ BOT' }).click();
+    await expect(host.locator('#tkStartRoom')).toBeEnabled({ timeout: 8000 });
+    await expect(host.locator('#tkRoomStatus')).toContainText('Đủ 3 ghế');
+
+    await host.click('#tkStartRoom');
+    await expect(host.locator('#setupModal')).not.toHaveClass(/show/, { timeout: 10000 });
+    await expect(guest.locator('#setupModal')).not.toHaveClass(/show/, { timeout: 10000 });
+    await expect(host.locator('#tkOnlineBadge')).toBeVisible();
+    await expect(guest.locator('#tkOnlineBadge')).toBeVisible();
+    await expect(host.locator('#turnMain')).toContainText('Thục');
+    await expect(guest.locator('#turnMain')).toContainText('Thục');
+
+    expect(hostErrors).toEqual([]);
+    expect(guestErrors).toEqual([]);
   } finally {
     if (createdRoomId) {
-      await page.evaluate(async id => {
+      await host.evaluate(async id => {
         if (!window.firebase) return;
         await window.firebase.database().ref('xiangqiRooms/threeKingdoms').child(id).remove();
       }, createdRoomId).catch(() => {});
     }
+    await guestContext.close();
+    await hostContext.close();
   }
 });
