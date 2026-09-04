@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import vm from 'node:vm';
 
 const botSource = fs.readFileSync(new URL('../games/go-bot.js', import.meta.url), 'utf8');
@@ -10,6 +11,9 @@ const coreSource = fs.readFileSync(new URL('../games/go-ai/destroyer-core.js', i
 const workerSource = fs.readFileSync(new URL('../games/go-ai/destroyer-worker.js', import.meta.url), 'utf8');
 const encoderSource = fs.readFileSync(new URL('../games/go-ai/neural-encoder.js', import.meta.url), 'utf8');
 const neuralWorkerSource = fs.readFileSync(new URL('../games/go-ai/neural-worker.js', import.meta.url), 'utf8');
+const verifiedModelUrl = new URL('../games/go-ai/models/katago-b6c96.onnx', import.meta.url);
+const verifiedModelShaUrl = new URL('../games/go-ai/models/katago-b6c96.onnx.sha256', import.meta.url);
+const VERIFIED_MODEL_SHA256 = '0f86dd3bc0403ebf9787f8a857f9fad04881e54191af1d7d4c2b71fa91de6511';
 
 function loadDestroyer() {
   const context = { performance: { now: () => Date.now() } };
@@ -43,6 +47,16 @@ test('Hủy Diệt prefers KataGo ONNX then falls back to local worker and exper
   assert.match(runtimeSource, /provider: 'classic-fallback'/);
   assert.match(runtimeSource, /katagoOnnx/);
   assert.match(runtimeSource, /queueBot = function/);
+});
+
+test('verified KataGo ONNX model is shipped byte-for-byte with its locked checksum', () => {
+  const bytes = fs.readFileSync(verifiedModelUrl);
+  const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+  const checksumFile = fs.readFileSync(verifiedModelShaUrl, 'utf8').trim();
+
+  assert.equal(bytes.length, 4133564);
+  assert.equal(digest, VERIFIED_MODEL_SHA256);
+  assert.equal(checksumFile, `${VERIFIED_MODEL_SHA256}  katago-b6c96.onnx`);
 });
 
 test('Go rules persist real move history for KataGo V7 history planes', () => {
