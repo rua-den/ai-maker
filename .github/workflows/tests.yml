@@ -28,12 +28,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install pinned ONNX Runtime Web
-        run: npm install --no-save --ignore-scripts onnxruntime-web@1.29.0
+      - name: Fetch pinned ONNX Runtime Web package
+        run: |
+          set -euxo pipefail
+          PKG=$(npm pack onnxruntime-web@1.29.0 --silent)
+          mkdir -p /tmp/ortpkg
+          tar -xzf "$PKG" -C /tmp/ortpkg
       - name: Vendor same-origin runtime assets
         run: |
           set -euxo pipefail
-          SRC=node_modules/onnxruntime-web/dist
+          SRC=/tmp/ortpkg/package/dist
           DEST=games/go-ai/vendor/ort
           mkdir -p "$DEST"
           cp "$SRC/ort.min.js" "$DEST/ort.min.js"
