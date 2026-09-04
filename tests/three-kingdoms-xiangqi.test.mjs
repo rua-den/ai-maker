@@ -108,28 +108,29 @@ test('Three Kingdoms opens with an explicit online lobby and keeps local play as
 });
 
 test('Three Kingdoms online rooms use the already-deployed Xiangqi Firebase namespace', () => {
-  assert.match(onlineSource, /const ROOT = 'xiangqiRooms\/threeKingdoms'/);
+  assert.match(onlineSource, /const\s+ROOT\s*=\s*'xiangqiRooms\/threeKingdoms'/);
   assert.match(onlineSource, /roomsRef\.limitToLast\(40\)/);
-  assert.match(onlineSource, /value\.status === 'waiting'/);
+  assert.match(onlineSource, /value\.status\s*===\s*'waiting'/);
   assert.doesNotMatch(onlineSource, /orderByChild\('status'\)\.equalTo\('waiting'\)/);
 });
 
 test('Three Kingdoms online room has three selectable seats and host can fill empty seats with bots', () => {
-  assert.match(onlineSource, /function createRoom\(/);
-  assert.match(onlineSource, /function takeSeat\(index\)/);
-  assert.match(onlineSource, /function setSeatBot\(index, enabled\)/);
-  assert.match(onlineSource, /function startRoom\(/);
-  assert.match(onlineSource, /function submitMove\(move\)/);
-  assert.match(onlineSource, /function maybeDriveBot\(value\)/);
-  assert.match(onlineSource, /seatAt\(value, i\)\.type === 'human' \|\| seatAt\(value, i\)\.type === 'bot'/);
-  assert.match(onlineSource, /R\.makeMove\(value\.state, move\)/);
+  assert.match(onlineSource, /function\s+createRoom\s*\(/);
+  assert.match(onlineSource, /function\s+takeSeat\s*\(index\)/);
+  assert.match(onlineSource, /function\s+setSeatBot\s*\(index\s*,\s*enabled\)/);
+  assert.match(onlineSource, /function\s+startRoom\s*\(/);
+  assert.match(onlineSource, /function\s+submitMove\s*\(move\)/);
+  assert.match(onlineSource, /function\s+maybeDriveBot\s*\(value\)/);
+  assert.match(onlineSource, /seatAt\(value\s*,\s*i\)\.type\s*===\s*'human'\s*\|\|\s*seatAt\(value\s*,\s*i\)\.type\s*===\s*'bot'/);
+  assert.match(onlineSource, /R\.makeMove\(value\.state\s*,\s*move\)/);
 });
 
 test('Three Kingdoms room sharing uses a full join URL that can restore the exact room', () => {
-  assert.match(onlineSource, /url\.searchParams\.set\('room', id\)/);
-  assert.match(onlineSource, /new URLSearchParams\(window\.location\.search\)\.get\('room'\)/);
+  assert.match(onlineSource, /url\.searchParams\.set\('room'\s*,\s*id\)/);
+  assert.match(onlineSource, /new\s+URLSearchParams\((?:window\.)?location\.search\)\.get\('room'\)/);
   assert.match(onlineSource, /🔗 Link phòng/);
   assert.match(onlineSource, /bindRoom\(requestedRoom\)/);
+  assert.match(onlineSource, /VÀO PHÒNG ĐƯỢC MỜI/);
 });
 
 test('Three Kingdoms UI delegates online human moves and blocks control of other seats', () => {
