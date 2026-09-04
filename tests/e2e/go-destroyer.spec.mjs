@@ -74,11 +74,13 @@ test('Go Hủy Diệt performs a real KataGo ONNX inference in the browser befor
       move: choice.move,
       legal: Boolean(applied),
       neuralCandidates: Number(choice.diagnostics?.neuralCandidates) || 0,
+      neuralError: choice.diagnostics?.neuralError || null,
+      diagnostics: choice.diagnostics || null,
       model: choice.diagnostics?.model || null
     };
   });
 
-  expect(result.provider).toBe('katago-onnx');
+  expect(result.provider, `KataGo neural failed: ${result.neuralError || JSON.stringify(result.diagnostics)}`).toBe('katago-onnx');
   expect(result.legal).toBe(true);
   expect(result.neuralCandidates).toBeGreaterThan(0);
   expect(pageErrors).toEqual([]);
