@@ -42,10 +42,10 @@ test('Bùm Chíu PvP uses local prediction while two browsers share one authorit
     const predicted=await p1.evaluate(()=>window.BoomChiuPvP.renderPosition);
     await p1.evaluate(()=>dispatchEvent(new KeyboardEvent('keyup',{code:'KeyW'})));
     expect(Math.hypot(predicted.x-before.x,predicted.y-before.y)).toBeGreaterThan(.05);
-    await expect.poll(()=>p1.evaluate(()=>{
+    await expect.poll(()=>p1.evaluate(origin=>{
       const me=window.BoomChiuPvP.actors.find(a=>a.id===window.BoomChiuPvP.you);
-      return me?Math.hypot(me.x-before.x,me.y-before.y):0;
-    }),{timeout:3000}).toBeGreaterThan(.05);
+      return me?Math.hypot(me.x-origin.x,me.y-origin.y):0;
+    },before),{timeout:3000}).toBeGreaterThan(.05);
 
     await p2.goto(`/games/boom-chiu-pvp.html?server=${encodeURIComponent(wsUrl)}&room=${room}`);
     await expect(p2.locator('#server')).toHaveValue(wsUrl);
