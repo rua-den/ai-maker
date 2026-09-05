@@ -1,15 +1,18 @@
 import { test, expect } from '@playwright/test';
 
-test('Bùm Chíu starts a 5v5 bot match and renders the mobile FPS HUD', async ({ page }) => {
+test('Bùm Chíu bot-only runs 5v5, moves bots, fires tracer VFX and stays responsive on mobile', async ({ page }) => {
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
+  await page.setViewportSize({width:390,height:844});
   await page.goto('/games/boom-chiu.html');
 
-  await expect(page.getByRole('heading',{name:'BÙM CHÍU'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'💥 BÙM CHÍU'})).toBeVisible();
   await expect(page.locator('.mapCard')).toHaveCount(3);
-  await expect(page.locator('#startBtn')).toContainText('5v5');
+  await expect(page.locator('#startBtn')).toContainText('BOT 5v5');
+  await expect(page.locator('.mode')).toContainText('KHÔNG CẦN SERVER');
+  await expect(page.locator('#fireBtn')).toHaveCSS('background-image',/ui-button-red-round\.svg/);
 
-  await page.evaluate(()=>window.BoomChiuGame.start({map:'cat_chay',difficulty:'easy',target:20}));
+  await page.evaluate(()=>window.BoomChiuGame.start({map:'cat_chay',difficulty:'destroyer',target:20}));
   await expect(page.locator('#menu')).toHaveClass(/hidden/);
   await expect(page.locator('#touchUI')).toHaveClass(/playing/);
 
@@ -21,23 +24,26 @@ test('Bùm Chíu starts a 5v5 bot match and renders the mobile FPS HUD', async (
   expect(initial.player.clip).toBe(30);
 
   const before=new Map(initial.actors.filter(a=>!a.isPlayer).map(a=>[a.id,{x:a.x,y:a.y}]));
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(1600);
   const later=await page.evaluate(()=>window.BoomChiuGame.getState());
-  const moved=later.actors.filter(a=>!a.isPlayer).some(a=>{
-    const p=before.get(a.id);return p&&Math.hypot(a.x-p.x,a.y-p.y)>.08;
-  });
-  expect(moved).toBe(true);
+  expect(later.actors.filter(a=>!a.isPlayer).some(a=>{const p=before.get(a.id);return p&&Math.hypot(a.x-p.x,a.y-p.y)>.08})).toBe(true);
 
-  await expect(page.locator('#blueScore')).toHaveText(/\d+/);
-  await expect(page.locator('#redScore')).toHaveText(/\d+/);
-  await expect(page.locator('#ammo')).toContainText('30 / 90');
+  const tracerBefore=await page.evaluate(()=>window.BoomChiuVfx?.tracerCount||0);
+  await page.evaluate(()=>window.BoomChiuGame.fire());
+  await expect.poll(()=>page.evaluate(()=>window.BoomChiuGame.getState().player.clip),{timeout:1500}).toBeLessThan(30);
+  await expect.poll(()=>page.evaluate(()=>window.BoomChiuVfx?.tracerCount||0),{timeout:1500}).toBeGreaterThan(tracerBefore);
+  await expect(page.locator('#boomFx')).toBeAttached();
+
+  await expect.poll(()=>page.evaluate(()=>window.BoomChiuVfx?.fps||0),{timeout:3000}).toBeGreaterThan(20);
+  await expect.poll(()=>page.evaluate(()=>window.BoomChiuGame.getState().diagnosticBotKills),{timeout:9000,intervals:[500]}).toBeGreaterThan(0);
+
   const canvas=await page.locator('#game').evaluate(el=>({w:el.width,h:el.height}));
   expect(canvas.w).toBeGreaterThan(300);
   expect(canvas.h).toBeGreaterThan(500);
   expect(errors).toEqual([]);
 });
 
-test('Bùm Chíu can switch to every original map without browser errors', async ({ page }) => {
+test('Bùm Chíu bot-only can switch to every original map without browser errors', async ({ page }) => {
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   await page.goto('/games/boom-chiu.html');
