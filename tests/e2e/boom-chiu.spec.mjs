@@ -49,6 +49,14 @@ test('Bùm Chíu bot-only has proper FPS viewmodel, grounded bots and full movem
   expect(Math.abs(later.lastBotGrounding.feetY-later.lastBotGrounding.ground)).toBeLessThan(1);
   expect(later.weaponView.angle).toBeGreaterThan(.45);
   expect(later.weaponView.anchor.x).toBeGreaterThan(390*.65);
+  const viewAlign=await page.evaluate(()=>{
+    const {weaponView}=window.BoomChiuGame.getState(),cx=innerWidth*.5,cy=innerHeight*.5;
+    const ax=weaponView.anchor.x-cx,ay=weaponView.anchor.y-cy,mx=weaponView.muzzle.x-cx,my=weaponView.muzzle.y-cy;
+    const anchorDist=Math.hypot(ax,ay),muzzleDist=Math.hypot(mx,my);
+    return {cosine:(ax*mx+ay*my)/(anchorDist*muzzleDist),anchorDist,muzzleDist};
+  });
+  expect(viewAlign.cosine).toBeGreaterThan(.9);
+  expect(viewAlign.muzzleDist).toBeLessThan(viewAlign.anchorDist*.55);
 
   const tracerBefore=await page.evaluate(()=>window.BoomChiuVfx?.tracerCount||0);
   await page.evaluate(()=>window.BoomChiuGame.fire());
