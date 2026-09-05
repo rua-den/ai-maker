@@ -1,77 +1,141 @@
 # 🐢 Rùa — Game Portfolio
 
-A personal game portfolio where you can play directly in your browser — no installation required.
+Browser game portfolio built mainly with plain HTML, CSS and JavaScript, deployed on GitHub Pages.
 
-## 📁 Project Structure
+## 🎮 Games
 
+Current portfolio:
+
+- Flappy Dog
+- Tetris
+- 2048
+- Xiangqi
+- Three Kingdoms Xiangqi
+- Caro
+- Connect Four
+- Tic Tac Toe
+- Go
+- Reversi
+- Nine Men's Morris
+- **Bùm Chíu** — BOT-first team FPS
+
+## 💥 Bùm Chíu — Current Status
+
+**Primary mode:** BOT-only / offline-style gameplay on GitHub Pages.
+
+`games/boom-chiu.html`
+
+Current playable milestone:
+
+- 5v5 Team Deathmatch: player + 4 blue BOTs vs 5 red BOTs.
+- 3 original maps: **Cát Cháy**, **Chợ Đêm**, **Phố Cổ**.
+- BOT difficulty: Vừa / Khó / Hủy diệt.
+- Rùa-47 rifle: ammo, reload, recoil, spread, hitmarker, kill feed and respawn.
+- Styloo CC0 AK-based first-person weapon asset.
+- Weapon viewmodel is rendered from the lower-right with muzzle-aligned tracer/VFX.
+- Quaternius Toon Shooter CC0 soldier assets rendered into 8 directional BOT sprites.
+- BOT sprites use a feet/ground anchor instead of floating around the horizon.
+- Full mouse look: yaw + pitch (left/right and up/down).
+- Jump: `Space`.
+- Crouch: `C` or `Ctrl`.
+- Mobile controls include move, look, fire, reload, jump and crouch.
+- Runtime remains lightweight raycast/canvas; 3D models are pre-rendered to PNG sprites rather than loaded as a 3D engine during gameplay.
+
+### Bùm Chíu networking
+
+`games/boom-chiu-pvp.html` remains an **experimental PvP mode**.
+
+The authoritative WebSocket server is kept in:
+
+`server/boom-chiu-server.js`
+
+It supports room-based 5v5 play with server BOT fill and is covered by integration/E2E tests. Public hosted PvP is **not the current main path**. The preferred next deployment target is a user-controlled VPS close to players; the existing Node/WebSocket server can be deployed there later.
+
+Render/Railway config files are retained only as deployment experiments/references.
+
+## ✅ Latest verified Bùm Chíu checkpoint
+
+Verified checkpoint before this documentation update:
+
+- Code HEAD: `9a8e2efbcb9f6e5edc11f8ab107ce87ddb810504`
+- GitHub Actions **Tests #241**: success.
+- GitHub Pages **#278**: success.
+- Browser coverage verifies weapon rendering, 8 directional BOT sprites, grounded BOT placement, muzzle/tracer alignment, vertical mouse look, jump, crouch, BOT movement/kills and all 3 maps.
+
+## 🧭 Bùm Chíu next priorities
+
+1. Continue polishing the first-person weapon pose/scale until it feels natural in live play.
+2. Improve BOT presentation and animation feel while keeping sprite-based performance.
+3. Improve shooting feedback: wall impact, muzzle flash, hit/death feedback and sound mix.
+4. Tune movement/camera feel after live testing of pitch, jump and crouch.
+5. Return to PvP only after the BOT build feels good; deploy the WebSocket server to the user's VPS instead of making the public hosted server a dependency for the main game.
+
+## 📁 Relevant structure
+
+```text
+ai-maker/
+├── index.html
+├── firebase-config.js
+├── games/
+│   ├── boom-chiu.html
+│   ├── boom-chiu.js
+│   ├── boom-chiu-core.js
+│   ├── boom-chiu-art.js
+│   ├── boom-chiu-vfx.js
+│   ├── boom-chiu-pvp.html
+│   └── boom-chiu-pvp.js
+├── server/
+│   └── boom-chiu-server.js
+├── assets/
+│   └── boom-chiu/
+│       ├── styloo/
+│       ├── quaternius/
+│       └── kenney/
+├── tests/
+│   └── e2e/
+├── package.json
+└── README.md
 ```
-rua-games/
-├── index.html            ← Homepage: "Welcome to Rùa"
-├── firebase-config.js    ← Shared Firebase config for all games (configure once)
-├── README.md
-└── games/
-    ├── flappy-dog.html   ← Flappy Dog (with leaderboard)
-    ├── tetris.html       ← Tetris (with leaderboard)
-    └── xiangqi.html      ← Chinese Chess (2 players / vs Bot — no leaderboard yet)
-```
 
-The entire project is a **static site** built with plain HTML, CSS, and JavaScript — no Node.js and no build step required. You can deploy it directly to GitHub Pages, Netlify, or Vercel.
+## 🧪 Tests
 
----
-
-## 🔥 Step 1 — Enable Shared Leaderboards with Firebase (Free)
-
-This step is optional. Without Firebase, every game will still work normally, but scores will only be stored locally in each player's browser and will not be shared across players.
-
-1. Go to the **Firebase Console** at `https://console.firebase.google.com` and create a new project (free).
-2. Inside the project, go to **Build → Realtime Database → Create Database**, then select **Start in test mode** for initial testing. You can tighten the security rules later.
-3. Go to **⚙ Project settings**, scroll down to **Your apps**, click the Web `</>` icon, and copy the generated `firebaseConfig` values.
-4. Open **`firebase-config.js`** in the project root and replace the placeholder values with your actual Firebase configuration:
-
-```js
-const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "...",
-  databaseURL: "...",
-  projectId: "...",
-};
-```
-
-5. That's it — **all games on the site automatically share this Firebase configuration**. Each game has its own leaderboard namespace based on the `GAME_ID` defined in that game's file, so scores from different games do not get mixed together.
-
-> Want to add another game later? Copy one of the files in `games/`, change its `GAME_ID` (for example, `'flappy-dog'` → `'new-game'`), and add a card/link to `index.html`. You do not need to create another Firebase project.
-
----
-
-## 🚀 Step 2 — Deploy to GitHub Pages
+The playable site is static, but the repository uses Node.js tooling for automated tests and the optional Bùm Chíu WebSocket server.
 
 ```bash
-# 1) Create a new GitHub repository (for example: rua-games), then:
-cd rua-games
-git init
-git add .
-git commit -m "Rùa game portfolio"
-git branch -M main
-git remote add origin https://github.com/<username>/rua-games.git
-git push -u origin main
+npm install
+npm test
 ```
 
-Then, on GitHub:
+The test suite includes unit tests, browser E2E tests and a real WebSocket integration test for Bùm Chíu PvP.
 
-1. Open the repository and go to **Settings → Pages**.
-2. Under **Source**, select **Deploy from a branch**.
-3. Select the `main` branch and `/ (root)` folder, then click **Save**.
-4. Wait about a minute. The site should become available at:
-   `https://<username>.github.io/rua-games/`
+## 🔥 Firebase
 
-The homepage is served from `index.html`, and individual games are located in the `games/` directory.
+Firebase Realtime Database is shared by games that need online rooms, presence, chat or shared game data. Static/offline games can run without it.
 
----
+Configuration lives in:
 
-## 🎮 Game Notes
+`firebase-config.js`
 
-- **Flappy Dog** — Click, tap, or press Space to fly. A player name is required before starting.
-- **Tetris** — Use the arrow keys to move and rotate pieces, Space for hard drop, and P to pause. Touch controls are included for mobile devices.
-- **Chinese Chess (Xiangqi)** — Play locally with two players or against the bot, with side and difficulty selection. Core rules are implemented, including check, flying general, cannon screens, blocked horse legs, and elephants not crossing the river. *Leaderboard support for this game is planned for later.*
+Database rules live in:
 
-All three games support full-screen layouts, automatically scale to the browser window, and include a 🐢 button to return to the homepage plus a ⛶ fullscreen button.
+`database.rules.json`
+
+## 🚀 Deployment
+
+The main website is deployed as a static GitHub Pages site from `main`.
+
+Bùm Chíu BOT-only requires no game server.
+
+Bùm Chíu PvP requires a persistent Node.js/WebSocket server. For future public PvP, deploy `server/boom-chiu-server.js` to the chosen VPS and point the PvP client at its `ws://` / `wss://` endpoint.
+
+## 🎨 Third-party assets
+
+Bùm Chíu currently uses free/CC0 assets, with provenance recorded under:
+
+`assets/boom-chiu/THIRD_PARTY.md`
+
+Main sources currently include:
+
+- Kenney UI assets — CC0.
+- Styloo Guns Asset Pack — CC0.
+- Quaternius Toon Shooter Game Kit — CC0.
