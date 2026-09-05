@@ -59,10 +59,42 @@ test('Bùm Chíu bot-only page visibly uses vendored Kenney CC0 UI and tracer VF
   assert.match(local,/ui-button-blue\.svg/);
   assert.match(local,/ui-button-red-round\.svg/);
   assert.match(local,/boom-chiu-vfx\.js/);
+});
+
+test('Bùm Chíu ships rendered Styloo weapon and eight Quaternius directional BOT sprites',()=>{
+  const weapon=new URL('../assets/boom-chiu/styloo/ak47-fps.png',import.meta.url);
+  assert.equal(fs.existsSync(weapon),true);
+  assert.ok(fs.statSync(weapon).size>10000,'rendered Styloo weapon should not be an empty placeholder');
+  for(let i=0;i<8;i++){
+    const file=new URL(`../assets/boom-chiu/quaternius/soldier-${i}.png`,import.meta.url);
+    assert.equal(fs.existsSync(file),true,`soldier-${i}.png must exist`);
+    assert.ok(fs.statSync(file).size>10000,`soldier-${i}.png should contain rendered art`);
+  }
+  const art=fs.readFileSync(new URL('../games/boom-chiu-art.js',import.meta.url),'utf8');
+  const game=fs.readFileSync(new URL('../games/boom-chiu.js',import.meta.url),'utf8');
   const vfx=fs.readFileSync(new URL('../games/boom-chiu-vfx.js',import.meta.url),'utf8');
-  assert.match(vfx,/MutationObserver/);
-  assert.match(vfx,/spawnTracer/);
-  assert.match(vfx,/globalCompositeOperation='screen'/);
+  assert.match(art,/styloo\/ak47-fps\.png/);
+  assert.match(art,/quaternius\/soldier-\$\{i\}\.png/);
+  assert.match(game,/ART\?\.soldiers/);
+  assert.match(game,/ctx\.drawImage\(sprite/);
+  assert.match(game,/BoomChiuWeaponView/);
+  assert.match(game,/BoomChiuVfx\?\.fire/);
+  assert.match(vfx,/window\.BoomChiuWeaponView\?\.muzzle/);
+  assert.match(vfx,/function fire\(opts=\{\}\)/);
+});
+
+test('Bùm Chíu records CC0 provenance and keeps 3D rendering out of runtime',()=>{
+  const thirdParty=fs.readFileSync(new URL('../assets/boom-chiu/THIRD_PARTY.md',import.meta.url),'utf8');
+  const renderer=fs.readFileSync(new URL('../scripts/render-boom-chiu-assets.mjs',import.meta.url),'utf8');
+  const html=fs.readFileSync(new URL('../games/boom-chiu.html',import.meta.url),'utf8');
+  assert.match(thirdParty,/Styloo Guns Asset Pack/);
+  assert.match(thirdParty,/Quaternius Toon Shooter Game Kit/);
+  assert.match(thirdParty,/CC0/);
+  assert.match(renderer,/ak47\.glb/);
+  assert.match(renderer,/Character_Soldier\.gltf/);
+  assert.match(renderer,/for\(let i=0;i<8;i\+\+\)/);
+  assert.doesNotMatch(html,/three\.module\.js|GLTFLoader|cdn\.jsdelivr/);
+  assert.match(html,/boom-chiu-art\.js/);
 });
 
 test('Bùm Chíu homepage is bot-first; PvP remains a separate experimental page',()=>{
