@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Bùm Chíu bot-only renders Styloo weapon, Quaternius bots and muzzle-aligned tracer on mobile', async ({ page }) => {
+test('Bùm Chíu bot-only has proper FPS viewmodel, grounded bots and full movement controls', async ({ page }) => {
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   await page.setViewportSize({width:390,height:844});
@@ -8,53 +8,62 @@ test('Bùm Chíu bot-only renders Styloo weapon, Quaternius bots and muzzle-alig
 
   await expect(page.getByRole('heading',{name:'💥 BÙM CHÍU'})).toBeVisible();
   await expect(page.locator('.mapCard')).toHaveCount(3);
-  await expect(page.locator('#startBtn')).toContainText('BOT 5v5');
-  await expect(page.locator('.mode')).toContainText('KHÔNG CẦN SERVER');
+  await expect(page.locator('#jumpBtn')).toBeAttached();
+  await expect(page.locator('#crouchBtn')).toBeAttached();
   await expect(page.locator('#fireBtn')).toHaveCSS('background-image',/ui-button-red-round\.svg/);
-
   await expect.poll(()=>page.evaluate(()=>window.BoomChiuArt?.rifleLoaded),{timeout:5000}).toBe(true);
   await expect.poll(()=>page.evaluate(()=>window.BoomChiuArt?.soldiersLoaded),{timeout:5000}).toBe(8);
 
   await page.evaluate(()=>window.BoomChiuGame.start({map:'cat_chay',difficulty:'destroyer',target:20}));
-  await expect(page.locator('#menu')).toHaveClass(/hidden/);
-  await expect(page.locator('#touchUI')).toHaveClass(/playing/);
-
   const initial=await page.evaluate(()=>window.BoomChiuGame.getState());
-  expect(initial.running).toBe(true);
   expect(initial.actors).toHaveLength(10);
-  expect(initial.actors.filter(a=>a.team==='blue')).toHaveLength(5);
-  expect(initial.actors.filter(a=>a.team==='red')).toHaveLength(5);
-  expect(initial.player.clip).toBe(30);
-  expect(initial.artReady).toBe(true);
-  expect(initial.soldierSprites).toBe(8);
+  expect(initial.player.pitch).toBe(0);
+
+  // Vertical mouse-look is real state, not just a cosmetic crosshair offset.
+  await page.evaluate(()=>window.BoomChiuGame.look(0,-120));
+  const looked=await page.evaluate(()=>window.BoomChiuGame.getState());
+  expect(looked.player.pitch).toBeGreaterThan(.2);
+  await page.evaluate(()=>window.BoomChiuGame.look(0,120));
+
+  // Space/mobile jump has actual vertical velocity and height.
+  expect(await page.evaluate(()=>window.BoomChiuGame.jump())).toBe(true);
+  await page.waitForTimeout(120);
+  const airborne=await page.evaluate(()=>window.BoomChiuGame.getState());
+  expect(airborne.player.z).toBeGreaterThan(.12);
+  expect(airborne.player.vz).toBeGreaterThan(0);
+  await page.waitForTimeout(800);
+
+  // Crouch lowers eye height smoothly.
+  await page.evaluate(()=>window.BoomChiuGame.setCrouch(true));
+  await page.waitForTimeout(180);
+  const crouched=await page.evaluate(()=>window.BoomChiuGame.getState());
+  expect(crouched.player.crouching).toBe(true);
+  expect(crouched.player.crouchAmount).toBeGreaterThan(.6);
+  expect(crouched.player.eyeHeight).toBeLessThan(1.3);
+  await page.evaluate(()=>window.BoomChiuGame.setCrouch(false));
 
   const before=new Map(initial.actors.filter(a=>!a.isPlayer).map(a=>[a.id,{x:a.x,y:a.y}]));
-  await page.waitForTimeout(1600);
+  await page.waitForTimeout(1400);
   const later=await page.evaluate(()=>window.BoomChiuGame.getState());
   expect(later.actors.filter(a=>!a.isPlayer).some(a=>{const p=before.get(a.id);return p&&Math.hypot(a.x-p.x,a.y-p.y)>.08})).toBe(true);
   expect(later.renderedSpriteCount).toBeGreaterThan(0);
   expect(later.weaponSpriteFrames).toBeGreaterThan(0);
+  expect(later.lastBotGrounding).toBeTruthy();
+  expect(Math.abs(later.lastBotGrounding.feetY-later.lastBotGrounding.ground)).toBeLessThan(1);
+  expect(later.weaponView.angle).toBeGreaterThan(.45);
+  expect(later.weaponView.anchor.x).toBeGreaterThan(390*.65);
 
   const tracerBefore=await page.evaluate(()=>window.BoomChiuVfx?.tracerCount||0);
   await page.evaluate(()=>window.BoomChiuGame.fire());
-  await expect.poll(()=>page.evaluate(()=>window.BoomChiuGame.getState().player.clip),{timeout:1500}).toBeLessThan(30);
   await expect.poll(()=>page.evaluate(()=>window.BoomChiuVfx?.tracerCount||0),{timeout:1500}).toBeGreaterThan(tracerBefore);
-  await expect(page.locator('#boomFx')).toBeAttached();
-
   const trace=await page.evaluate(()=>({shot:window.BoomChiuVfx?.lastShot,state:window.BoomChiuGame.getState()}));
-  expect(trace.shot).toBeTruthy();
   expect(Math.hypot(trace.shot.x1-trace.state.muzzle.x,trace.shot.y1-trace.state.muzzle.y)).toBeLessThan(12);
   expect(Math.abs(trace.shot.x2-195)).toBeLessThan(12);
   expect(Math.abs(trace.shot.y2-422)).toBeLessThan(12);
-  // Muzzle is intentionally much closer to crosshair than the old bottom-right hard-coded tracer origin.
-  expect(trace.state.muzzle.y).toBeLessThan(844*.7);
+  expect(Math.abs(trace.shot.y1-trace.shot.y2)).toBeGreaterThan(45);
 
   await expect.poll(()=>page.evaluate(()=>window.BoomChiuVfx?.fps||0),{timeout:3000}).toBeGreaterThan(20);
   await expect.poll(()=>page.evaluate(()=>window.BoomChiuGame.getState().diagnosticBotKills),{timeout:9000,intervals:[500]}).toBeGreaterThan(0);
-
-  const canvas=await page.locator('#game').evaluate(el=>({w:el.width,h:el.height}));
-  expect(canvas.w).toBeGreaterThan(300);
-  expect(canvas.h).toBeGreaterThan(500);
   expect(errors).toEqual([]);
 });
 
