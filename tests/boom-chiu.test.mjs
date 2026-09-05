@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 
 function loadCore(){
   const code=fs.readFileSync(new URL('../games/boom-chiu-core.js',import.meta.url),'utf8');
@@ -61,15 +62,18 @@ test('Bùm Chíu bot-only page visibly uses vendored Kenney CC0 UI and tracer VF
   assert.match(local,/boom-chiu-vfx\.js/);
 });
 
-test('Bùm Chíu ships rendered Styloo weapon and eight Quaternius directional BOT sprites',()=>{
+test('Bùm Chíu ships rendered Styloo weapon and eight distinct Quaternius directional BOT sprites',()=>{
   const weapon=new URL('../assets/boom-chiu/styloo/ak47-fps.png',import.meta.url);
   assert.equal(fs.existsSync(weapon),true);
   assert.ok(fs.statSync(weapon).size>10000,'rendered Styloo weapon should not be an empty placeholder');
+  const hashes=[];
   for(let i=0;i<8;i++){
     const file=new URL(`../assets/boom-chiu/quaternius/soldier-${i}.png`,import.meta.url);
     assert.equal(fs.existsSync(file),true,`soldier-${i}.png must exist`);
     assert.ok(fs.statSync(file).size>10000,`soldier-${i}.png should contain rendered art`);
+    hashes.push(crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'));
   }
+  assert.equal(new Set(hashes).size,8,'all 8 directional soldier renders must be visually distinct files');
   const art=fs.readFileSync(new URL('../games/boom-chiu-art.js',import.meta.url),'utf8');
   const game=fs.readFileSync(new URL('../games/boom-chiu.js',import.meta.url),'utf8');
   const vfx=fs.readFileSync(new URL('../games/boom-chiu-vfx.js',import.meta.url),'utf8');
@@ -78,6 +82,10 @@ test('Bùm Chíu ships rendered Styloo weapon and eight Quaternius directional B
   assert.match(game,/ART\?\.soldiers/);
   assert.match(game,/ctx\.drawImage\(sprite/);
   assert.match(game,/BoomChiuWeaponView/);
+  assert.match(game,/lastShotMuzzle/);
+  assert.match(game,/movementY/);
+  assert.match(game,/function jump\(/);
+  assert.match(game,/function setCrouch\(/);
   assert.match(game,/BoomChiuVfx\?\.fire/);
   assert.match(vfx,/window\.BoomChiuWeaponView\?\.muzzle/);
   assert.match(vfx,/function fire\(opts=\{\}\)/);
@@ -92,6 +100,7 @@ test('Bùm Chíu records CC0 provenance and keeps 3D rendering out of runtime',(
   assert.match(thirdParty,/CC0/);
   assert.match(renderer,/ak47\.glb/);
   assert.match(renderer,/Character_Soldier\.gltf/);
+  assert.match(renderer,/preserveDrawingBuffer:true/);
   assert.match(renderer,/for\(let i=0;i<8;i\+\+\)/);
   assert.doesNotMatch(html,/three\.module\.js|GLTFLoader|cdn\.jsdelivr/);
   assert.match(html,/boom-chiu-art\.js/);
@@ -107,6 +116,8 @@ test('Bùm Chíu homepage is bot-first; PvP remains a separate experimental page
   assert.match(local,/\.\.\/assets\/app-fonts\.css/);
   assert.match(local,/PvP thử nghiệm/);
   assert.match(local,/VÀO TRẬN BOT 5v5/);
+  assert.match(local,/id="jumpBtn"/);
+  assert.match(local,/id="crouchBtn"/);
   assert.match(online,/boom-chiu-pvp\.js/);
 });
 
