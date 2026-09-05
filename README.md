@@ -2,6 +2,8 @@
 
 Browser game portfolio built mainly with plain HTML, CSS and JavaScript, deployed on GitHub Pages.
 
+> **Continuing this project in a new thread? Read [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) first.** It contains the full current handoff, architecture decisions, verified checkpoints, known issues and next milestones.
+
 ## 🎮 Games
 
 Current portfolio:
@@ -55,12 +57,14 @@ Render/Railway config files are retained only as deployment experiments/referenc
 
 ## ✅ Latest verified Bùm Chíu checkpoint
 
-Verified checkpoint before this documentation update:
+Verified checkpoint before the handoff/documentation commits:
 
 - Code HEAD: `9a8e2efbcb9f6e5edc11f8ab107ce87ddb810504`
 - GitHub Actions **Tests #241**: success.
 - GitHub Pages **#278**: success.
 - Browser coverage verifies weapon rendering, 8 directional BOT sprites, grounded BOT placement, muzzle/tracer alignment, vertical mouse look, jump, crouch, BOT movement/kills and all 3 maps.
+
+For the current repository handoff and newer documentation commits, see `PROJECT_STATUS.md` and verify the latest `main` Actions before continuing.
 
 ## 🧭 Bùm Chíu next priorities
 
@@ -74,6 +78,8 @@ Verified checkpoint before this documentation update:
 
 ```text
 ai-maker/
+├── README.md
+├── PROJECT_STATUS.md        ← full handoff for the next thread
 ├── index.html
 ├── firebase-config.js
 ├── games/
@@ -93,8 +99,7 @@ ai-maker/
 │       └── kenney/
 ├── tests/
 │   └── e2e/
-├── package.json
-└── README.md
+└── package.json
 ```
 
 ## 🧪 Tests
