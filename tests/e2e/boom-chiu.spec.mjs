@@ -19,13 +19,11 @@ test('Bùm Chíu bot-only has proper FPS viewmodel, grounded bots and full movem
   expect(initial.actors).toHaveLength(10);
   expect(initial.player.pitch).toBe(0);
 
-  // Vertical mouse-look is real state, not just a cosmetic crosshair offset.
   await page.evaluate(()=>window.BoomChiuGame.look(0,-120));
   const looked=await page.evaluate(()=>window.BoomChiuGame.getState());
   expect(looked.player.pitch).toBeGreaterThan(.2);
   await page.evaluate(()=>window.BoomChiuGame.look(0,120));
 
-  // Space/mobile jump has actual vertical velocity and height.
   expect(await page.evaluate(()=>window.BoomChiuGame.jump())).toBe(true);
   await page.waitForTimeout(120);
   const airborne=await page.evaluate(()=>window.BoomChiuGame.getState());
@@ -33,7 +31,6 @@ test('Bùm Chíu bot-only has proper FPS viewmodel, grounded bots and full movem
   expect(airborne.player.vz).toBeGreaterThan(0);
   await page.waitForTimeout(800);
 
-  // Crouch lowers eye height smoothly.
   await page.evaluate(()=>window.BoomChiuGame.setCrouch(true));
   await page.waitForTimeout(180);
   const crouched=await page.evaluate(()=>window.BoomChiuGame.getState());
@@ -57,7 +54,8 @@ test('Bùm Chíu bot-only has proper FPS viewmodel, grounded bots and full movem
   await page.evaluate(()=>window.BoomChiuGame.fire());
   await expect.poll(()=>page.evaluate(()=>window.BoomChiuVfx?.tracerCount||0),{timeout:1500}).toBeGreaterThan(tracerBefore);
   const trace=await page.evaluate(()=>({shot:window.BoomChiuVfx?.lastShot,state:window.BoomChiuGame.getState()}));
-  expect(Math.hypot(trace.shot.x1-trace.state.muzzle.x,trace.shot.y1-trace.state.muzzle.y)).toBeLessThan(12);
+  expect(trace.state.lastShotMuzzle).toBeTruthy();
+  expect(Math.hypot(trace.shot.x1-trace.state.lastShotMuzzle.x,trace.shot.y1-trace.state.lastShotMuzzle.y)).toBeLessThan(12);
   expect(Math.abs(trace.shot.x2-195)).toBeLessThan(12);
   expect(Math.abs(trace.shot.y2-422)).toBeLessThan(12);
   expect(Math.abs(trace.shot.y1-trace.shot.y2)).toBeGreaterThan(45);
