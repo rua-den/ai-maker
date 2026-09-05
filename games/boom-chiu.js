@@ -20,7 +20,7 @@
   let mapId='cat_chay',map=C.MAPS[mapId],difficulty='hard',targetScore=30,running=false,matchEnded=false,player=null;
   let blueScore=0,redScore=0,endsAt=0,lastFrame=performance.now(),muzzleUntil=0,lastShotAt=-Infinity,reloadingUntil=0,audioCtx=null;
   let touchMove={x:0,y:0},lookTouch=null,stickTouch=null,diagnosticBotKills=0,renderedSpriteCount=0,weaponSpriteFrames=0;
-  let weaponMuzzle={x:innerWidth*.43,y:innerHeight*.61},lastBotGrounding=null;
+  let weaponMuzzle={x:innerWidth*.43,y:innerHeight*.61},lastShotMuzzle=null,lastBotGrounding=null;
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const rgba=(hex,a)=>{const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`};
@@ -35,10 +35,10 @@
   function makeActor(id,name,team,isPlayer,index){const s=spawnFor(team,index);return{id,name,team,isPlayer,x:s.x,y:s.y,angle:team===C.TEAM_BLUE?0:Math.PI,pitch:0,z:0,vz:0,crouching:false,crouchAmount:0,hp:100,alive:true,respawnAt:0,kills:0,deaths:0,nextShotAt:0,path:[],pathAt:0,targetId:null,strafe:Math.random()<.5?-1:1,hitUntil:0}}
   function resetActors(){actors.length=0;player=makeActor('player','Bạn',C.TEAM_BLUE,true,0);actors.push(player);for(let i=0;i<4;i++)actors.push(makeActor('b'+i,C.BOT_NAMES[i],C.TEAM_BLUE,false,i+1));for(let i=0;i<5;i++)actors.push(makeActor('r'+i,C.BOT_NAMES[i+5],C.TEAM_RED,false,i))}
 
-  function startMatch(){difficulty=difficultyEl.value;targetScore=Number(targetScoreEl.value)||30;map=C.MAPS[mapId];blueScore=0;redScore=0;diagnosticBotKills=0;renderedSpriteCount=0;weaponSpriteFrames=0;lastBotGrounding=null;matchEnded=false;endsAt=now()+5*60*1000;feed.length=0;killFeed.innerHTML='';resetActors();player.clip=C.WEAPON.clipSize;player.reserve=C.WEAPON.reserve;reloadingUntil=0;lastShotAt=-Infinity;running=true;menu.classList.add('hidden');touchUI.classList.add('playing');updateHud();ensureAudio();if(matchMedia('(pointer:fine)').matches)canvas.requestPointerLock?.()}
+  function startMatch(){difficulty=difficultyEl.value;targetScore=Number(targetScoreEl.value)||30;map=C.MAPS[mapId];blueScore=0;redScore=0;diagnosticBotKills=0;renderedSpriteCount=0;weaponSpriteFrames=0;lastBotGrounding=null;lastShotMuzzle=null;matchEnded=false;endsAt=now()+5*60*1000;feed.length=0;killFeed.innerHTML='';resetActors();player.clip=C.WEAPON.clipSize;player.reserve=C.WEAPON.reserve;reloadingUntil=0;lastShotAt=-Infinity;running=true;menu.classList.add('hidden');touchUI.classList.add('playing');updateHud();ensureAudio();if(matchMedia('(pointer:fine)').matches)canvas.requestPointerLock?.()}
   startBtn.addEventListener('click',startMatch);
 
-  function ensureAudio(){if(!audioCtx){try{audioCtx=new (AudioContext||webkitAudioContext)()}catch{}}if(audioCtx?.state==='suspended')audioCtx.resume().catch(()=>{})}
+  function ensureAudio(){if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch{}}if(audioCtx?.state==='suspended')audioCtx.resume().catch(()=>{})}
   function tone(freq,dur=.05,volume=.05,type='square'){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(volume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}
   const shotSound=()=>{tone(82,.075,.08,'sawtooth');tone(42,.09,.05,'square')},hitSound=head=>tone(head?1080:760,.045,.035,'square');
   function moveActor(a,dx,dy){const nx=a.x+dx,ny=a.y+dy;if(C.canStand(map,nx,a.y))a.x=nx;if(C.canStand(map,a.x,ny))a.y=ny}
@@ -71,7 +71,7 @@
   function firePlayer(){
     const t=now();if(!running||!player?.alive||matchEnded||reloadingUntil)return;if(t<(player.nextShotAt||0))return;if(player.clip<=0){reload();return}
     player.nextShotAt=t+C.WEAPON.fireDelay;player.clip--;muzzleUntil=t+58;lastShotAt=t;shotSound();
-    const muzzle=window.BoomChiuWeaponView?.muzzle||weaponMuzzle;window.BoomChiuVfx?.fire?.({x1:muzzle.x,y1:muzzle.y,x2:innerWidth*.5,y2:innerHeight*.5});
+    const muzzle=window.BoomChiuWeaponView?.muzzle||weaponMuzzle;lastShotMuzzle={x:muzzle.x,y:muzzle.y};window.BoomChiuVfx?.fire?.({x1:lastShotMuzzle.x,y1:lastShotMuzzle.y,x2:innerWidth*.5,y2:innerHeight*.5});
     const shotAngle=player.angle+rand(-C.WEAPON.spread,C.WEAPON.spread),shotPitch=player.pitch+rand(-C.WEAPON.spread*.55,C.WEAPON.spread*.55),wall=C.raycast(map,player.x,player.y,shotAngle,C.WEAPON.range).distance,eye=eyeHeight();
     let best=null,bestDist=wall,bestScore=Infinity,bestHead=false;
     for(const a of actors){
@@ -135,7 +135,7 @@
   window.BoomChiuGame={
     start:(opts={})=>{if(opts.map&&C.MAPS[opts.map]){mapId=opts.map;map=C.MAPS[mapId]}if(opts.difficulty)difficultyEl.value=opts.difficulty;if(opts.target)targetScoreEl.value=String(opts.target);startMatch()},
     fire:firePlayer,jump,setCrouch,look:(dx,dy)=>look(dx,dy,.0025),
-    getState:()=>({running,mapId,difficulty,blueScore,redScore,targetScore,actors:actors.map(a=>({id:a.id,team:a.team,isPlayer:a.isPlayer,alive:a.alive,hp:a.hp,x:a.x,y:a.y,kills:a.kills,deaths:a.deaths})),player:player&&{hp:player.hp,clip:player.clip,reserve:player.reserve,kills:player.kills,deaths:player.deaths,pitch:player.pitch,z:player.z,vz:player.vz,crouching:player.crouching,crouchAmount:player.crouchAmount,eyeHeight:eyeHeight()},diagnosticBotKills,renderedSpriteCount,weaponSpriteFrames,artReady:!!ART?.ready,soldierSprites:ART?.soldiersLoaded||0,muzzle:{...weaponMuzzle},weaponView:window.BoomChiuWeaponView?{...window.BoomChiuWeaponView}:null,lastBotGrounding}),
+    getState:()=>({running,mapId,difficulty,blueScore,redScore,targetScore,actors:actors.map(a=>({id:a.id,team:a.team,isPlayer:a.isPlayer,alive:a.alive,hp:a.hp,x:a.x,y:a.y,kills:a.kills,deaths:a.deaths})),player:player&&{hp:player.hp,clip:player.clip,reserve:player.reserve,kills:player.kills,deaths:player.deaths,pitch:player.pitch,z:player.z,vz:player.vz,crouching:player.crouching,crouchAmount:player.crouchAmount,eyeHeight:eyeHeight()},diagnosticBotKills,renderedSpriteCount,weaponSpriteFrames,artReady:!!ART?.ready,soldierSprites:ART?.soldiersLoaded||0,muzzle:{...weaponMuzzle},lastShotMuzzle:lastShotMuzzle&&{...lastShotMuzzle},weaponView:window.BoomChiuWeaponView?{...window.BoomChiuWeaponView}:null,lastBotGrounding}),
     end:endMatch
   };
 })();
