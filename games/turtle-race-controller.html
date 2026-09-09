@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Đua Rùa — Controller</title>
+<link rel="stylesheet" href="../assets/app-fonts.css">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#07141b;color:#f6fffb;overscroll-behavior:none}body{min-height:100dvh;background:radial-gradient(circle at 50% -10%,#1b5b55,#0b2930 46%,#06151b);padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}.app{min-height:100dvh;display:flex;align-items:center;justify-content:center}.card{width:min(100%,460px);background:rgba(8,31,36,.91);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:20px;box-shadow:0 20px 70px rgba(0,0,0,.4)}h1{margin:0;text-align:center;font-size:42px}.sub{text-align:center;opacity:.65;font-size:12px;font-weight:700;margin:5px 0 18px}.fields{display:grid;gap:10px}.field label{display:block;font-size:11px;font-weight:950;letter-spacing:.1em;margin:0 0 5px;color:#86e8d8}.field input{width:100%;border:2px solid rgba(255,255,255,.13);border-radius:13px;padding:13px 14px;background:#f7fff9;color:#0c332d;font:900 18px system-ui;outline:0;text-align:center}.field input:focus{border-color:#62e0c9}.roomInput{text-transform:uppercase;letter-spacing:.18em}.join{margin-top:12px;width:100%;border:0;border-radius:14px;padding:14px;background:#66e6c9;color:#073027;font-size:16px;font-weight:1000;box-shadow:0 5px 0 #258f79}.join:active{transform:translateY(3px);box-shadow:0 2px 0 #258f79}.msg{min-height:20px;margin-top:10px;text-align:center;font-size:12px;font-weight:800;color:#ffe087}.play{display:none;text-align:center}.play.show{display:block}.lobby.hide{display:none}.badge{display:inline-flex;gap:7px;align-items:center;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:950}.playerName{font-size:34px;font-weight:1000;margin:14px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.state{font-size:13px;opacity:.7;font-weight:750;min-height:22px}.meter{height:15px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden;margin:14px 0 5px}.fill{height:100%;width:0;background:linear-gradient(90deg,#62e8ca,#ffe374);transition:width .08s linear}.count{font-weight:1000;color:#ffe374}.tap{width:min(78vw,330px);aspect-ratio:1;border-radius:50%;border:0;margin:18px auto 8px;display:grid;place-items:center;background:radial-gradient(circle at 38% 30%,#a5ffde,#51d9bc 52%,#198d78);color:#08392f;font-size:clamp(32px,12vw,58px);font-weight:1000;line-height:.95;box-shadow:0 12px 0 #126653,0 24px 60px rgba(0,0,0,.35);touch-action:manipulation;user-select:none}.tap:active:not(:disabled){transform:translateY(7px) scale(.985);box-shadow:0 5px 0 #126653,0 14px 36px rgba(0,0,0,.35)}.tap:disabled{filter:grayscale(.5);opacity:.42}.winner{font-size:26px;font-weight:1000;color:#ffe374;min-height:36px;margin-top:6px}.leave{margin-top:14px;border:1px solid rgba(255,255,255,.15);border-radius:11px;padding:9px 13px;background:transparent;color:#d8efeb;font-weight:850}.tiny{font-size:10px;opacity:.42;margin-top:13px;line-height:1.45}@media(max-height:690px){.card{padding:14px}.tap{width:min(58vh,280px);margin:10px auto 4px}.playerName{font-size:28px;margin-top:8px}.winner{font-size:20px;min-height:28px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="turtle-race-core.js"></script>
+</head>
+<body>
+<main class="app">
+  <section class="card">
+    <div id="lobby" class="lobby">
+      <h1>🐢</h1>
+      <div class="sub">ĐUA RÙA · CONTROLLER</div>
+      <div class="fields">
+        <div class="field"><label>TÊN RÙA</label><input id="name" maxlength="16" autocomplete="nickname" placeholder="Ví dụ: Rùa Đen"></div>
+        <div class="field"><label>MÃ PHÒNG</label><input id="room" class="roomInput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD"></div>
+      </div>
+      <button id="join" class="join">Vào phòng</button>
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <div id="play" class="play">
+      <div id="badge" class="badge">ROOM ····</div>
+      <div id="playerName" class="playerName">Rùa</div>
+      <div id="state" class="state">Đang kết nối…</div>
+      <div class="meter"><div id="fill" class="fill"></div></div>
+      <div id="count" class="count">0 / 30</div>
+      <button id="tap" class="tap" disabled>BẤM!</button>
+      <div id="winner" class="winner"></div>
+      <button id="leave" class="leave">Rời phòng</button>
+      <div class="tiny">Mỗi lần chạm gửi một cập nhật realtime qua Firebase. Prototype V0 chưa chống cheat và chưa có đăng nhập.</div>
+    </div>
+  </section>
+</main>
+<script>
+(()=>{
+  const C=window.TurtleRaceCore;
+  const lobby=document.getElementById('lobby'),play=document.getElementById('play'),nameEl=document.getElementById('name'),roomEl=document.getElementById('room'),joinBtn=document.getElementById('join'),msgEl=document.getElementById('msg'),badgeEl=document.getElementById('badge'),playerNameEl=document.getElementById('playerName'),stateEl=document.getElementById('state'),fillEl=document.getElementById('fill'),countEl=document.getElementById('count'),tapBtn=document.getElementById('tap'),winnerEl=document.getElementById('winner'),leaveBtn=document.getElementById('leave');
+  let db=null,roomRef=null,playerRef=null,disconnectOp=null,currentCode='',roomState=null,canTap=false,lastTapAt=0;
+  let clientId='';
+  try{clientId=localStorage.getItem('turtleRaceClientId')||'';if(!clientId){clientId=(crypto.randomUUID?.()||('p'+Date.now()+Math.random())).replace(/[^a-z0-9]/gi,'').slice(0,32);localStorage.setItem('turtleRaceClientId',clientId)}nameEl.value=localStorage.getItem('turtleRaceName')||''}catch(e){clientId='p'+Date.now()+Math.random()}
+  const queryCode=C.cleanRoomCode(new URLSearchParams(location.search).get('room'));if(queryCode)roomEl.value=queryCode;
+
+  function message(text){msgEl.textContent=text||''}
+  function showLobby(text){canTap=false;tapBtn.disabled=true;play.classList.remove('show');lobby.classList.remove('hide');if(text)message(text)}
+  function showPlay(){lobby.classList.add('hide');play.classList.add('show')}
+  function init(){
+    try{if(!window.firebase||typeof firebaseConfig==='undefined')throw new Error('firebase_missing');if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();message(queryCode?'Nhập tên rồi vào phòng '+queryCode+'.':'Nhập tên và mã đang hiện trên màn hình chính.')}catch(e){console.error(e);message('Không kết nối được Firebase. Kiểm tra mạng rồi reload.')}
+  }
+  async function joinRoom(){
+    if(!db)return message('Firebase chưa sẵn sàng.');
+    const code=C.cleanRoomCode(roomEl.value),name=C.cleanName(nameEl.value);
+    if(code.length!==4)return message('Mã phòng gồm 4 ký tự.');
+    nameEl.value=name;roomEl.value=code;try{localStorage.setItem('turtleRaceName',name)}catch(e){}
+    joinBtn.disabled=true;message('Đang vào phòng…');
+    const ref=db.ref(`${C.ROOT}/${C.roomKey(code)}`);
+    try{
+      const snap=await ref.once('value'),room=snap.val();
+      if(!room||room.kind!==C.ROOM_KIND)throw new Error('room_not_found');
+      const players=room.players||{},existing=players[clientId];
+      if(!existing&&Object.keys(players).length>=C.MAX_PLAYERS)throw new Error('room_full');
+      const pRef=ref.child('players/'+clientId);
+      await pRef.transaction(p=>p?{...p,name}:{name,progress:0,joinedAt:firebase.database.ServerValue.TIMESTAMP});
+      roomRef=ref;playerRef=pRef;currentCode=code;disconnectOp=playerRef.onDisconnect();await disconnectOp.remove();
+      roomRef.on('value',handleRoom,()=>showLobby('Mất quyền đọc phòng.'));
+      showPlay();badgeEl.textContent='ROOM '+code;playerNameEl.textContent=name;message('');
+    }catch(e){console.error(e);if(e.message==='room_full')message('Phòng đã đủ người.');else if(e.message==='room_not_found')message('Không thấy phòng '+code+'.');else message('Không vào được phòng. Thử lại.')}finally{joinBtn.disabled=false}
+  }
+  function handleRoom(snap){
+    const room=snap.val();roomState=room;
+    if(!room||room.kind!==C.ROOM_KIND){detach(false);showLobby('Màn hình chính đã đóng phòng.');return}
+    const mine=room.players&&room.players[clientId];
+    if(!mine){detach(false);showLobby('Bạn không còn trong phòng.');return}
+    const progress=C.clampProgress(mine.progress),pct=Math.round(progress/C.TARGET*100);fillEl.style.width=pct+'%';countEl.textContent=progress+' / '+C.TARGET;playerNameEl.textContent=C.cleanName(mine.name);
+    winnerEl.textContent='';
+    if(room.status==='race_waiting'){canTap=false;stateEl.textContent='Chờ màn hình chính bấm Bắt đầu…';tapBtn.disabled=true;tapBtn.textContent='CHỜ…'}
+    else if(room.status==='race_playing'&&!room.winner){canTap=true;stateEl.textContent='ĐUA! Bấm càng nhanh càng tốt';tapBtn.disabled=false;tapBtn.textContent='BẤM!'}
+    else if(room.status==='race_finished'||room.winner){canTap=false;tapBtn.disabled=true;tapBtn.textContent='XONG';const winner=room.players&&room.players[room.winner];if(room.winner===clientId)winnerEl.textContent='🏆 BẠN THẮNG!';else winnerEl.textContent=winner?'🏁 '+C.cleanName(winner.name)+' thắng':'🏁 Hết ván';stateEl.textContent='Chờ màn hình chính cho chơi lại.'}
+  }
+  function tap(){
+    const now=performance.now();if(!canTap||!playerRef||now-lastTapAt<42)return;lastTapAt=now;
+    navigator.vibrate?.(12);
+    playerRef.child('progress').transaction(value=>Math.min(C.TARGET,(Number(value)||0)+1)).catch(console.error);
+  }
+  async function detach(removePlayer=true){
+    canTap=false;tapBtn.disabled=true;
+    if(roomRef)roomRef.off();
+    if(disconnectOp)try{await disconnectOp.cancel()}catch(e){}
+    if(removePlayer&&playerRef)try{await playerRef.remove()}catch(e){}
+    roomRef=playerRef=disconnectOp=null;roomState=null;currentCode='';
+  }
+  async function leave(){await detach(true);showLobby('Đã rời phòng.')}
+  joinBtn.addEventListener('click',joinRoom);roomEl.addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom()});nameEl.addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom()});tapBtn.addEventListener('pointerdown',e=>{e.preventDefault();tap()});leaveBtn.addEventListener('click',leave);
+  window.TurtleRaceController={getState:()=>({code:currentCode,room:roomState,canTap}),tap,join:joinRoom};
+  init();
+})();
+</script>
+</body>
+</html>
