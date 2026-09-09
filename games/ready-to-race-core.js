@@ -33,7 +33,7 @@
     const maxSpeed=onRoad?285:128,accel=onRoad?230:145,brake=320,turnRate=2.35;
     car.speed+=input.throttle*accel*dt;
     if(input.brake)car.speed-=brake*dt;
-    car.speed*=Math.pow(onRoad?.992:.972,dt*60);
+    car.speed*=Math.pow(onRoad ? .992 : .972,dt*60);
     car.speed=clamp(car.speed,0,maxSpeed);
     const turnGrip=.20+Math.min(1,car.speed/165)*.92;
     car.angle+=input.steer*turnRate*turnGrip*dt;
@@ -41,7 +41,7 @@
     car.y+=Math.sin(car.angle)*car.speed*dt;
     let nq=trackMetric(car.x,car.y,track);
     if(nq<.54||nq>1.14){
-      const target=nq<.54?.56:1.12,dx=car.x-track.cx,dy=car.y-track.cy;
+      const target=nq<.54 ? .56 : 1.12,dx=car.x-track.cx,dy=car.y-track.cy;
       const scale=target/Math.max(.001,nq);
       car.x=track.cx+dx*scale;car.y=track.cy+dy*scale;car.speed*=.55;
       nq=target;
