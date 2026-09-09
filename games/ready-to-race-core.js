@@ -88,10 +88,20 @@
   function resetProgress(car,track){car.theta=ellipseTheta(car.x,car.y,track);car.progress=0;car.lap=0;car.finished=false;return car}
   function updateProgress(car,track){const theta=ellipseTheta(car.x,car.y,track),delta=angleDelta(car.theta,theta);car.theta=theta;if(Math.abs(delta)<.32)car.progress=Math.max(0,car.progress+delta);car.lap=Math.max(0,Math.min(LAPS,Math.floor(car.progress/TWO_PI)));if(car.progress>=LAPS*TWO_PI){car.progress=LAPS*TWO_PI;car.lap=LAPS;car.finished=true}return car}
   function approach(value,target,amount){if(value<target)return Math.min(target,value+amount);if(value>target)return Math.max(target,value-amount);return value}
+  function constrainToMap(car,track){
+    const width=Number(track.width)||Number(track.cx)*2||960;
+    const height=Number(track.height)||Number(track.cy)*2||600;
+    const margin=Math.max(12,Number(track.edgeMargin)||18);
+    let hit=false;
+    if(car.x<margin){car.x=margin;hit=true}else if(car.x>width-margin){car.x=width-margin;hit=true}
+    if(car.y<margin){car.y=margin;hit=true}else if(car.y>height-margin){car.y=height-margin;hit=true}
+    if(hit)car.speed*=-.18;
+    return car;
+  }
   function stepCar(car,input,dt,track){
     dt=clamp(dt,0,.05);input=sanitizeInput(input);
     const q=trackMetric(car.x,car.y,track),onRoad=q>=.60&&q<=1.08;
-    const forwardMax=onRoad?285:128,reverseMax=onRoad?92:55,accel=onRoad?230:145,reverseAccel=175,brakePower=390,turnRate=2.35;
+    const forwardMax=onRoad?285:205,reverseMax=onRoad?92:70,accel=onRoad?230:178,reverseAccel=onRoad?175:145,brakePower=390,turnRate=2.35;
 
     if(input.brake){
       car.speed=approach(car.speed,0,brakePower*dt);
@@ -103,7 +113,7 @@
       else car.speed+=input.throttle*accel*dt;
     }
 
-    const drag=onRoad?.992:.972;
+    const drag=onRoad?.992:.982;
     car.speed*=Math.pow(drag,dt*60);
     car.speed=clamp(car.speed,-reverseMax,forwardMax);
 
@@ -114,27 +124,10 @@
     car.x+=Math.cos(car.angle)*car.speed*dt;
     car.y+=Math.sin(car.angle)*car.speed*dt;
 
-    const nq=trackMetric(car.x,car.y,track);
-    if(nq<.54||nq>1.14){
-      const target=nq<.54?.56:1.12;
-      const dx=car.x-track.cx,dy=car.y-track.cy;
-      const scale=target/Math.max(.001,nq);
-      const targetX=track.cx+dx*scale,targetY=track.cy+dy*scale;
-      const correction=1-Math.pow(.001,dt);
-      car.x+=(targetX-car.x)*correction;
-      car.y+=(targetY-car.y)*correction;
-      car.speed*=Math.pow(.90,dt*60);
-    }
-    const after=trackMetric(car.x,car.y,track);
-    if(after<.42||after>1.28){
-      const target=after<.42?.50:1.20;
-      const dx=car.x-track.cx,dy=car.y-track.cy,scale=target/Math.max(.001,after);
-      car.x=track.cx+dx*scale;car.y=track.cy+dy*scale;car.speed*=.35;
-    }
-
+    constrainToMap(car,track);
     updateProgress(car,track);
     return car;
   }
   function raceProgress(car){return Math.max(0,Math.min(LAPS,car.progress/TWO_PI))}
-  return {ROOT,ROOM_PREFIX,ROOM_KIND,MAX_PLAYERS,LAPS,ALPHABET,TWO_PI,cleanRoomCode,roomKey,cleanName,makeRoomCode,clamp,clampSteer,clampUnit,sanitizeInput,normalizeAngle,angleDelta,trackMetric,ellipseTheta,makeCar,resetProgress,updateProgress,approach,stepCar,raceProgress};
+  return {ROOT,ROOM_PREFIX,ROOM_KIND,MAX_PLAYERS,LAPS,ALPHABET,TWO_PI,cleanRoomCode,roomKey,cleanName,makeRoomCode,clamp,clampSteer,clampUnit,sanitizeInput,normalizeAngle,angleDelta,trackMetric,ellipseTheta,makeCar,resetProgress,updateProgress,approach,constrainToMap,stepCar,raceProgress};
 });
