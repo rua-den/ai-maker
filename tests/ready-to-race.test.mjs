@@ -22,7 +22,7 @@ test('Ready to Race room identity and input bounds are stable',()=>{
 });
 
 test('local car physics supports forward and true reverse movement',()=>{
-  const track={cx:480,cy:300,rx:330,ry:190};
+  const track={cx:480,cy:300,rx:330,ry:190,width:960,height:600};
   const forward=C.makeCar(0,track);C.resetProgress(forward,track);const y0=forward.y;
   for(let i=0;i<30;i++)C.stepCar(forward,{steer:0,throttle:1,brake:false,reverse:false},1/60,track);
   assert.ok(forward.speed>0);
@@ -33,15 +33,32 @@ test('local car physics supports forward and true reverse movement',()=>{
   assert.ok(reverse.y<ry0);
 });
 
-test('track boundary correction is soft instead of snapping each frame',()=>{
-  const track={cx:480,cy:300,rx:330,ry:190};
-  const car=C.makeCar(0,track);
-  car.x=track.cx+track.rx*1.16;car.y=track.cy;car.angle=0;car.speed=0;C.resetProgress(car,track);
-  const before=C.trackMetric(car.x,car.y,track);
+test('grass is free-roam terrain while asphalt stays faster',()=>{
+  const track={cx:480,cy:300,rx:330,ry:190,width:960,height:600,edgeMargin:18};
+  const free=C.makeCar(0,track);
+  free.x=track.cx+track.rx*1.16;free.y=track.cy;free.angle=0;free.speed=0;C.resetProgress(free,track);
+  const before=C.trackMetric(free.x,free.y,track);
+  C.stepCar(free,{steer:0,throttle:0,brake:false,reverse:false},1/60,track);
+  const after=C.trackMetric(free.x,free.y,track);
+  assert.ok(Math.abs(after-before)<1e-9,'grass position should not be pulled back toward the oval');
+
+  const road=C.makeCar(0,track);C.resetProgress(road,track);
+  const grass={x:120,y:120,angle:Math.PI/2,speed:0,theta:0,progress:0,lap:0,finished:false};C.resetProgress(grass,track);
+  for(let i=0;i<60;i++){
+    C.stepCar(road,{steer:0,throttle:1,brake:false,reverse:false},1/60,track);
+    C.stepCar(grass,{steer:0,throttle:1,brake:false,reverse:false},1/60,track);
+  }
+  assert.ok(road.speed>grass.speed,'asphalt should reward staying on the road');
+});
+
+test('only the outer map edges constrain cars',()=>{
+  const track={cx:480,cy:300,rx:330,ry:190,width:960,height:600,edgeMargin:18};
+  const car={x:5,y:300,angle:Math.PI,speed:100,theta:0,progress:0,lap:0,finished:false};C.resetProgress(car,track);
   C.stepCar(car,{steer:0,throttle:0,brake:false,reverse:false},1/60,track);
-  const after=C.trackMetric(car.x,car.y,track);
-  assert.ok(after<before);
-  assert.ok(after>1.12,'soft correction should not teleport directly onto the boundary');
+  assert.equal(car.x,18);
+  assert.ok(car.speed<0,'edge hit should bounce the car gently back into the map');
+  assert.doesNotMatch(coreSource,/target=nq<\.54/);
+  assert.match(coreSource,/constrainToMap/);
 });
 
 test('prototype storage root is allowed by current Firebase rules',()=>{
@@ -90,6 +107,12 @@ test('shared screen has larger standings and race fullscreen control',()=>{
   assert.match(host,/requestFullscreen/);
   assert.match(host,/fullscreenchange/);
   assert.match(host,/grid-template-columns:minmax\(0,1fr\) 320px/);
+});
+
+test('shared screen advertises the open map terrain rules',()=>{
+  assert.match(host,/width:960,height:600,edgeMargin:18/);
+  assert.match(host,/Asphalt nhanh nhất/);
+  assert.match(host,/chỉ 4 cạnh bản đồ là tường/);
 });
 
 test('shared screen runs canvas physics and controller rate-limits Firebase input',()=>{
