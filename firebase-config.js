@@ -49,3 +49,28 @@ const firebaseConfig = {
   script.dataset.ruaGameMusic = '1';
   (document.head || document.documentElement).appendChild(script);
 })();
+
+// Ready to Race owns map selection + synthesized vehicle audio. Load it only
+// after the page is fully initialized so the existing host/controller runtime
+// stays untouched and the enhancement can safely wrap its public API.
+(() => {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  const path = window.location.pathname.toLowerCase();
+  if (!path.includes('ready-to-race')) return;
+  if (window.__readyToRaceEnhancementRequested) return;
+  window.__readyToRaceEnhancementRequested = true;
+  const current = document.currentScript;
+  const src = current && current.src
+    ? new URL('./games/ready-to-race-enhancements.js', current.src).href
+    : './games/ready-to-race-enhancements.js';
+  const load = () => {
+    if (document.getElementById('readyToRaceEnhancements')) return;
+    const script = document.createElement('script');
+    script.id = 'readyToRaceEnhancements';
+    script.src = src;
+    script.async = false;
+    (document.head || document.documentElement).appendChild(script);
+  };
+  if (document.readyState === 'complete') load();
+  else window.addEventListener('load', load, { once: true });
+})();
