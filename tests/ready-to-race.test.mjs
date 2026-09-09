@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 
 const require=createRequire(import.meta.url);
 const C=require('../games/ready-to-race-core.js');
+const coreSource=fs.readFileSync(new URL('../games/ready-to-race-core.js',import.meta.url),'utf8');
 const host=fs.readFileSync(new URL('../games/ready-to-race.html',import.meta.url),'utf8');
 const controller=fs.readFileSync(new URL('../games/ready-to-race-controller.html',import.meta.url),'utf8');
 const entry=fs.readFileSync(new URL('../games/ready-to-race-start.html',import.meta.url),'utf8');
@@ -56,6 +57,16 @@ test('Ready to Race entry explicitly chooses host or controller role',()=>{
   assert.match(entry,/href="ready-to-race\.html"/);
   assert.match(entry,/href="ready-to-race-controller\.html"/);
   assert.match(index,/href="games\/ready-to-race-start\.html"/);
+});
+
+test('room screen injects a QR that follows the controller room URL',()=>{
+  assert.match(coreSource,/readyToRaceQrJoin/);
+  assert.match(coreSource,/qrcodejs\/1\.0\.0\/qrcode\.min\.js/);
+  assert.match(coreSource,/new window\.QRCode/);
+  assert.match(coreSource,/searchParams\.get\('room'\)/);
+  assert.match(coreSource,/setInterval\(renderQr,250\)/);
+  assert.match(host,/id="joinUrl"/);
+  assert.match(host,/controllerUrl\(code\)/);
 });
 
 test('controller is a landscape-first gamepad with reverse',()=>{
