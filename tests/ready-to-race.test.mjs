@@ -7,6 +7,8 @@ const require=createRequire(import.meta.url);
 const C=require('../games/ready-to-race-core.js');
 const host=fs.readFileSync(new URL('../games/ready-to-race.html',import.meta.url),'utf8');
 const controller=fs.readFileSync(new URL('../games/ready-to-race-controller.html',import.meta.url),'utf8');
+const entry=fs.readFileSync(new URL('../games/ready-to-race-start.html',import.meta.url),'utf8');
+const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const rules=JSON.parse(fs.readFileSync(new URL('../database.rules.json',import.meta.url),'utf8'));
 
 test('Ready to Race room identity and input bounds are stable',()=>{
@@ -35,6 +37,27 @@ test('prototype storage root is allowed by current Firebase rules',()=>{
   assert.ok(root);
   assert.equal(root['.read'],true);
   assert.equal(root.$room['.write'],true);
+});
+
+test('Ready to Race entry explicitly chooses host or controller role',()=>{
+  assert.match(entry,/Tạo phòng/);
+  assert.match(entry,/Vào phòng/);
+  assert.match(entry,/href="ready-to-race\.html"/);
+  assert.match(entry,/href="ready-to-race-controller\.html"/);
+  assert.match(index,/href="games\/ready-to-race-start\.html"/);
+});
+
+test('controller is a landscape-first gamepad',()=>{
+  assert.match(controller,/@media\(orientation:portrait\)/);
+  assert.match(controller,/Xoay ngang điện thoại/);
+  assert.match(controller,/screen\.orientation/);
+  assert.match(controller,/class="gamepad"/);
+  assert.match(controller,/class="zone steeringZone"/);
+  assert.match(controller,/class="zone pedalZone"/);
+  assert.match(controller,/id="left"/);
+  assert.match(controller,/id="right"/);
+  assert.match(controller,/id="gas"/);
+  assert.match(controller,/id="brake"/);
 });
 
 test('shared screen runs canvas physics and controller rate-limits Firebase input',()=>{
