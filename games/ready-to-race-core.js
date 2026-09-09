@@ -3,6 +3,66 @@
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
   if(root)root.ReadyToRaceCore=api;
+
+  if(typeof document!=='undefined'){
+    const setupRoomQr=()=>{
+      const roomCard=document.querySelector('.room');
+      const joinUrl=document.getElementById('joinUrl');
+      if(!roomCard||!joinUrl||document.getElementById('readyToRaceQrJoin'))return;
+
+      const style=document.createElement('style');
+      style.textContent='.readyQrJoin{margin:10px auto 11px;padding:10px 10px 8px;border-radius:16px;background:#fff;border:1px solid #d8e0dc;display:grid;place-items:center;gap:6px;width:min(190px,100%)}.readyQrCode{width:150px;height:150px;display:grid;place-items:center}.readyQrCode img,.readyQrCode canvas{display:block!important;width:150px!important;height:150px!important}.readyQrLabel{font-size:10px;font-weight:1000;letter-spacing:.12em;color:#50635b}.readyQrHint{font-size:9px;font-weight:750;color:#7d8b85;line-height:1.25}';
+      document.head.appendChild(style);
+
+      const wrap=document.createElement('div');
+      wrap.id='readyToRaceQrJoin';
+      wrap.className='readyQrJoin';
+      wrap.innerHTML='<div id="readyToRaceQrCode" class="readyQrCode" aria-label="QR vào phòng"></div><div class="readyQrLabel">📱 QUÉT ĐỂ VÀO PHÒNG</div><div id="readyToRaceQrHint" class="readyQrHint">Đang tạo QR…</div>';
+      roomCard.insertBefore(wrap,joinUrl);
+
+      const qrBox=wrap.querySelector('#readyToRaceQrCode');
+      const hint=wrap.querySelector('#readyToRaceQrHint');
+      let lastUrl='';
+
+      const renderQr=()=>{
+        const url=String(joinUrl.value||'');
+        if(!/^https?:\/\//.test(url)||!window.QRCode||url===lastUrl)return;
+        lastUrl=url;
+        qrBox.innerHTML='';
+        try{
+          new window.QRCode(qrBox,{text:url,width:150,height:150,colorDark:'#12251f',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.M});
+          const code=(new URL(url)).searchParams.get('room')||'';
+          hint.textContent=code?'Mở controller · phòng '+code:'Mở controller trên điện thoại';
+        }catch(error){
+          console.error(error);
+          hint.textContent='Không tạo được QR · dùng mã phòng bên trên';
+        }
+      };
+
+      const loadQrLibrary=()=>{
+        if(window.QRCode)return renderQr();
+        let script=document.getElementById('readyToRaceQrLib');
+        if(!script){
+          script=document.createElement('script');
+          script.id='readyToRaceQrLib';
+          script.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+          script.async=true;
+          script.onload=renderQr;
+          script.onerror=()=>{hint.textContent='QR không tải được · dùng mã phòng bên trên';};
+          document.head.appendChild(script);
+        }else{
+          script.addEventListener('load',renderQr,{once:true});
+        }
+      };
+
+      loadQrLibrary();
+      const timer=setInterval(renderQr,250);
+      window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+    };
+
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupRoomQr,{once:true});
+    else setupRoomQr();
+  }
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   const ROOT='caroRooms';
   const ROOM_PREFIX='readyToRace_';
