@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ready to Race — Chọn chế độ</title>
+<link rel="stylesheet" href="../assets/app-fonts.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#071018;color:#f7fbff}body{min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% -10%,#2a4967 0,#0d1c2b 46%,#050a0f 82%)}.wrap{width:min(920px,100%)}.eyebrow{text-align:center;font-size:12px;font-weight:950;letter-spacing:.18em;color:#7ce1ff;text-transform:uppercase}.title{text-align:center;font-size:clamp(46px,9vw,92px);line-height:.9;font-style:italic;font-weight:1000;margin:8px 0 12px}.sub{text-align:center;max-width:620px;margin:0 auto 28px;opacity:.66;font-weight:700;line-height:1.5}.choices{display:grid;grid-template-columns:1fr 1fr;gap:18px}.choice{min-height:280px;border-radius:26px;border:1px solid rgba(255,255,255,.12);background:rgba(9,20,31,.9);color:white;text-decoration:none;padding:26px;display:flex;flex-direction:column;justify-content:space-between;transition:.18s transform,.18s border-color,.18s background}.choice:active{transform:scale(.985)}.choice:hover{transform:translateY(-4px);border-color:rgba(124,225,255,.45);background:rgba(12,30,45,.96)}.icon{font-size:64px}.choice h2{margin:10px 0 6px;font-size:30px}.choice p{margin:0;opacity:.65;line-height:1.5;font-weight:650}.cta{margin-top:22px;display:flex;align-items:center;justify-content:space-between;font-weight:1000;font-size:14px;padding:12px 14px;border-radius:13px;background:rgba(255,255,255,.08)}.host .cta{background:#74e3ff;color:#073040}.join .cta{background:#9df278;color:#173c18}.hint{text-align:center;margin-top:18px;font-size:12px;opacity:.45}.home{position:fixed;top:12px;left:12px;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:rgba(0,0,0,.36);border:1px solid rgba(255,255,255,.12);color:#fff;text-decoration:none}@media(max-width:700px){body{padding:64px 14px 18px}.choices{grid-template-columns:1fr}.choice{min-height:190px;padding:20px}.icon{font-size:48px}.choice h2{font-size:25px}.title{font-size:52px}.sub{margin-bottom:18px}}
+</style>
+</head>
+<body>
+<a class="home" href="../index.html" aria-label="Về trang chủ">🐢</a>
+<main class="wrap">
+  <div class="eyebrow">Rùa Console · Multiplayer</div>
+  <div class="title">READY TO RACE</div>
+  <p class="sub">Chọn vai trò của thiết bị này. Laptop/TV nên tạo phòng; điện thoại của người chơi chọn vào phòng để biến thành tay cầm.</p>
+  <div class="choices">
+    <a class="choice host" href="ready-to-race.html">
+      <div><div class="icon">📺</div><h2>Tạo phòng</h2><p>Dùng thiết bị này làm màn hình chính. Game chạy physics và hiển thị toàn bộ đường đua ở đây.</p></div>
+      <div class="cta"><span>MỞ MÀN HÌNH CHÍNH</span><span>→</span></div>
+    </a>
+    <a class="choice join" href="ready-to-race-controller.html">
+      <div><div class="icon">🎮</div><h2>Vào phòng</h2><p>Dùng điện thoại làm tay cầm. Nhập tên + mã phòng rồi xoay ngang để lái xe.</p></div>
+      <div class="cta"><span>MỞ TAY CẦM</span><span>→</span></div>
+    </a>
+  </div>
+  <div class="hint">Không cần cùng Wi‑Fi · Firebase Realtime Database</div>
+</main>
+</body>
+</html>
