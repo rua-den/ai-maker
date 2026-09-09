@@ -11,7 +11,7 @@
       if(!roomCard||!joinUrl||document.getElementById('readyToRaceQrJoin'))return;
 
       const style=document.createElement('style');
-      style.textContent='.readyQrJoin{margin:12px auto 13px;padding:18px;border-radius:20px;background:#fff;border:2px solid #d8e0dc;display:grid;place-items:center;gap:8px;width:min(284px,100%);box-shadow:0 8px 26px rgba(0,0,0,.13)}.readyQrCode{width:232px;height:232px;padding:0;background:#fff;display:grid;place-items:center}.readyQrCode img,.readyQrCode canvas{display:block!important;width:232px!important;height:232px!important;image-rendering:pixelated}.readyQrLabel{font-size:11px;font-weight:1000;letter-spacing:.12em;color:#233a31}.readyQrHint{font-size:10px;font-weight:850;color:#687970;line-height:1.3}.readyQrTip{font-size:9px;color:#8a9891}';
+      style.textContent='.readyQrJoin{margin:12px auto 13px;padding:18px;border-radius:20px;background:#fff;border:2px solid #d8e0dc;display:grid;place-items:center;gap:8px;width:min(284px,100%);box-shadow:0 8px 26px rgba(0,0,0,.13)}.readyQrCode{width:232px;height:232px;padding:0;background:#fff;display:grid;place-items:center}.readyQrCode canvas{display:block!important;width:232px!important;height:232px!important;image-rendering:pixelated}.readyQrCode img{display:none!important}.readyQrLabel{font-size:11px;font-weight:1000;letter-spacing:.12em;color:#233a31}.readyQrHint{font-size:10px;font-weight:850;color:#687970;line-height:1.3}.readyQrTip{font-size:9px;color:#8a9891}';
       document.head.appendChild(style);
 
       const wrap=document.createElement('div');
@@ -31,6 +31,10 @@
         qrBox.innerHTML='';
         try{
           new window.QRCode(qrBox,{text:url,width:232,height:232,colorDark:'#000000',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.L});
+          const image=qrBox.querySelector('img');
+          if(image)image.remove();
+          const qrCanvas=qrBox.querySelector('canvas');
+          if(qrCanvas)qrCanvas.style.display='block';
           const code=(new URL(url)).searchParams.get('room')||'';
           hint.textContent=code?'Mở tay cầm · phòng '+code:'Mở tay cầm trên điện thoại';
         }catch(error){
