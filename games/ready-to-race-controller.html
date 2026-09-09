@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Ready to Race — Controller</title>
+<link rel="stylesheet" href="../assets/app-fonts.css">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;min-height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#071018;color:#f7fbff;overscroll-behavior:none}body{min-height:100dvh;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);background:radial-gradient(circle at 50% -10%,#263e56,#0d1d2b 48%,#060c12)}.app{min-height:100dvh;display:flex;align-items:center;justify-content:center}.card{width:min(100%,500px);background:rgba(9,19,29,.93);border:1px solid rgba(255,255,255,.11);border-radius:24px;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.4)}h1{margin:0;text-align:center;font-size:42px;font-style:italic}.sub{text-align:center;opacity:.58;font-size:11px;font-weight:850;letter-spacing:.14em;margin:4px 0 16px}.fields{display:grid;gap:10px}.field label{display:block;font-size:10px;font-weight:950;letter-spacing:.11em;margin:0 0 5px;color:#78d7ff}.field input{width:100%;border:2px solid rgba(255,255,255,.13);border-radius:13px;padding:13px 14px;background:#f8fbff;color:#102b3a;font:900 18px system-ui;outline:0;text-align:center}.roomInput{text-transform:uppercase;letter-spacing:.18em}.join{margin-top:12px;width:100%;border:0;border-radius:14px;padding:14px;background:#71e4ff;color:#062d3a;font-size:16px;font-weight:1000;box-shadow:0 5px 0 #277f98}.msg{min-height:20px;margin-top:10px;text-align:center;font-size:12px;font-weight:850;color:#ffe077}.play{display:none}.play.show{display:block}.lobby.hide{display:none}.topline{display:flex;justify-content:space-between;gap:8px;align-items:center}.badge,.place{display:inline-flex;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);font-size:11px;font-weight:950}.driver{text-align:center;font-size:30px;font-weight:1000;margin:10px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.state{text-align:center;min-height:21px;font-size:12px;opacity:.68;font-weight:750}.dash{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0}.dash div{padding:10px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);text-align:center}.dash strong{display:block;font-size:22px}.dash span{font-size:9px;opacity:.52;font-weight:900;letter-spacing:.12em}.steer{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.steerBtn,.pedal{border:0;color:#fff;font-weight:1000;touch-action:none;user-select:none}.steerBtn{height:110px;border-radius:20px;background:linear-gradient(180deg,#344d63,#1a2f41);font-size:48px;box-shadow:0 7px 0 #0b1822}.steerBtn.active{transform:translateY(4px);box-shadow:0 3px 0 #0b1822;background:linear-gradient(180deg,#4e7899,#264960)}.pedals{display:grid;grid-template-columns:.72fr 1.28fr;gap:10px;margin-top:12px}.pedal{height:125px;border-radius:20px;font-size:22px}.brake{background:linear-gradient(180deg,#ff6d6d,#b82f3d);box-shadow:0 7px 0 #6e1721}.gas{background:linear-gradient(180deg,#9af06e,#3fbf56);box-shadow:0 7px 0 #24752f;font-size:32px}.pedal.active{transform:translateY(4px);box-shadow:0 3px 0 rgba(0,0,0,.35)}.disabled{filter:grayscale(.7);opacity:.38}.leave{display:block;margin:14px auto 0;border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 14px;background:transparent;color:#d9edf6;font-weight:850}.tiny{text-align:center;font-size:10px;opacity:.39;margin-top:11px;line-height:1.45}@media(max-height:720px){.card{padding:12px}.steerBtn{height:82px}.pedal{height:92px}.driver{font-size:24px}.dash{margin:8px 0}.pedals{margin-top:8px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="ready-to-race-core.js"></script>
+</head>
+<body>
+<main class="app">
+  <section class="card">
+    <div id="lobby" class="lobby">
+      <h1>🏎️</h1><div class="sub">READY TO RACE · CONTROLLER</div>
+      <div class="fields"><div class="field"><label>TÊN TAY ĐUA</label><input id="name" maxlength="16" autocomplete="nickname" placeholder="Ví dụ: Rùa Đen"></div><div class="field"><label>MÃ PHÒNG</label><input id="room" class="roomInput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD"></div></div>
+      <button id="join" class="join">Vào garage</button><div id="msg" class="msg"></div>
+    </div>
+
+    <div id="play" class="play">
+      <div class="topline"><div id="badge" class="badge">ROOM ····</div><div id="place" class="place">#–</div></div>
+      <div id="driver" class="driver">Racer</div><div id="state" class="state">Đang kết nối…</div>
+      <div class="dash"><div><strong id="lap">1 / 3</strong><span>LAP</span></div><div><strong id="speed">0</strong><span>KM/H</span></div></div>
+      <div class="steer"><button id="left" class="steerBtn" type="button">◀</button><button id="right" class="steerBtn" type="button">▶</button></div>
+      <div class="pedals"><button id="brake" class="pedal brake" type="button">BRAKE</button><button id="gas" class="pedal gas" type="button">GAS</button></div>
+      <button id="leave" class="leave" type="button">Rời phòng</button>
+      <div class="tiny">Controller gửi input khoảng 12 lần/giây khi đang đua. Physics và vị trí xe chạy trên màn hình chính, không chạy trên Firebase.</div>
+    </div>
+  </section>
+</main>
+<script>
+(()=>{
+  const C=window.ReadyToRaceCore;
+  const lobby=document.getElementById('lobby'),play=document.getElementById('play'),nameEl=document.getElementById('name'),roomEl=document.getElementById('room'),joinBtn=document.getElementById('join'),msgEl=document.getElementById('msg'),badgeEl=document.getElementById('badge'),driverEl=document.getElementById('driver'),stateEl=document.getElementById('state'),placeEl=document.getElementById('place'),lapEl=document.getElementById('lap'),speedEl=document.getElementById('speed'),leftBtn=document.getElementById('left'),rightBtn=document.getElementById('right'),gasBtn=document.getElementById('gas'),brakeBtn=document.getElementById('brake'),leaveBtn=document.getElementById('leave');
+  let db=null,roomRef=null,playerRef=null,disconnectOp=null,roomState=null,currentCode='',joined=false,seq=0,sendTimer=null;
+  let steer=0,throttle=0,brake=false,clientId='';
+  const queryCode=C.cleanRoomCode(new URLSearchParams(location.search).get('room'));
+  try{clientId=localStorage.getItem('readyToRaceClientId')||'';if(!clientId){clientId=(crypto.randomUUID?.()||('p'+Date.now()+Math.random())).replace(/[^a-z0-9]/gi,'').slice(0,32);localStorage.setItem('readyToRaceClientId',clientId)}nameEl.value=localStorage.getItem('readyToRaceName')||''}catch(e){clientId='p'+Date.now()+Math.random()}
+  if(queryCode)roomEl.value=queryCode;
+
+  function message(text){msgEl.textContent=text||''}
+  function setControls(enabled){for(const b of [leftBtn,rightBtn,gasBtn,brakeBtn])b.classList.toggle('disabled',!enabled)}
+  function init(){try{if(!window.firebase||typeof firebaseConfig==='undefined')throw new Error('firebase_missing');if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();message(queryCode?'Nhập tên rồi vào phòng '+queryCode+'.':'Nhập tên và mã trên màn hình chính.')}catch(e){console.error(e);message('Không kết nối được Firebase. Kiểm tra mạng rồi reload.')}}
+  async function joinRoom(){if(!db)return message('Firebase chưa sẵn sàng.');const code=C.cleanRoomCode(roomEl.value),name=C.cleanName(nameEl.value);if(code.length!==4)return message('Mã phòng gồm 4 ký tự.');nameEl.value=name;roomEl.value=code;try{localStorage.setItem('readyToRaceName',name)}catch(e){}joinBtn.disabled=true;message('Đang vào garage…');const ref=db.ref(`${C.ROOT}/${C.roomKey(code)}`);try{const snap=await ref.once('value'),room=snap.val();if(!room||room.kind!==C.ROOM_KIND)throw new Error('room_not_found');if(room.status!=='race_waiting')throw new Error('race_started');const players=room.players||{},existing=players[clientId];if(!existing&&Object.keys(players).length>=C.MAX_PLAYERS)throw new Error('room_full');const pRef=ref.child('players/'+clientId);await pRef.set({name,joinedAt:firebase.database.ServerValue.TIMESTAMP,input:{steer:0,throttle:0,brake:false,seq:0,at:firebase.database.ServerValue.TIMESTAMP}});roomRef=ref;playerRef=pRef;currentCode=code;joined=true;disconnectOp=playerRef.onDisconnect();await disconnectOp.remove();roomRef.on('value',handleRoom,()=>showLobby('Mất quyền đọc phòng.'));lobby.classList.add('hide');play.classList.add('show');badgeEl.textContent='ROOM '+code;driverEl.textContent=name;startSending();message('')}catch(e){console.error(e);if(e.message==='room_full')message('Phòng đã đủ '+C.MAX_PLAYERS+' người.');else if(e.message==='race_started')message('Ván này đã bắt đầu. Chờ host tạo/phát lại phòng.');else if(e.message==='room_not_found')message('Không thấy phòng '+code+'.');else message('Không vào được phòng. Thử lại.')}finally{joinBtn.disabled=false}}
+  function showLobby(text){joined=false;stopSending();resetInput();play.classList.remove('show');lobby.classList.remove('hide');if(text)message(text)}
+  function handleRoom(snap){const room=snap.val();roomState=room;if(!room||room.kind!==C.ROOM_KIND){detach(false);showLobby('Màn hình chính đã đóng phòng.');return}const mine=room.players&&room.players[clientId];if(!mine){detach(false);showLobby('Bạn không còn trong phòng.');return}driverEl.textContent=C.cleanName(mine.name);const tel=room.telemetry&&room.telemetry[clientId];placeEl.textContent=tel?.place?'#'+tel.place:'#–';lapEl.textContent=(tel?.lap||1)+' / '+C.LAPS;speedEl.textContent=Math.max(0,Math.round(Number(tel?.speed)||0));if(room.status==='race_waiting'){stateEl.textContent='Đã vào garage · chờ host START';setControls(false)}else if(room.status==='race_countdown'){stateEl.textContent='READY… giữ GAS nếu muốn launch!';setControls(true)}else if(room.status==='race_playing'){stateEl.textContent='RACE! Ôm cua và giữ GAS';setControls(true)}else if(room.status==='race_finished'){setControls(false);resetInput();const winner=room.players&&room.players[room.winner];stateEl.textContent=room.winner===clientId?'🏆 BẠN THẮNG!':winner?'🏁 '+C.cleanName(winner.name)+' thắng':'🏁 FINISH'}}
+
+  function startSending(){stopSending();sendTimer=setInterval(sendInput,80)}function stopSending(){if(sendTimer)clearInterval(sendTimer);sendTimer=null}
+  function sendInput(){if(!joined||!playerRef||!roomState)return;const active=roomState.status==='race_countdown'||roomState.status==='race_playing';const payload={steer:active?steer:0,throttle:active?throttle:0,brake:active?brake:false,seq:++seq,at:firebase.database.ServerValue.TIMESTAMP};playerRef.child('input').set(payload).catch(()=>{})}
+  function resetInput(){steer=0;throttle=0;brake=false;for(const b of [leftBtn,rightBtn,gasBtn,brakeBtn])b.classList.remove('active')}
+  function bindHold(button,onStart,onEnd){const active=new Set();button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture?.(e.pointerId);active.add(e.pointerId);button.classList.add('active');onStart()});const end=e=>{if(!active.has(e.pointerId))return;active.delete(e.pointerId);if(!active.size){button.classList.remove('active');onEnd()}};button.addEventListener('pointerup',end);button.addEventListener('pointercancel',end);button.addEventListener('lostpointercapture',end)}
+  bindHold(leftBtn,()=>{steer=-1},()=>{if(!rightBtn.classList.contains('active'))steer=0;else steer=1});bindHold(rightBtn,()=>{steer=1},()=>{if(!leftBtn.classList.contains('active'))steer=0;else steer=-1});bindHold(gasBtn,()=>{throttle=1},()=>{throttle=0});bindHold(brakeBtn,()=>{brake=true},()=>{brake=false});
+  async function detach(remove=true){joined=false;stopSending();resetInput();if(roomRef)roomRef.off();if(disconnectOp)try{await disconnectOp.cancel()}catch(e){}if(remove&&playerRef)try{await playerRef.remove()}catch(e){}roomRef=playerRef=disconnectOp=null;roomState=null;currentCode=''}
+  async function leave(){await detach(true);showLobby('Đã rời phòng.')}
+  joinBtn.addEventListener('click',joinRoom);nameEl.addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom()});roomEl.addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom()});leaveBtn.addEventListener('click',leave);window.ReadyToRaceController={getState:()=>({code:currentCode,roomState,steer,throttle,brake}),join:joinRoom};init();
+})();
+</script>
+</body>
+</html>
