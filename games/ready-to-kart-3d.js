@@ -70,12 +70,30 @@ async function finishRace(id){if(finishing||!roomRef)return;finishing=true;try{a
 async function publishTelemetry(now){if(!roomRef||now-telemetryAt<180)return;telemetryAt=now;const data={};ranking().forEach((x,i)=>{data[x.p.id]={lap:Math.min(C.LAPS,x.car.lap+1),place:i+1,speed:Math.round(x.car.speed),progress:+C.raceProgress(x.car).toFixed(3),checkpoint:x.car.checkpoint,vehicle:x.p.vehicle}});try{await roomRef.child('telemetry').set(data)}catch(e){}}
 
 const camTarget=new THREE.Vector3(),desired=new THREE.Vector3(),look=new THREE.Vector3();
-function updateCamera(now,dt){const lead=ranking()[0];if(!lead){const a=now*.00012;desired.set(Math.cos(a)*29,17,Math.sin(a)*24);camTarget.set(0,0,0)}else{const car=lead.car,k=kartViews.get(lead.p.id);if(!k)return;const forward=new THREE.Vector3(Math.cos(car.angle),0,Math.sin(car.angle));if(cameraMode===0){desired.copy(k.position).addScaledVector(forward,-7.8).add(new THREE.Vector3(0,4.3,0));camTarget.copy(k.position).addScaledVector(forward,3.2).add(new THREE.Vector3(0,1,0))}else if(cameraMode===1){desired.copy(k.position).add(new THREE.Vector3(-9,11,-9));camTarget.copy(k.position)}else{desired.set(0,28,.01);camTarget.copy(k.position)}}const follow=1-Math.pow(.001,Math.min(.05,dt));camera.position.lerp(desired,follow*.72);look.lerp(camTarget,follow);camera.lookAt(look)}
+function updateCamera(now,dt){
+ const ranked=ranking();
+ if(!ranked.length){const a=now*.00012;desired.set(Math.cos(a)*29,17,Math.sin(a)*24);camTarget.set(0,0,0)}
+ else if(cameraMode===0){
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,count=0;
+  for(const x of ranked){const k=kartViews.get(x.p.id);if(!k)continue;minX=Math.min(minX,k.position.x);maxX=Math.max(maxX,k.position.x);minZ=Math.min(minZ,k.position.z);maxZ=Math.max(maxZ,k.position.z);count++}
+  if(!count)return;
+  const cx=(minX+maxX)/2,cz=(minZ+maxZ)/2,spanX=Math.max(3,maxX-minX),spanZ=Math.max(3,maxZ-minZ);
+  const spread=Math.min(36,Math.max(7,spanX,spanZ*1.25));
+  camTarget.set(cx,.55,cz);
+  desired.set(cx-spread*.34,7.2+spread*.62,cz+7.5+spread*.42);
+ }else{
+  const lead=ranked[0],car=lead.car,k=kartViews.get(lead.p.id);if(!k)return;
+  const forward=new THREE.Vector3(Math.cos(car.angle),0,Math.sin(car.angle));
+  if(cameraMode===1){desired.copy(k.position).addScaledVector(forward,-7.8).add(new THREE.Vector3(0,4.3,0));camTarget.copy(k.position).addScaledVector(forward,3.2).add(new THREE.Vector3(0,1,0))}
+  else{desired.set(k.position.x,30,k.position.z+.01);camTarget.copy(k.position)}
+ }
+ const follow=1-Math.pow(.001,Math.min(.05,dt));camera.position.lerp(desired,follow*.72);look.lerp(camTarget,follow);camera.lookAt(look)
+}
 function loop(now){const dt=Math.min(.05,(now-last)/1000||0);last=now;if(roomState){ensureCars();if(roomState.status==='race_countdown'&&Date.now()>=(Number(roomState.startsAt)||0))beginPlaying();if(roomState.status==='race_playing'){for(const p of players()){const car=cars.get(p.id);if(car&&!car.finished)C.stepCar(car,p.input,dt,track)}C.resolveCarCollisions([...cars.values()].filter(c=>!c.finished));for(const car of cars.values())C.constrainToMap(car,track);const lead=ranking()[0];if(lead?.car.finished)finishRace(lead.p.id);publishTelemetry(now)}}syncKartViews(dt);updateDust(dt);updateCamera(now,dt);renderBoard();renderBig();renderer.render(scene,camera);requestAnimationFrame(loop)}
 function renderBoard(){const ranked=ranking();boardEl.innerHTML='';if(!ranked.length){boardEl.innerHTML='<div class="empty">Quét QR để vào garage.</div>';return}ranked.forEach((x,i)=>{const spec=C.vehicleSpec(x.p.vehicle),row=document.createElement('div');row.className='row'+(i===0?' leader':'');row.innerHTML=`<div class="pos">#${i+1}</div><div class="driver">${escapeHtml(spec.emoji+' '+x.p.name)}</div><div class="meta">L${Math.min(C.LAPS,x.car.lap+1)}/${C.LAPS} · ${Math.abs(Math.round(x.car.speed))}</div>`;boardEl.appendChild(row)})}
 function renderBig(){let text='';if(roomState?.status==='race_countdown'){const left=Math.ceil(((Number(roomState.startsAt)||0)-Date.now())/1000);text=left>0?String(left):'GO!'}else if(roomState?.status==='race_finished'){const w=roomState.players?.[roomState.winner];text=w?'🏆 '+C.cleanName(w.name):'FINISH'}bigText.textContent=text;bigText.classList.toggle('show',!!text)}
 function escapeHtml(text){const d=document.createElement('div');d.textContent=text;return d.innerHTML}
 async function copyJoin(){if(!joinUrlEl.value.startsWith('http'))return;try{await navigator.clipboard.writeText(joinUrlEl.value);copyBtn.textContent='Đã copy ✓';setTimeout(()=>copyBtn.textContent='Copy link controller',1200)}catch(e){}}
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2))}
-mapSelect.addEventListener('change',()=>setMap(mapSelect.value));startBtn.addEventListener('click',startRace);newRoomBtn.addEventListener('click',createRoom);copyBtn.addEventListener('click',copyJoin);cameraBtn.addEventListener('click',()=>{cameraMode=(cameraMode+1)%3;cameraBtn.textContent=['🎥 CHASE','🎥 ANGLE','🎥 TOP'][cameraMode]});fullscreenBtn.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){}});addEventListener('resize',resize);
-applyTrack();buildWorld();initFirebase();requestAnimationFrame(loop);window.ReadyToKart3D={getState:()=>({roomCode,roomState,cars:[...cars.entries()],map:selectedMap}),start:startRace,newRoom:createRoom};
+mapSelect.addEventListener('change',()=>setMap(mapSelect.value));startBtn.addEventListener('click',startRace);newRoomBtn.addEventListener('click',createRoom);copyBtn.addEventListener('click',copyJoin);cameraBtn.textContent='👥 GROUP';cameraBtn.addEventListener('click',()=>{cameraMode=(cameraMode+1)%3;cameraBtn.textContent=['👥 GROUP','🎥 LEADER','🛰️ TOP'][cameraMode]});fullscreenBtn.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){}});addEventListener('resize',resize);
+applyTrack();buildWorld();initFirebase();requestAnimationFrame(loop);window.ReadyToKart3D={getState:()=>({roomCode,roomState,cars:[...cars.entries()],map:selectedMap,cameraMode}),start:startRace,newRoom:createRoom};
