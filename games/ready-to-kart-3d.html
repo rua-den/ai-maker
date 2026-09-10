@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script src="ready-to-race-core.js"></script>
+<script src="ready-to-kart-3d-multiplayer-fix.js"></script>
 </head>
 <body>
 <div id="stage" class="stage"></div>
@@ -24,13 +25,13 @@
     <div class="brand"><div class="eyebrow">RÙA CONSOLE · THREE.JS</div><h1>READY TO KART 3D</h1><div id="status" class="status">Đang khởi động garage 3D…</div></div>
     <div class="room"><div class="roomLabel">MÃ PHÒNG</div><div id="roomCode" class="roomCode">····</div><input id="joinUrl" class="joinUrl" readonly value="Đang tạo phòng…"><button id="copyBtn" class="copy" disabled>Copy link controller</button></div>
   </div>
-  <div class="cameraTag">CHASE CAM · LEADER</div>
+  <div class="cameraTag">GROUP CAM · ALL KARTS</div>
   <div class="controls">
     <select id="mapSelect" class="mapSelect" aria-label="Chọn map">
       <option value="park">🌿 Rùa Park 3D</option><option value="desert">🏜️ Desert Dash 3D</option><option value="night">🌃 Night City 3D</option><option value="ice">❄️ Ice Lake 3D</option>
     </select>
     <button id="startBtn" class="btn primary" disabled>START KART</button>
-    <button id="cameraBtn" class="btn">🎥 CAMERA</button>
+    <button id="cameraBtn" class="btn">👥 GROUP</button>
     <button id="fullscreenBtn" class="btn">⛶ FULLSCREEN</button>
     <button id="newRoomBtn" class="btn">Phòng mới</button>
   </div>
