@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ready to Kart 3D — Shared Screen</title>
+<link rel="stylesheet" href="../assets/app-fonts.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#05090d;color:#fff}body{touch-action:none}.stage{position:fixed;inset:0;background:#08121b}.stage canvas{display:block;width:100%;height:100%}.hud{position:fixed;inset:0;pointer-events:none;z-index:5}.topbar{position:absolute;top:max(12px,env(safe-area-inset-top));left:58px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.brand{padding:11px 15px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:rgba(5,10,15,.68);backdrop-filter:blur(14px);box-shadow:0 10px 35px rgba(0,0,0,.28)}.brand .eyebrow{font-size:9px;letter-spacing:.18em;font-weight:950;color:#75e4ff}.brand h1{margin:2px 0 0;font-size:clamp(22px,4vw,42px);line-height:.9;font-style:italic}.brand .status{font-size:11px;margin-top:7px;opacity:.74;font-weight:800}.room{pointer-events:auto;width:min(300px,34vw);padding:12px 14px;border-radius:17px;background:rgba(248,250,241,.96);color:#13241e;text-align:center;box-shadow:0 12px 42px rgba(0,0,0,.34)}.roomLabel{font-size:9px;font-weight:1000;letter-spacing:.16em;color:#62726b}.roomCode{font-size:clamp(32px,5vw,52px);font-weight:1000;letter-spacing:.14em;line-height:1;margin:5px 0 8px}.joinUrl{width:100%;border:1px solid #cbd6d1;border-radius:9px;padding:7px;background:white;color:#34473f;font:750 9px system-ui;text-align:center}.copy{width:100%;border:0;border-radius:9px;margin-top:6px;padding:8px;background:#153a30;color:#fff;font-size:10px;font-weight:950}.controls{pointer-events:auto;position:absolute;left:14px;bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 28px)}.btn,.mapSelect{border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 13px;background:rgba(8,17,25,.82);color:#fff;font-weight:950;font-size:11px;backdrop-filter:blur(12px)}.btn{cursor:pointer}.btn.primary{background:#73e7ff;color:#07303d;border-color:transparent;box-shadow:0 4px 0 #257b91}.btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}.mapSelect{cursor:pointer}.standings{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));width:min(310px,34vw);padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.13);background:rgba(5,10,15,.7);backdrop-filter:blur(14px)}.standings h2{font-size:12px;letter-spacing:.12em;margin:0 0 8px}.board{display:grid;gap:5px}.row{display:grid;grid-template-columns:28px 1fr auto;gap:7px;align-items:center;padding:7px 8px;border-radius:10px;background:rgba(255,255,255,.06);font-size:10px}.row.leader{outline:1px solid rgba(255,224,100,.64);background:rgba(255,224,100,.09)}.pos{font-size:14px;font-weight:1000;color:#ffe064}.driver{font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{text-align:right;opacity:.72}.empty{font-size:10px;opacity:.55;padding:10px;text-align:center}.big{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(70px,15vw,180px);font-weight:1000;font-style:italic;text-shadow:0 10px 40px #000;opacity:0;transform:scale(.85);transition:.15s}.big.show{opacity:1;transform:scale(1)}.home{pointer-events:auto;position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.13);color:#fff;text-decoration:none}.cameraTag{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:9px;font-weight:900;letter-spacing:.13em;padding:6px 9px;border-radius:999px;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.11);opacity:.75}.readyQrJoin{transform:scale(.72);transform-origin:top center;margin-bottom:-72px!important}@media(max-width:760px){.topbar{left:54px}.brand{display:none}.room{width:min(270px,52vw)}.standings{width:min(260px,45vw)}.controls{right:14px;padding-right:48vw}.readyQrJoin{display:none!important}}@media(max-height:520px){.room{padding:8px 10px}.roomCode{font-size:30px}.readyQrJoin{display:none!important}.standings{max-height:42vh;overflow:auto}.controls{max-width:62vw}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js"}}
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="ready-to-race-core.js"></script>
+</head>
+<body>
+<div id="stage" class="stage"></div>
+<div class="hud">
+  <a class="home" href="../index.html" aria-label="Về trang chủ">🐢</a>
+  <div class="topbar">
+    <div class="brand"><div class="eyebrow">RÙA CONSOLE · THREE.JS</div><h1>READY TO KART 3D</h1><div id="status" class="status">Đang khởi động garage 3D…</div></div>
+    <div class="room"><div class="roomLabel">MÃ PHÒNG</div><div id="roomCode" class="roomCode">····</div><input id="joinUrl" class="joinUrl" readonly value="Đang tạo phòng…"><button id="copyBtn" class="copy" disabled>Copy link controller</button></div>
+  </div>
+  <div class="cameraTag">CHASE CAM · LEADER</div>
+  <div class="controls">
+    <select id="mapSelect" class="mapSelect" aria-label="Chọn map">
+      <option value="park">🌿 Rùa Park 3D</option><option value="desert">🏜️ Desert Dash 3D</option><option value="night">🌃 Night City 3D</option><option value="ice">❄️ Ice Lake 3D</option>
+    </select>
+    <button id="startBtn" class="btn primary" disabled>START KART</button>
+    <button id="cameraBtn" class="btn">🎥 CAMERA</button>
+    <button id="fullscreenBtn" class="btn">⛶ FULLSCREEN</button>
+    <button id="newRoomBtn" class="btn">Phòng mới</button>
+  </div>
+  <aside class="standings"><h2>🏁 LIVE STANDINGS</h2><div id="board" class="board"><div class="empty">Quét QR để vào garage.</div></div></aside>
+  <div id="bigText" class="big"></div>
+</div>
+<script type="module" src="ready-to-kart-3d.js"></script>
+</body>
+</html>
