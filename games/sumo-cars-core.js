@@ -3,6 +3,35 @@
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
   if(root)root.SumoCarsCore=api;
+
+  if(root&&typeof document!=='undefined'){
+    const style=document.createElement('style');
+    style.textContent='.qr canvas{display:block!important}.qr img{display:none!important}';
+    document.head.appendChild(style);
+
+    if(typeof root.QRCode!=='function'){
+      function FallbackQRCode(el,options){
+        options=options||{};
+        const size=Math.max(96,Number(options.width)||168);
+        const canvas=document.createElement('canvas');
+        canvas.width=size;
+        canvas.height=size;
+        canvas.style.width=size+'px';
+        canvas.style.height=size+'px';
+        const ctx=canvas.getContext('2d');
+        ctx.fillStyle='#fff';
+        ctx.fillRect(0,0,size,size);
+        el.appendChild(canvas);
+        const img=new Image();
+        img.crossOrigin='anonymous';
+        img.onload=()=>{ctx.clearRect(0,0,size,size);ctx.drawImage(img,0,0,size,size)};
+        img.onerror=()=>{ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.fillStyle='#111';ctx.textAlign='center';ctx.font='700 12px system-ui';ctx.fillText('QR unavailable',size/2,size/2)};
+        img.src='https://api.qrserver.com/v1/create-qr-code/?size='+size+'x'+size+'&margin=0&data='+encodeURIComponent(String(options.text||''));
+      }
+      FallbackQRCode.CorrectLevel={L:1};
+      root.QRCode=FallbackQRCode;
+    }
+  }
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   const ROOT='caroRooms';
   const ROOM_PREFIX='sumoCars_';
