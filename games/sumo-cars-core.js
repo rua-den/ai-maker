@@ -40,12 +40,14 @@
   const ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const COLORS=['#ff5d73','#47d7ff','#ffd166','#7cf29a','#b28dff','#ff9f43','#5eead4','#f472b6','#a3e635','#60a5fa','#facc15','#fb7185','#34d399','#c084fc','#f97316','#22d3ee','#84cc16','#818cf8','#e879f9','#f43f5e'];
   const CAR_RADIUS=18;
-  const BASE_ARENA_RADIUS=310;
-  const MIN_ARENA_RADIUS=185;
-  const SHRINK_DELAY_MS=18000;
-  const SHRINK_DURATION_MS=36000;
+  const BASE_ARENA_RADIUS=335;
+  const MIN_ARENA_RADIUS=220;
+  const SHRINK_DELAY_MS=20000;
+  const SHRINK_DURATION_MS=40000;
   const BOOST_COOLDOWN_MS=1900;
   const BOOST_ACTIVE_MS=260;
+  const DRIVE_SPEED=275;
+  const BOOST_SPEED=440;
 
   function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
   function cleanRoomCode(value){return String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4)}
@@ -61,34 +63,42 @@
   function makeCar(index,count,arena,playerId,name){
     count=Math.max(1,Number(count)||1);index=Math.max(0,Number(index)||0);
     const a=-Math.PI/2+(index/count)*Math.PI*2;
-    const spawnRadius=(arena?.radius||BASE_ARENA_RADIUS)*.68;
+    const spawnRadius=(arena?.radius||BASE_ARENA_RADIUS)*.7;
     const cx=arena?.cx||0,cy=arena?.cy||0;
-    return{id:playerId||('p'+index),name:cleanName(name||('Driver '+(index+1))),color:COLORS[index%COLORS.length],x:cx+Math.cos(a)*spawnRadius,y:cy+Math.sin(a)*spawnRadius,vx:0,vy:0,angle:normalizeAngle(a+Math.PI),alive:true,boostUntil:0,cooldownUntil:0,boostHeld:false,lastBoostSeq:0,knockoutAt:0,place:0};
+    return{id:playerId||('p'+index),name:cleanName(name||('Driver '+(index+1))),color:COLORS[index%COLORS.length],x:cx+Math.cos(a)*spawnRadius,y:cy+Math.sin(a)*spawnRadius,vx:0,vy:0,angle:normalizeAngle(a+Math.PI),alive:true,boostUntil:0,cooldownUntil:0,boostHeld:false,lastBoostSeq:0,knockoutAt:0,hitUntil:0,place:0};
   }
   function speed(car){return Math.hypot(Number(car?.vx)||0,Number(car?.vy)||0)}
   function stepCar(car,input,dt,now,arena){
     if(!car||!car.alive)return car;
     dt=clamp(dt,0,.05);now=Number(now)||0;input=sanitizeInput(input);
     const n=normalizeVector(input.x,input.y);
-    if(n.mag>.12){
+    if(n.mag>.1){
       const target=Math.atan2(n.y,n.x);
-      car.angle=approachAngle(car.angle,target,5.3*dt);
-      const accel=235*(.42+.58*n.mag);
-      car.vx+=Math.cos(car.angle)*accel*dt;
-      car.vy+=Math.sin(car.angle)*accel*dt;
+      const turnRate=8.4*(.62+.38*n.mag);
+      car.angle=approachAngle(car.angle,target,turnRate*dt);
+      const desiredSpeed=DRIVE_SPEED*n.mag;
+      const desiredVx=Math.cos(car.angle)*desiredSpeed;
+      const desiredVy=Math.sin(car.angle)*desiredSpeed;
+      const response=now<car.hitUntil?2.2:6.6;
+      const grip=1-Math.exp(-response*dt);
+      car.vx+=(desiredVx-car.vx)*grip;
+      car.vy+=(desiredVy-car.vy)*grip;
+    }else{
+      const coast=Math.exp(-4.2*dt);
+      car.vx*=coast;
+      car.vy*=coast;
+      if(speed(car)<3){car.vx=0;car.vy=0}
     }
     const boostPressed=(input.boostSeq>car.lastBoostSeq)||(input.boost&&!car.boostHeld);
     if(input.boostSeq>car.lastBoostSeq)car.lastBoostSeq=input.boostSeq;
     if(boostPressed&&now>=car.cooldownUntil){
-      car.vx+=Math.cos(car.angle)*205;
-      car.vy+=Math.sin(car.angle)*205;
+      car.vx+=Math.cos(car.angle)*190;
+      car.vy+=Math.sin(car.angle)*190;
       car.boostUntil=now+BOOST_ACTIVE_MS;
       car.cooldownUntil=now+BOOST_COOLDOWN_MS;
     }
     car.boostHeld=input.boost;
-    const drag=Math.pow(.984,dt*60);
-    car.vx*=drag;car.vy*=drag;
-    const maxSpeed=now<car.boostUntil?430:265,s=speed(car);
+    const maxSpeed=now<car.boostUntil?BOOST_SPEED:DRIVE_SPEED*1.12,s=speed(car);
     if(s>maxSpeed){const k=maxSpeed/s;car.vx*=k;car.vy*=k}
     car.x+=car.vx*dt;car.y+=car.vy*dt;
     const dx=car.x-(arena?.cx||0),dy=car.y-(arena?.cy||0),limit=(arena?.radius||BASE_ARENA_RADIUS)+CAR_RADIUS*.35;
@@ -104,12 +114,13 @@
       a.x-=nx*overlap*.5;a.y-=ny*overlap*.5;b.x+=nx*overlap*.5;b.y+=ny*overlap*.5;
       const rvx=b.vx-a.vx,rvy=b.vy-a.vy,rel=rvx*nx+rvy*ny;
       if(rel<0){
-        const restitution=.48,base=-(1+restitution)*rel*.5;
+        const restitution=.52,base=-(1+restitution)*rel*.5;
         const aBoost=now<a.boostUntil,bBoost=now<b.boostUntil;
         const aToward=Math.max(0,a.vx*nx+a.vy*ny),bToward=Math.max(0,-(b.vx*nx+b.vy*ny));
-        const bonusA=aBoost?120+Math.min(150,aToward*.42):0,bonusB=bBoost?120+Math.min(150,bToward*.42):0;
+        const bonusA=aBoost?115+Math.min(145,aToward*.4):0,bonusB=bBoost?115+Math.min(145,bToward*.4):0;
         const impulse=base+bonusA+bonusB;
         a.vx-=nx*impulse;a.vy-=ny*impulse;b.vx+=nx*impulse;b.vy+=ny*impulse;
+        a.hitUntil=now+220;b.hitUntil=now+220;
       }
     }
     return list;
@@ -123,5 +134,5 @@
     return list;
   }
   function roundWinner(cars){const alive=aliveCars(cars);return alive.length===1?alive[0]:null}
-  return {ROOT,ROOM_PREFIX,ROOM_KIND,MAX_PLAYERS,ALPHABET,COLORS,CAR_RADIUS,BASE_ARENA_RADIUS,MIN_ARENA_RADIUS,SHRINK_DELAY_MS,SHRINK_DURATION_MS,BOOST_COOLDOWN_MS,BOOST_ACTIVE_MS,clamp,cleanRoomCode,roomKey,cleanName,makeRoomCode,normalizeVector,sanitizeInput,normalizeAngle,angleDelta,approachAngle,arenaRadius,makeCar,speed,stepCar,resolveCarCollisions,aliveCars,assignPlaces,roundWinner};
+  return {ROOT,ROOM_PREFIX,ROOM_KIND,MAX_PLAYERS,ALPHABET,COLORS,CAR_RADIUS,BASE_ARENA_RADIUS,MIN_ARENA_RADIUS,SHRINK_DELAY_MS,SHRINK_DURATION_MS,BOOST_COOLDOWN_MS,BOOST_ACTIVE_MS,DRIVE_SPEED,BOOST_SPEED,clamp,cleanRoomCode,roomKey,cleanName,makeRoomCode,normalizeVector,sanitizeInput,normalizeAngle,angleDelta,approachAngle,arenaRadius,makeCar,speed,stepCar,resolveCarCollisions,aliveCars,assignPlaces,roundWinner};
 });
