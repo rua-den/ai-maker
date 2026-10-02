@@ -1,0 +1,56 @@
+name: Deploy Firebase Rules
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "database.rules.json"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/deploy-firebase-rules.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Require Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Missing GitHub Actions secret: FIREBASE_SERVICE_ACCOUNT"
+            echo "Create a Firebase/GCP service account JSON key for project first-app-7456b and save the full JSON as this repository secret."
+            exit 1
+          fi
+
+      - name: Configure Google credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP']) / 'firebase-service-account.json'
+          data = json.loads(p.read_text(encoding='utf-8'))
+          if data.get('project_id') != 'first-app-7456b':
+              raise SystemExit(f"Service account belongs to wrong project: {data.get('project_id')!r}")
+          if data.get('type') != 'service_account':
+              raise SystemExit('FIREBASE_SERVICE_ACCOUNT is not a service account JSON key')
+          PY
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Deploy Realtime Database rules
+        run: firebase deploy --only database --project first-app-7456b --non-interactive
