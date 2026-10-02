@@ -1,0 +1,71 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Require Firebase API key
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        run: |
+          if [ -z "$FIREBASE_API_KEY" ]; then
+            echo "Missing GitHub Actions secret: FIREBASE_API_KEY"
+            exit 1
+          fi
+
+      - name: Inject Firebase API key into deploy artifact
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("firebase-config.js")
+          source = path.read_text(encoding="utf-8")
+          token = '"__FIREBASE_API_KEY__"'
+
+          if token not in source:
+              raise SystemExit("firebase-config.js is missing the deploy token")
+
+          key = os.environ["FIREBASE_API_KEY"].strip()
+          if not key:
+              raise SystemExit("FIREBASE_API_KEY is empty")
+
+          path.write_text(source.replace(token, json.dumps(key)), encoding="utf-8")
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
