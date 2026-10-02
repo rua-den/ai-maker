@@ -1,10 +1,15 @@
 // ============================================================
 // Firebase config — SHARED by every game on this site.
-// Đây là project Firebase thật của rua-den (first-app-7456b),
-// đã lấy từ index.html cũ trong repo, dùng chung cho mọi game.
+//
+// IMPORTANT:
+// - The API key is injected into the GitHub Pages artifact at deploy time.
+// - Never commit a real key here. Configure the GitHub Actions secret
+//   FIREBASE_API_KEY instead.
+// - Firebase web API keys are identifiers, not authorization. Real data
+//   protection must come from Firebase Security Rules / App Check.
 // ============================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyCr7P5vuhMZsGC-DzR-cKV7BUzgpBeeapk",
+  apiKey: "__FIREBASE_API_KEY__",
   authDomain: "first-app-7456b.firebaseapp.com",
   databaseURL: "https://first-app-7456b-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "first-app-7456b",
