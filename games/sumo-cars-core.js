@@ -40,8 +40,8 @@
   const ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const COLORS=['#ff5d73','#47d7ff','#ffd166','#7cf29a','#b28dff','#ff9f43','#5eead4','#f472b6','#a3e635','#60a5fa','#facc15','#fb7185','#34d399','#c084fc','#f97316','#22d3ee','#84cc16','#818cf8','#e879f9','#f43f5e'];
   const CAR_RADIUS=18;
-  const BASE_ARENA_RADIUS=335;
-  const MIN_ARENA_RADIUS=220;
+  const BASE_ARENA_RADIUS=420;
+  const MIN_ARENA_RADIUS=270;
   const SHRINK_DELAY_MS=20000;
   const SHRINK_DURATION_MS=40000;
   const BOOST_COOLDOWN_MS=1900;
