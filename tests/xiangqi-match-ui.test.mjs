@@ -44,13 +44,24 @@ test('Xiangqi tracks captured pieces chronologically and renders capture effects
   assert.match(matchUi, /drawPieceAt\(0, 0, fx\.piece/);
 });
 
-test('Xiangqi supports an explicit untimed mode', () => {
+test('Xiangqi supports untimed play and one cumulative time pool per side', () => {
   assert.match(matchUi, /option value="0">∞ Không tính giờ/);
+  assert.match(matchUi, /Quỹ thời gian mỗi bên/);
+  assert.match(matchUi, /option value="600">10 phút/);
+  assert.match(matchUi, /Thời gian được tích lũy cho cả ván đấu/);
   assert.match(matchUi, /function isTimeControlEnabled/);
-  assert.match(matchUi, /enabled:\s*control\.enabled/);
+  assert.match(matchUi, /return \{ enabled, totalSeconds: enabled \? total : 0 \}/);
   assert.match(matchUi, /xiangqiClockOff/);
   assert.match(matchUi, /∞ Không tính giờ/);
-  assert.match(matchUi, /turnSelect\.disabled = totalSelect\.value === '0'/);
+  assert.doesNotMatch(matchUi, /TIME_TURN_KEY|DEFAULT_TURN_SECONDS|xiangqiTimeTurnSeconds|xiangqiTurnTime|turnSeconds|xiangqiTurnClock|hết giờ lượt/);
+});
+
+test('Xiangqi deducts only the active side elapsed time from its cumulative clock', () => {
+  assert.match(matchUi, /const elapsed = active \? Math\.max\(0, now - localClock\.turnStartedAt\) : 0/);
+  assert.match(matchUi, /localClock\[mover \+ 'Ms'\] = remain\.total/);
+  assert.match(matchUi, /current\.clock\[field\] = Math\.max\(0, \(Number\(current\.clock\[field\]\) \|\| 0\) - elapsed\)/);
+  assert.match(matchUi, /elements\.bar\.style\.width = percent \+ '%'/);
+  assert.match(matchUi, /finishLocalTimeout\(current, 'hết giờ'\)/);
 });
 
 test('Xiangqi prevents false timeout while a newly switched turn clock is still syncing', () => {
@@ -62,16 +73,15 @@ test('Xiangqi prevents false timeout while a newly switched turn clock is still 
   assert.match(matchUi, /current\.clock\.lastTurn = current\.turn/);
 });
 
-test('Xiangqi exposes pre-game total and per-turn time controls with timeout enforcement', () => {
+test('Xiangqi applies the cumulative clock to local and online games', () => {
   assert.match(matchUi, /id="xiangqiTotalTime"/);
   assert.match(matchUi, /option value="600">10 phút/);
-  assert.match(matchUi, /id="xiangqiTurnTime"/);
-  assert.match(matchUi, /option value="60">60 giây/);
+  assert.doesNotMatch(matchUi, /id="xiangqiTurnTime"|turnSeconds|hết giờ tổng|hết giờ lượt/);
   assert.match(matchUi, /timeControl/);
   assert.match(matchUi, /clock/);
   assert.match(matchUi, /enforceOnlineTimeout/);
-  assert.match(matchUi, /hết giờ tổng/);
-  assert.match(matchUi, /hết giờ lượt/);
+  assert.match(matchUi, /const reason = remain\.total <= 0 \? 'hết giờ' : null/);
+  assert.match(matchUi, /const finalReason = check\.total <= 0 \? 'hết giờ' : null/);
 });
 
 test('Xiangqi match UI JavaScript parses', () => {
