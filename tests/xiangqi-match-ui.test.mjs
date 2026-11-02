@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const matchUi = fs.readFileSync(new URL('../games/xiangqi-match-ui.js', import.meta.url), 'utf8');
 const loader = fs.readFileSync(new URL('../games/xiangqi.html', import.meta.url), 'utf8');
+const boardCenterFix = fs.readFileSync(new URL('../games/xiangqi-board-center-fix.js', import.meta.url), 'utf8');
 
 test('Xiangqi loads match UI after chat and existing social modules', () => {
   assert.match(loader, /xiangqi-match-ui\.js/);
@@ -14,14 +15,18 @@ test('Xiangqi moves status and suggestion helpers into a left assist rail', () =
   assert.match(matchUi, /xiangqiAssistRail/);
   assert.match(matchUi, /rail\.appendChild\(topBarEl\)/);
   assert.match(matchUi, /rail\.appendChild\(suggestPanel\)/);
-  assert.match(matchUi, /canvasEl\.style\.transform = 'translateX\('/);
+  assert.match(matchUi, /#xiangqiAssistRail\{position:absolute;left:8px;right:8px;top:max\(56px,env\(safe-area-inset-top\)\)/);
+  assert.match(matchUi, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
+  assert.match(matchUi, /rail\.style\.display = show \? \(window\.innerWidth <= 760 \? 'grid' : 'flex'\) : 'none'/);
+  assert.match(matchUi, /gameContainer\.style\.setProperty\('--xiangqi-board-offset-y'/);
+  assert.match(boardCenterFix, /translateY\(var\(--xiangqi-board-offset-y, 0px\)\)/);
   assert.match(matchUi, /#board\{filter:none!important;opacity:1!important/);
 });
 
 test('Xiangqi chat is taller and collapsed chat clears the music control', () => {
   assert.match(matchUi, /#xiangqiLiveChat\{height:min\(560px,68vh\)!important\}/);
   assert.match(matchUi, /#xiangqiLiveChat\.collapsed\{height:auto!important;bottom:64px!important/);
-  assert.match(matchUi, /@media\(max-width:520px\).*#xiangqiLiveChat\{height:min\(420px,55vh\)!important/s);
+  assert.match(matchUi, /#xiangqiLiveChat\{height:min\(420px,48dvh\)!important\}/);
 });
 
 test('Xiangqi online undo requires opponent approval before restoring state', () => {
@@ -82,6 +87,15 @@ test('Xiangqi applies the cumulative clock to local and online games', () => {
   assert.match(matchUi, /enforceOnlineTimeout/);
   assert.match(matchUi, /const reason = remain\.total <= 0 \? 'hết giờ' : null/);
   assert.match(matchUi, /const finalReason = check\.total <= 0 \? 'hết giờ' : null/);
+});
+
+
+test('Xiangqi mobile controls sit above the board without covering its play area', () => {
+  assert.match(matchUi, /availableH = Math\.max\(220, vh - railTop - railHeight - 28\)/);
+  assert.match(matchUi, /availableW = Math\.max\(180, vw - 20\)/);
+  assert.match(matchUi, /visualViewport\.addEventListener\('resize'/);
+  assert.match(matchUi, /#xiangqiAssistRail #topBar\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(matchUi, /#xiangqiAssistRail #xiangqiSuggestPanel\{max-height:76px!important/);
 });
 
 test('Xiangqi match UI JavaScript parses', () => {

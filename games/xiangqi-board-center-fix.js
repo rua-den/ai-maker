@@ -8,7 +8,7 @@
   style.id = 'xiangqi-board-center-fix-style';
   style.textContent = `
     #gameContainer > #board {
-      transform: none !important;
+      transform: translateY(var(--xiangqi-board-offset-y, 0px)) !important;
       margin-left: 0 !important;
       margin-right: 0 !important;
     }
@@ -18,6 +18,7 @@
   // xiangqi-match-ui may recalculate board sizing on resize/orientation.
   // The board stays a normal flex child, so gameContainer's
   // justify-content:center remains the single source of truth for centering.
+  // On compact screens, the match UI offsets the board into the space below the control rail.
   board.style.removeProperty('margin-left');
   board.style.removeProperty('margin-right');
 })();
