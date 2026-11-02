@@ -70,8 +70,28 @@
     #xiangqiLiveChat.collapsed{height:auto!important;bottom:64px!important;width:min(245px,calc(100vw - 24px))!important}
     #xiangqiLiveChat.collapsed .liveChatHead{box-shadow:0 7px 20px rgba(0,0,0,.38)}
     #globalMusicBtn{right:max(12px,env(safe-area-inset-right))!important;bottom:max(12px,env(safe-area-inset-bottom))!important}
-    @media(max-width:760px){#xiangqiAssistRail{width:142px;top:58px}.xiangqiRailCard{padding:7px 8px}.xiangqiClockMain{font-size:14px}#xiangqiAssistRail #topBar{padding:8px!important}#xiangqiAssistRail #topBar button{font-size:11px!important;padding:7px 5px!important}}
-    @media(max-width:520px){#xiangqiAssistRail{width:104px;left:6px;top:58px;gap:6px}.xiangqiRailTitle{font-size:9px}.xiangqiClockRow{grid-template-columns:minmax(0,1fr) auto;gap:5px 4px;padding:6px 4px}.xiangqiClockDot{width:8px;height:8px}.xiangqiClockSide{font-size:10px}.xiangqiClockStatus{font-size:7px}.xiangqiClockMain{text-align:right;font-size:15px;letter-spacing:-.6px}.xiangqiClockProgress{height:3px}.capturedChip{min-width:23px;height:23px;font-size:14px;padding:0 3px}#xiangqiAssistRail #topBar #turnLabel{font-size:10px}#xiangqiAssistRail #topBar button{font-size:10px!important;padding:6px 3px!important}#xiangqiAssistRail #xiangqiSuggestPanel{font-size:9px!important;padding:6px!important;max-height:170px}.xiangqiTimeField select{padding:7px 6px;font-size:11px}#xiangqiLiveChat{height:min(420px,55vh)!important;right:8px!important;bottom:8px!important;width:calc(100vw - 16px)!important}#xiangqiLiveChat.collapsed{bottom:64px!important;width:min(230px,calc(100vw - 118px))!important}.liveChatTitle{font-size:11px!important}}
+    @media(max-width:760px){
+      #xiangqiAssistRail{position:absolute;left:8px;right:8px;top:max(56px,env(safe-area-inset-top));bottom:auto;width:auto;max-height:min(330px,42dvh);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;gap:6px;padding:0;overflow-y:auto}
+      #xiangqiAssistRail>*{min-width:0}
+      #xiangqiAssistRail #topBar,#xiangqiAssistRail #onlineBadge,#xiangqiAssistRail #xiangqiSuggestPanel{grid-column:1/-1}
+      #xiangqiAssistRail #topBar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px!important;padding:7px!important}
+      #xiangqiAssistRail #topBar #turnLabel{grid-column:1/-1;font-size:12px}
+      #xiangqiAssistRail #topBar button{min-width:0;padding:7px 4px!important;font-size:11px!important;white-space:nowrap}
+      #xiangqiAssistRail #onlineBadge{font-size:10px!important;padding:5px 8px!important}
+      #xiangqiAssistRail #xiangqiSuggestPanel{max-height:76px!important;padding:7px!important;font-size:10px!important}
+      .xiangqiRailCard{padding:7px 8px}.xiangqiRailTitle{font-size:10px;margin-bottom:5px}
+      .xiangqiClockRow{gap:4px;padding:5px 3px}.xiangqiClockSide{font-size:10px}.xiangqiClockStatus{font-size:7px}.xiangqiClockMain{font-size:16px}.xiangqiClockProgress{height:3px}
+      .capturedGroup{margin-top:4px}.capturedLabel{font-size:9px}.capturedChip{min-width:22px;height:22px;font-size:13px;padding:0 3px}
+      #xiangqiLiveChat{height:min(420px,48dvh)!important;right:8px!important;bottom:8px!important;width:calc(100vw - 16px)!important}
+      #xiangqiLiveChat.collapsed{bottom:64px!important;width:min(230px,calc(100vw - 118px))!important}.liveChatTitle{font-size:11px!important}
+    }
+    @media(max-width:520px){
+      #xiangqiAssistRail{left:6px;right:6px;top:max(52px,env(safe-area-inset-top));max-height:min(300px,40dvh);gap:5px}
+      #xiangqiAssistRail #topBar{padding:6px!important}#xiangqiAssistRail #topBar button{font-size:10px!important;padding:6px 3px!important}#xiangqiAssistRail #topBar #turnLabel{font-size:11px}
+      #xiangqiAssistRail #xiangqiSuggestPanel{max-height:58px!important}.xiangqiRailCard{padding:6px}.xiangqiRailTitle{font-size:9px}
+      .xiangqiClockMain{font-size:14px}.xiangqiClockSide{font-size:9px}.xiangqiClockStatus{font-size:6px}.capturedChip{min-width:20px;height:20px;font-size:12px}
+      .xiangqiTimeField select{padding:7px 6px;font-size:11px}
+    }
   `;
   document.head.appendChild(style);
 
@@ -182,20 +202,23 @@
 
   function fitBoard() {
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const railWidth = vw <= 520 ? 104 : vw <= 760 ? 142 : 196;
-    const availableW = Math.max(180, vw - railWidth - 20);
-    const availableH = Math.max(220, vh * 0.97);
+    const vh = window.visualViewport?.height || window.innerHeight;
+    const compact = vw <= 760;
+    const railTop = compact ? Math.max(52, parseFloat(getComputedStyle(rail).top) || 56) : 0;
+    const railHeight = compact ? rail.getBoundingClientRect().height : 0;
+    const availableW = Math.max(180, vw - 20);
+    const availableH = Math.max(220, vh - railTop - railHeight - 28);
     const scale = Math.min(availableW / 560, availableH / 640);
     const cssW = Math.max(180, Math.floor(560 * scale));
     const cssH = Math.floor(cssW * 640 / 560);
     canvasEl.style.width = cssW + 'px';
     canvasEl.style.height = cssH + 'px';
-    canvasEl.style.transform = 'translateX(' + Math.floor(railWidth / 2) + 'px)';
+    gameContainer.style.setProperty('--xiangqi-board-offset-y', compact ? Math.max(0, Math.round((railTop + railHeight - 12) / 2)) + 'px' : '0px');
   }
   fitBoard();
   window.addEventListener('resize', () => requestAnimationFrame(fitBoard));
-  window.addEventListener('orientationchange', () => setTimeout(fitBoard, 60));
+  window.addEventListener('orientationchange', () => setTimeout(fitBoard, 100));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => requestAnimationFrame(fitBoard));
 
   let localCaptures = [];
   let localMoveLog = [];
