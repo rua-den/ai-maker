@@ -748,7 +748,8 @@
     let state = '';
     try { state = gameState; } catch (_) {}
     const show = !!watchingRoomId() || state === 'playing' || state === 'over' || topBarEl.style.display === 'flex';
-    rail.style.display = show ? 'flex' : 'none';
+    rail.style.display = show ? (window.innerWidth <= 760 ? 'grid' : 'flex') : 'none';
+    requestAnimationFrame(fitBoard);
     if (!boundRoomId) {
       renderClock();
       renderCaptured(localCaptures);
