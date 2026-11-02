@@ -26,7 +26,7 @@ test('Xiangqi moves status and suggestion helpers into a left assist rail', () =
 test('Xiangqi chat is taller and collapsed chat clears the music control', () => {
   assert.match(matchUi, /#xiangqiLiveChat\{height:min\(560px,68vh\)!important\}/);
   assert.match(matchUi, /#xiangqiLiveChat\.collapsed\{height:auto!important;bottom:64px!important/);
-  assert.match(matchUi, /@media\(max-width:760px\)[\s\S]*#xiangqiLiveChat\{height:min\(420px,48dvh\)!important\}/);
+  assert.match(matchUi, /#xiangqiLiveChat\{height:min\(420px,48dvh\)!important\}/);
 });
 
 test('Xiangqi online undo requires opponent approval before restoring state', () => {
