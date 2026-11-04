@@ -287,9 +287,22 @@
     const localItems = readGameHistory();
     if (!db) return localItems;
     try {
-      const snapshot = await db.ref('xiangqiGameHistory').child(historyOwnerId()).once('value');
-      const cloudItems = Object.values(snapshot.val() || {});
-      const merged = mergeGameHistory(cloudItems);
+      const historyRef = db.ref('xiangqiGameHistory');
+      const [globalSnapshot, legacySnapshot] = await Promise.all([
+        historyRef.orderByChild('date').limitToLast(50).once('value'),
+        historyRef.child(historyOwnerId()).once('value')
+      ]);
+      // Migrate this browser's old local/per-owner history into the shared collection.
+      const legacyItems = [
+        ...Object.values(legacySnapshot.val() || {}),
+        ...localItems
+      ].filter(item => item?.id && Array.isArray(item.frames));
+      const migration = {};
+      for (const item of legacyItems) migration[item.id] = item;
+      if (Object.keys(migration).length) await historyRef.update(migration);
+
+      const refreshed = Object.values((await historyRef.orderByChild('date').limitToLast(50).once('value')).val() || {});
+      const merged = mergeGameHistory([...refreshed, ...legacyItems]);
       writeGameHistory(merged);
       return merged;
     } catch (error) {
@@ -302,7 +315,7 @@
     const items = mergeGameHistory([game]);
     writeGameHistory(items);
     if (db) {
-      db.ref('xiangqiGameHistory').child(historyOwnerId()).child(game.id).set(game)
+      db.ref('xiangqiGameHistory').child(game.id).set(game)
         .catch(error => console.warn('[Xiangqi] Could not save game history to Firebase.', error));
     }
   }
