@@ -240,6 +240,7 @@
       await ref.set({
         status: 'waiting', createdAt: now, updatedAt: now,
         red: { name, clientId: myClientId }, black: null,
+        timeControl: (() => { const c = window.XiangqiMatchUI?.selectedControl?.() || {}; return { enabled: !!c.enabled, totalSeconds: Number(c.totalSeconds) || 0, incrementSeconds: Number(c.incrementSeconds) || 10 }; })(),
         board: initialBoard(), turn: 'r', lastMove: null, winner: null
       });
       waitingDisconnect = ref.onDisconnect();

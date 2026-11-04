@@ -101,3 +101,24 @@ test('Xiangqi mobile controls sit above the board without covering its play area
 test('Xiangqi match UI JavaScript parses', () => {
   assert.doesNotThrow(() => new Function(matchUi));
 });
+
+test('Xiangqi offers selectable per-move increment before starting', () => {
+  assert.match(matchUi, /id="xiangqiIncrementTime"/);
+  for (const seconds of [5, 10, 15, 20, 30]) assert.match(matchUi, new RegExp('option value="' + seconds + '">\\+' + seconds + ' giây/nước'));
+  assert.match(matchUi, /TIME_INCREMENT_KEY/);
+  assert.match(matchUi, /incrementSeconds: storedNumber\(TIME_INCREMENT_KEY, 10, false\)/);
+  assert.match(matchUi, /localClock\[mover \+ 'Ms'\] \+= Number\(storedNumber\(TIME_INCREMENT_KEY, 10, false\)\) \* 1000/);
+  assert.match(matchUi, /current\.clock\[mover \+ 'Ms'\].*incrementSeconds/);
+});
+
+test('Xiangqi provides move record and replay controls for local and online games', () => {
+  assert.match(matchUi, /Biên bản & Replay/);
+  assert.match(matchUi, /⏮ Đầu/);
+  assert.match(matchUi, /◀ Lùi/);
+  assert.match(matchUi, /▶ Phát/);
+  assert.match(matchUi, /Tiến ▶/);
+  assert.match(matchUi, /Cuối ⏭/);
+  assert.match(matchUi, /boardBefore: cloneValue\(before\.board\)/);
+  assert.match(matchUi, /boardAfter: cloneValue\(after\.board\)/);
+  assert.match(matchUi, /localReplayFrames\.push\(window\.XiangqiReplay\.snapshot\(\)\)/);
+});

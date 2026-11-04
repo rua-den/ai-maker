@@ -6,6 +6,7 @@
   const COLOR_KEY = 'xiangqiActiveColor';
   const CLIENT_KEY = 'xiangqiClientId';
   const TIME_TOTAL_KEY = 'xiangqiTimeTotalSeconds';
+  const TIME_INCREMENT_KEY = 'xiangqiIncrementSeconds';
   const DEFAULT_TOTAL_SECONDS = 10 * 60;
   const gameContainer = document.getElementById('gameContainer');
   const canvasEl = document.getElementById('board');
@@ -182,23 +183,88 @@
   function selectedControl() {
     const total = totalSelect ? Number(totalSelect.value) : storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS, true);
     const enabled = Number.isFinite(total) && total > 0;
-    return { enabled, totalSeconds: enabled ? total : 0 };
+    return { enabled, totalSeconds: enabled ? total : 0, incrementSeconds: storedNumber(TIME_INCREMENT_KEY, 10, false) };
   }
   if (setupPanel) {
     const settings = document.createElement('div');
     settings.id = 'xiangqiTimeSettings';
     settings.innerHTML = `
       <div class="xiangqiTimeField"><label for="xiangqiTotalTime">Quỹ thời gian mỗi bên</label><select id="xiangqiTotalTime"><option value="0">∞ Không tính giờ</option><option value="60">1 phút</option><option value="180">3 phút</option><option value="300">5 phút</option><option value="600">10 phút</option><option value="900">15 phút</option><option value="1800">30 phút</option></select></div>
-      <div class="xiangqiTimeHint">Thời gian được tích lũy cho cả ván đấu, chỉ trừ khi đến lượt bên đó.</div>`;
+      <div class="xiangqiTimeField"><label for="xiangqiIncrementTime">Cộng thêm mỗi nước</label><select id="xiangqiIncrementTime"><option value="5">+5 giây/nước</option><option value="10">+10 giây/nước</option><option value="15">+15 giây/nước</option><option value="20">+20 giây/nước</option><option value="30">+30 giây/nước</option></select></div>
+      <div class="xiangqiTimeHint">Quỹ thời gian tích lũy cả ván; cộng thêm sau mỗi nước đi hợp lệ.</div>`;
     const firstModeRow = setupPanel.querySelector('.modeRow');
     if (firstModeRow) firstModeRow.insertAdjacentElement('afterend', settings); else setupPanel.prepend(settings);
     totalSelect = settings.querySelector('#xiangqiTotalTime');
+    const incrementSelect = settings.querySelector('#xiangqiIncrementTime');
+    incrementSelect.value = String(storedNumber(TIME_INCREMENT_KEY, 10, false));
+    incrementSelect.addEventListener('change', () => writeLocal(TIME_INCREMENT_KEY, incrementSelect.value));
     totalSelect.value = String(storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS, true));
     const persist = () => writeLocal(TIME_TOTAL_KEY, totalSelect.value);
     totalSelect.addEventListener('change', persist);
     document.getElementById('createRoomBtn')?.addEventListener('click', persist);
     document.getElementById('newStartGameBtn')?.addEventListener('click', persist);
   }
+
+  const replayStyle = document.createElement('style');
+  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,5,3,.78);backdrop-filter:blur(5px)}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(460px,100%);max-height:82dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:#2b1d12;color:#f6e2b7;padding:15px}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
+  document.head.appendChild(replayStyle);
+  const replayPanel = document.createElement('div');
+  replayPanel.id = 'xiangqiReplayPanel';
+  replayPanel.innerHTML = '<div id="xiangqiReplayCard"><button id="xiangqiReplayClose" type="button">Đóng ✕</button><h3>Biên bản & Replay</h3><div id="xiangqiReplayCount">Chưa có nước đi</div><div id="xiangqiReplayMoves"></div><div id="xiangqiReplayControls"><button data-step="start">⏮ Đầu</button><button data-step="back">◀ Lùi</button><button data-step="play">▶ Phát</button><button data-step="next">Tiến ▶</button><button data-step="end">Cuối ⏭</button></div></div>';
+  gameContainer.appendChild(replayPanel);
+  const replayMovesEl = replayPanel.querySelector('#xiangqiReplayMoves');
+  const replayCountEl = replayPanel.querySelector('#xiangqiReplayCount');
+  function replayLabel(record, index) {
+    const side = record.mover === 'r' || record.turn === 'r' ? 'Đỏ' : 'Đen';
+    const from = record.from || record.lastMove?.from || [];
+    const to = record.to || record.lastMove?.to || [];
+    return (index + 1) + '. ' + side + '  ' + (from.join(',') || '—') + ' → ' + (to.join(',') || '—');
+  }
+  function stopReplayTimer() { if (replayTimer) clearInterval(replayTimer); replayTimer = null; }
+  function showReplayFrame(index) {
+    replayIndex = Math.max(0, Math.min(index, replayFrames.length - 1));
+    const frame = replayFrames[replayIndex];
+    if (frame && window.XiangqiReplay) window.XiangqiReplay.show(frame);
+    replayCountEl.textContent = 'Nước ' + replayIndex + ' / ' + Math.max(0, replayFrames.length - 1);
+    [...replayMovesEl.children].forEach((button, i) => button.classList.toggle('active', i === replayIndex - 1));
+  }
+  function openReplay() {
+    stopReplayTimer();
+    const online = currentMode() === 'online' && lastRoom;
+    if (online) {
+      const records = Object.entries(lastRoom.moveHistory || {}).map(([key, value]) => ({key, ...value})).sort((a,b)=>(Number(a.movedAt)||0)-(Number(b.movedAt)||0));
+      const first = records[0];
+      replayFrames = first ? [{board:first.boardBefore,turn:first.turnBefore,lastMove:first.lastMoveBefore,gameState:'replay'}, ...records.map(r=>({board:r.boardAfter,turn:r.turnAfter,lastMove:r.lastMoveAfter,gameState:'replay'}))] : [];
+      replayMovesEl.innerHTML = records.map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+'</button>').join('');
+    } else {
+      replayFrames = localReplayFrames.slice();
+      replayMovesEl.innerHTML = localMoveLog.map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+(r.captured?' · ăn '+glyph(r.captured):'')+'</button>').join('');
+    }
+    if (!replayFrames.length) { toast('Ván này chưa có biên bản để phát lại.'); return; }
+    replaySavedState = window.XiangqiReplay?.snapshot() || null;
+    replayPanel.classList.add('show');
+    showReplayFrame(0);
+  }
+  function closeReplay() {
+    stopReplayTimer();
+    replayPanel.classList.remove('show');
+    if (replaySavedState && window.XiangqiReplay) window.XiangqiReplay.restore(replaySavedState);
+    replaySavedState = null;
+  }
+  replayPanel.querySelector('#xiangqiReplayClose').addEventListener('click', closeReplay);
+  replayMovesEl.addEventListener('click', e => { const button=e.target.closest('button[data-frame]'); if(button) showReplayFrame(Number(button.dataset.frame)); });
+  replayPanel.querySelector('#xiangqiReplayControls').addEventListener('click', e => {
+    const step=e.target.closest('button')?.dataset.step; if(!step) return;
+    if(step==='play') { if(replayTimer) stopReplayTimer(); else replayTimer=setInterval(()=>{if(replayIndex>=replayFrames.length-1){stopReplayTimer();return;}showReplayFrame(replayIndex+1);},900); }
+    else { stopReplayTimer(); if(step==='start')showReplayFrame(0); if(step==='back')showReplayFrame(replayIndex-1); if(step==='next')showReplayFrame(replayIndex+1); if(step==='end')showReplayFrame(replayFrames.length-1); }
+  });
+  document.getElementById('menuBtn')?.addEventListener('click', () => {});
+  const recordButton = document.createElement('button');
+  recordButton.type='button'; recordButton.textContent='♟ Biên bản / Replay'; recordButton.className='xiangqiReplayButton';
+  recordButton.style.cssText='width:100%;border:1px solid #8e6c48;border-radius:9px;background:#3b2b20;color:#f6dfb3;padding:9px;font-weight:800;cursor:pointer';
+  const railTopBar = document.getElementById('topBar');
+  if (railTopBar) railTopBar.appendChild(recordButton);
+  recordButton.addEventListener('click', openReplay);
 
   function fitBoard() {
     const vw = window.innerWidth;
@@ -222,6 +288,11 @@
 
   let localCaptures = [];
   let localMoveLog = [];
+  let localReplayFrames = [];
+  let replaySavedState = null;
+  let replayFrames = [];
+  let replayIndex = 0;
+  let replayTimer = null;
   let localClock = null;
   let captureFx = [];
 
@@ -339,9 +410,11 @@
     startGame = function() {
       localCaptures = [];
       localMoveLog = [];
+      localReplayFrames = [];
       captureFx = [];
       initLocalClock();
       const result = baseStartGame();
+      localReplayFrames = window.XiangqiReplay ? [window.XiangqiReplay.snapshot()] : [];
       renderCaptured(localCaptures);
       return result;
     };
@@ -430,7 +503,7 @@
     if (!room.timeControl && me === 'r') {
       const control = selectedControl();
       try {
-        await roomRef.child('timeControl').transaction(value => value || { enabled: control.enabled, totalSeconds: control.totalSeconds });
+        await roomRef.child('timeControl').transaction(value => value || { enabled: control.enabled, totalSeconds: control.totalSeconds, incrementSeconds: control.incrementSeconds });
       } catch (_) {}
       return;
     }
@@ -487,6 +560,10 @@
       turnBefore: before.turn,
       lastMoveBefore: cloneValue(before.lastMove || null),
       clockBefore: cloneValue(before.clock || null),
+      boardAfter: cloneValue(after.board),
+      turnAfter: after.turn,
+      lastMoveAfter: cloneValue(after.lastMove || null),
+      incrementSeconds: Number(lastRoom?.timeControl?.incrementSeconds ?? storedNumber(TIME_INCREMENT_KEY, 10, false)),
       movedAt: Number(after.updatedAt) || Date.now()
     };
     try {
@@ -495,6 +572,7 @@
         current.moveHistory = current.moveHistory || {};
         if (current.moveHistory[key]) return current;
         current.moveHistory[key] = record;
+        if (current.clock && isTimeControlEnabled(current.timeControl)) current.clock[mover + 'Ms'] = Math.max(0, Number(current.clock[mover + 'Ms']) || 0) + Math.max(0, Number(current.timeControl.incrementSeconds ?? storedNumber(TIME_INCREMENT_KEY, 10, false))) * 1000;
         if (captured) {
           current.captures = current.captures || {};
           current.captures[key] = { piece: cloneValue(captured), capturedBy: mover, from: cloneValue(move.from), to: cloneValue(move.to), at: record.movedAt };
@@ -663,6 +741,7 @@
       if (currentMode() === 'online') { requestOnlineUndo(); return; }
       if (gameState !== 'playing' || !localMoveLog.length) return;
       const log = localMoveLog.pop();
+      if (localReplayFrames.length > 1) localReplayFrames.pop();
       try { undoMove(); } catch (_) { return; }
       if (log?.captured) localCaptures.pop();
       if (log?.clockBefore) { localClock = cloneValue(log.clockBefore); if (localClock) localClock.turnStartedAt = Date.now(); }
@@ -724,14 +803,16 @@
       const clockBefore = localClockSnapshot();
       const at = Date.now();
       if (!remain.disabled) localClock[mover + 'Ms'] = remain.total;
-      localMoveLog.push({ captured: !!captured, clockBefore });
+      localMoveLog.push({ mover, from: cloneValue(from), to: cloneValue(to), captured: captured ? cloneValue(captured) : null, clockBefore, movedAt: at });
       if (captured) {
         localCaptures.push({ piece: captured, capturedBy: mover, from: cloneValue(from), to: cloneValue(to), at });
         captureFx.push({ piece: captured, to: cloneValue(to), start: performance.now(), duration: 420 });
       }
       const result = basePerformMove(from, to);
+      if (localClock.enabled !== false) localClock[mover + 'Ms'] += Number(storedNumber(TIME_INCREMENT_KEY, 10, false)) * 1000;
       localClock.turn = opposite(mover);
       localClock.turnStartedAt = Date.now();
+      if (window.XiangqiReplay) localReplayFrames.push(window.XiangqiReplay.snapshot());
       renderCaptured(localCaptures);
       renderClock();
       return result;
