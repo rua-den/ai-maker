@@ -81,11 +81,10 @@
     },
     "xiangqiGameHistory": {
       ".read": true,
-      "$owner": {
+      ".indexOn": ["date"],
+      "$game": {
         ".write": true,
-        "$game": {
-          ".validate": "newData.hasChildren(['id', 'date', 'frames', 'moves'])"
-        }
+        ".validate": "newData.hasChildren(['id', 'date', 'frames', 'moves'])"
       }
     }
   }
