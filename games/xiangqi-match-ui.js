@@ -229,18 +229,47 @@
     replayCountEl.textContent = 'Nước ' + replayIndex + ' / ' + Math.max(0, replayFrames.length - 1);
     [...replayMovesEl.children].forEach((button, i) => button.classList.toggle('active', i === replayIndex - 1));
   }
+  function historyOwnerId() {
+    let id = readLocal(GAME_HISTORY_OWNER_KEY);
+    if (!id) {
+      id = 'qh-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+      writeLocal(GAME_HISTORY_OWNER_KEY, id);
+    }
+    return id;
+  }
   function readGameHistory() {
     try { const value = JSON.parse(localStorage.getItem(GAME_HISTORY_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (_) { return []; }
   }
   function writeGameHistory(items) {
-    try { localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(items.slice(0, 50))); } catch (_) { toast('Không lưu được lịch sử trên thiết bị này.'); }
+    try { localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(items.slice(0, 50))); } catch (_) { toast('Không lưu được lịch sử dự phòng trên thiết bị này.'); }
+  }
+  function mergeGameHistory(items) {
+    const merged = new Map();
+    for (const item of [...items, ...readGameHistory()]) if (item?.id && Array.isArray(item.frames)) merged.set(item.id, item);
+    return [...merged.values()].sort((a,b) => (Number(b.date)||0) - (Number(a.date)||0)).slice(0, 50);
+  }
+  async function loadGameHistory() {
+    const localItems = readGameHistory();
+    if (!db) return localItems;
+    try {
+      const snapshot = await db.ref('xiangqiGameHistory').child(historyOwnerId()).once('value');
+      const cloudItems = Object.values(snapshot.val() || {});
+      const merged = mergeGameHistory(cloudItems);
+      writeGameHistory(merged);
+      return merged;
+    } catch (error) {
+      console.warn('[Xiangqi] Firebase history unavailable; using local backup.', error);
+      return localItems;
+    }
   }
   function saveCompletedGame(game) {
     if (!game || !Array.isArray(game.frames) || game.frames.length < 2 || !game.id) return;
-    const items = readGameHistory();
-    if (items.some(item => item.id === game.id)) return;
-    items.unshift(game);
+    const items = mergeGameHistory([game]);
     writeGameHistory(items);
+    if (db) {
+      db.ref('xiangqiGameHistory').child(historyOwnerId()).child(game.id).set(game)
+        .catch(error => console.warn('[Xiangqi] Could not save game history to Firebase.', error));
+    }
   }
   function saveLocalCompletedGame(resultLabel = 'Đã kết thúc') {
     if (currentMode() === 'online' || localReplayFrames.length < 2) return;
@@ -251,9 +280,13 @@
       moves: cloneValue(localMoveLog), incrementSeconds: Number(storedNumber(TIME_INCREMENT_KEY, 10, false))
     });
   }
-  function renderHistoryList() {
-    const items = readGameHistory();
-    historyListEl.innerHTML = items.length ? items.map((item, index) => '<button type="button" data-history="'+index+'" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0"><b>'+new Date(item.date).toLocaleString()+'</b><br>'+item.mode+' · '+item.moveCount+' nước<br>'+item.result+'</button>').join('') : '<p style="opacity:.75">Chưa có ván đã lưu. Ván đấu sẽ xuất hiện ở đây sau khi kết thúc.</p>';
+  async function renderHistoryList() {
+    const render = items => {
+      historyListEl.innerHTML = items.length ? items.map((item, index) => '<button type="button" data-history="'+index+'" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0"><b>'+new Date(item.date).toLocaleString()+'</b><br>'+item.mode+' · '+item.moveCount+' nước<br>'+item.result+'</button>').join('') : '<p style="opacity:.75">Chưa có ván đã lưu. Ván đấu sẽ xuất hiện ở đây sau khi kết thúc.</p>';
+    };
+    render(readGameHistory());
+    const items = await loadGameHistory();
+    render(items);
   }
   function openSavedGame(item) {
     if (!item?.frames?.length) return;
@@ -332,6 +365,7 @@
   let replayIndex = 0;
   let replayTimer = null;
   const GAME_HISTORY_KEY = 'xiangqiCompletedGameHistoryV1';
+  const GAME_HISTORY_OWNER_KEY = 'xiangqiGameHistoryOwnerId';
   let savedOnlineGameId = null;
   let localClock = null;
   let captureFx = [];
