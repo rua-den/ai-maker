@@ -134,3 +134,14 @@ test('Xiangqi saves completed games in persistent history and replays them later
   assert.match(matchUi, /room\?\.status === 'finished'/);
   assert.match(matchUi, /frames: cloneValue\(localReplayFrames\)/);
 });
+
+test('Xiangqi game history is visible in mode selection with player names and replay action', () => {
+  assert.match(matchUi, /xiangqiMenuHistory/);
+  assert.match(matchUi, /Chọn một ván để xem lại bàn cờ và từng nước đi/);
+  assert.match(matchUi, /item\.redName \|\| 'Đỏ'/);
+  assert.match(matchUi, /item\.blackName \|\| 'Đen'/);
+  assert.match(matchUi, /Xem lại ván đấu/);
+  assert.match(matchUi, /replayReturnToMenu/);
+  assert.match(matchUi, /redName:room\.red\?\.name/);
+  assert.match(matchUi, /blackName:room\.black\?\.name/);
+});
