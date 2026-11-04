@@ -145,3 +145,9 @@ test('Xiangqi game history is visible in mode selection with player names and re
   assert.match(matchUi, /redName:room\.red\?\.name/);
   assert.match(matchUi, /blackName:room\.black\?\.name/);
 });
+
+test('Xiangqi checks terminal game state after animated move before saving bot game history', () => {
+  assert.match(matchUi, /checkGameEnd runs after the move animation/);
+  assert.match(matchUi, /setTimeout\(\(\) => \{\s*if \(gameState === 'over'\)/);
+  assert.match(matchUi, /saveLocalCompletedGame\(label\)/);
+});
