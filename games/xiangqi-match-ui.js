@@ -260,6 +260,10 @@
     replayCountEl.textContent = 'Nước ' + replayIndex + ' / ' + Math.max(0, replayFrames.length - 1);
     [...replayMovesEl.children].forEach((button, i) => button.classList.toggle('active', i === replayIndex - 1));
   }
+  function createGameGuid() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return 'game-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + '-' + Math.random().toString(36).slice(2);
+  }
   function historyOwnerId() {
     let id = readLocal(GAME_HISTORY_OWNER_KEY);
     if (!id) {
@@ -305,7 +309,7 @@
   function saveLocalCompletedGame(resultLabel = 'Đã kết thúc') {
     if (currentMode() === 'online' || localReplayFrames.length < 2) return;
     saveCompletedGame({
-      id: 'local-' + (localMoveLog[0]?.movedAt || Date.now()),
+      id: createGameGuid(),
       date: Date.now(), mode: currentMode() === 'bot' ? 'Đấu với Bot' : '2 người',
       redName: currentMode() === 'bot' ? (typeof humanColor !== 'undefined' && humanColor === 'r' ? 'Bạn' : 'Bot') : 'Đỏ',
       blackName: currentMode() === 'bot' ? (typeof humanColor !== 'undefined' && humanColor === 'b' ? 'Bạn' : 'Bot') : 'Đen',
@@ -722,7 +726,7 @@
       const first = records[0];
       const frames = first ? [{board:first.boardBefore,turn:first.turnBefore,lastMove:first.lastMoveBefore,gameState:'replay'}, ...records.map(r=>({board:r.boardAfter,turn:r.turnAfter,lastMove:r.lastMoveAfter,gameState:'replay'}))] : [];
       if (frames.length > 1) {
-        saveCompletedGame({id:'online-'+boundRoomId,date:Number(room.finishedAt)||Date.now(),mode:'Online',redName:room.red?.name || 'Đỏ',blackName:room.black?.name || 'Đen',result:room.winner === 'r' ? 'Đỏ thắng' : room.winner === 'b' ? 'Đen thắng' : 'Hòa / kết thúc',moveCount:records.length,frames,moves:records,roomId:boundRoomId});
+        saveCompletedGame({id:createGameGuid(),date:Number(room.finishedAt)||Date.now(),mode:'Online',redName:room.red?.name || 'Đỏ',blackName:room.black?.name || 'Đen',result:room.winner === 'r' ? 'Đỏ thắng' : room.winner === 'b' ? 'Đen thắng' : 'Hòa / kết thúc',moveCount:records.length,frames,moves:records,roomId:boundRoomId});
         savedOnlineGameId = boundRoomId;
       }
     }
