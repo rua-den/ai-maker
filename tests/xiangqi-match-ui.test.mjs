@@ -122,3 +122,15 @@ test('Xiangqi provides move record and replay controls for local and online game
   assert.match(matchUi, /boardAfter: cloneValue\(after\.board\)/);
   assert.match(matchUi, /localReplayFrames\.push\(window\.XiangqiReplay\.snapshot\(\)\)/);
 });
+
+test('Xiangqi saves completed games in persistent history and replays them later', () => {
+  assert.match(matchUi, /xiangqiCompletedGameHistoryV1/);
+  assert.match(matchUi, /function saveCompletedGame/);
+  assert.match(matchUi, /function saveLocalCompletedGame/);
+  assert.match(matchUi, /localStorage\.setItem\(GAME_HISTORY_KEY/);
+  assert.match(matchUi, /data-history=/);
+  assert.match(matchUi, /function openSavedGame/);
+  assert.match(matchUi, /Lịch sử ván đấu/);
+  assert.match(matchUi, /room\?\.status === 'finished'/);
+  assert.match(matchUi, /frames: cloneValue\(localReplayFrames\)/);
+});
