@@ -238,7 +238,7 @@
       replayMovesEl.innerHTML = records.map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+'</button>').join('');
     } else {
       replayFrames = localReplayFrames.slice();
-      replayMovesEl.innerHTML = localMoveLog.map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">Nước '+(i+1)+'</button>').join('');
+      replayMovesEl.innerHTML = localMoveLog.map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+(r.captured?' · ăn '+glyph(r.captured):'')+'</button>').join('');
     }
     if (!replayFrames.length) { toast('Ván này chưa có biên bản để phát lại.'); return; }
     replaySavedState = window.XiangqiReplay?.snapshot() || null;
@@ -803,7 +803,7 @@
       const clockBefore = localClockSnapshot();
       const at = Date.now();
       if (!remain.disabled) localClock[mover + 'Ms'] = remain.total;
-      localMoveLog.push({ captured: !!captured, clockBefore });
+      localMoveLog.push({ mover, from: cloneValue(from), to: cloneValue(to), captured: captured ? cloneValue(captured) : null, clockBefore, movedAt: at });
       if (captured) {
         localCaptures.push({ piece: captured, capturedBy: mover, from: cloneValue(from), to: cloneValue(to), at });
         captureFx.push({ piece: captured, to: cloneValue(to), start: performance.now(), duration: 420 });
