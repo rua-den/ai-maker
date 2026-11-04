@@ -688,6 +688,29 @@ function loop(now) {
   drawSelection();
   requestAnimationFrame(loop);
 }
+window.XiangqiReplay = {
+  snapshot() { return { board: board.map(row => row.map(piece => piece ? { ...piece } : null)), turn, lastMove: lastMove ? { from: [...lastMove.from], to: [...lastMove.to] } : null, gameState, winner }; },
+  show(snapshot) {
+    if (!snapshot || !Array.isArray(snapshot.board)) return false;
+    board = snapshot.board.map(row => row.map(piece => piece ? { ...piece } : null));
+    turn = snapshot.turn || 'r';
+    lastMove = snapshot.lastMove ? { from: [...snapshot.lastMove.from], to: [...snapshot.lastMove.to] } : null;
+    selected = null; legalTargets = []; animAnim = null;
+    gameState = 'replay';
+    updateTurnLabel();
+    return true;
+  },
+  restore(snapshot) {
+    if (!snapshot || !Array.isArray(snapshot.board)) return false;
+    board = snapshot.board.map(row => row.map(piece => piece ? { ...piece } : null));
+    turn = snapshot.turn || 'r';
+    lastMove = snapshot.lastMove ? { from: [...snapshot.lastMove.from], to: [...snapshot.lastMove.to] } : null;
+    selected = null; legalTargets = []; animAnim = null;
+    gameState = snapshot.gameState || 'playing'; winner = snapshot.winner || null;
+    updateTurnLabel();
+    return true;
+  }
+};
 requestAnimationFrame(loop);
 </script>
 </body>
