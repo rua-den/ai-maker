@@ -183,7 +183,7 @@
   function selectedControl() {
     const total = totalSelect ? Number(totalSelect.value) : storedNumber(TIME_TOTAL_KEY, DEFAULT_TOTAL_SECONDS, true);
     const enabled = Number.isFinite(total) && total > 0;
-    return { enabled, totalSeconds: enabled ? total : 0 };
+    return { enabled, totalSeconds: enabled ? total : 0, incrementSeconds: storedNumber(TIME_INCREMENT_KEY, 10, false) };
   }
   if (setupPanel) {
     const settings = document.createElement('div');
@@ -503,7 +503,7 @@
     if (!room.timeControl && me === 'r') {
       const control = selectedControl();
       try {
-        await roomRef.child('timeControl').transaction(value => value || { enabled: control.enabled, totalSeconds: control.totalSeconds });
+        await roomRef.child('timeControl').transaction(value => value || { enabled: control.enabled, totalSeconds: control.totalSeconds, incrementSeconds: control.incrementSeconds });
       } catch (_) {}
       return;
     }
