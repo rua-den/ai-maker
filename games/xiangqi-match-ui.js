@@ -206,7 +206,7 @@
   }
 
   const replayStyle = document.createElement('style');
-  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,5,3,.78);backdrop-filter:blur(5px)}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(460px,100%);max-height:82dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:#2b1d12;color:#f6e2b7;padding:15px}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
+  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,5,3,.78);backdrop-filter:blur(5px)}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(460px,100%);max-height:82dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:#2b1d12;color:#f6e2b7;padding:15px}#xiangqiHistoryList{max-height:22dvh;overflow:auto;margin:8px 0}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
   document.head.appendChild(replayStyle);
   const replayPanel = document.createElement('div');
   replayPanel.id = 'xiangqiReplayPanel';
@@ -298,7 +298,7 @@
   });
   document.getElementById('menuBtn')?.addEventListener('click', () => {});
   const recordButton = document.createElement('button');
-  recordButton.type='button'; recordButton.textContent='♟ Biên bản / Replay'; recordButton.className='xiangqiReplayButton';
+  recordButton.type='button'; recordButton.textContent='♟ Lịch sử ván đấu'; recordButton.className='xiangqiReplayButton';
   recordButton.style.cssText='width:100%;border:1px solid #8e6c48;border-radius:9px;background:#3b2b20;color:#f6dfb3;padding:9px;font-weight:800;cursor:pointer';
   const railTopBar = document.getElementById('topBar');
   if (railTopBar) railTopBar.appendChild(recordButton);
@@ -638,13 +638,13 @@
 
   function onRoomValue(room) {
     lastRoom = room;
-    if (room?.status === 'finished' && room.id && savedOnlineGameId !== room.id) {
+    if (room?.status === 'finished' && boundRoomId && savedOnlineGameId !== boundRoomId) {
       const records = Object.values(room.moveHistory || {}).sort((a,b)=>(Number(a.movedAt)||0)-(Number(b.movedAt)||0));
       const first = records[0];
       const frames = first ? [{board:first.boardBefore,turn:first.turnBefore,lastMove:first.lastMoveBefore,gameState:'replay'}, ...records.map(r=>({board:r.boardAfter,turn:r.turnAfter,lastMove:r.lastMoveAfter,gameState:'replay'}))] : [];
       if (frames.length > 1) {
-        saveCompletedGame({id:'online-'+room.id,date:Number(room.finishedAt)||Date.now(),mode:'Online',result:room.winner === 'r' ? 'Đỏ thắng' : room.winner === 'b' ? 'Đen thắng' : 'Hòa / kết thúc',moveCount:records.length,frames,moves:records,roomId:room.id});
-        savedOnlineGameId = room.id;
+        saveCompletedGame({id:'online-'+boundRoomId,date:Number(room.finishedAt)||Date.now(),mode:'Online',result:room.winner === 'r' ? 'Đỏ thắng' : room.winner === 'b' ? 'Đen thắng' : 'Hòa / kết thúc',moveCount:records.length,frames,moves:records,roomId:boundRoomId});
+        savedOnlineGameId = boundRoomId;
       }
     }
     renderClock(room);
