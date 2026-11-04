@@ -920,6 +920,13 @@
       localClock.turnStartedAt = Date.now();
       if (window.XiangqiReplay) localReplayFrames.push(window.XiangqiReplay.snapshot());
       if (gameState === 'over') saveLocalCompletedGame(typeof winner !== 'undefined' && winner ? (winner === 'r' ? 'Đỏ thắng' : 'Đen thắng') : 'Đã kết thúc');
+      // checkGameEnd runs after the move animation, so defer the terminal-state check.
+      setTimeout(() => {
+        if (gameState === 'over') {
+          const label = typeof winner !== 'undefined' && winner ? (winner === 'r' ? 'Đỏ thắng' : 'Đen thắng') : 'Đã kết thúc';
+          saveLocalCompletedGame(label);
+        }
+      }, (typeof ANIM_MS === 'number' ? ANIM_MS : 0) + 80);
       renderCaptured(localCaptures);
       renderClock();
       return result;
