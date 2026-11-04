@@ -741,6 +741,7 @@
       if (currentMode() === 'online') { requestOnlineUndo(); return; }
       if (gameState !== 'playing' || !localMoveLog.length) return;
       const log = localMoveLog.pop();
+      if (localReplayFrames.length > 1) localReplayFrames.pop();
       try { undoMove(); } catch (_) { return; }
       if (log?.captured) localCaptures.pop();
       if (log?.clockBefore) { localClock = cloneValue(log.clockBefore); if (localClock) localClock.turnStartedAt = Date.now(); }
