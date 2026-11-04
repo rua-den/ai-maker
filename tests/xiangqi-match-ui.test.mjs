@@ -135,6 +135,13 @@ test('Xiangqi saves completed games in persistent history and replays them later
   assert.match(matchUi, /frames: cloneValue\(localReplayFrames\)/);
 });
 
+test('Xiangqi history is shared across devices through one global Firebase collection', () => {
+  assert.match(matchUi, /historyRef\.orderByChild\('date'\)\.limitToLast\(50\)/);
+  assert.match(matchUi, /db\.ref\('xiangqiGameHistory'\)\.child\(game\.id\)\.set\(game\)/);
+  assert.match(matchUi, /historyRef\.update\(migration\)/);
+  assert.match(matchUi, /historyRef\.child\(historyOwnerId\(\)\)/);
+});
+
 test('Xiangqi game history is visible in mode selection with player names and replay action', () => {
   assert.match(matchUi, /xiangqiMenuHistory/);
   assert.match(matchUi, /Chọn một ván để xem lại bàn cờ và từng nước đi/);
