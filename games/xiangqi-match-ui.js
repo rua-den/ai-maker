@@ -206,7 +206,7 @@
   }
 
   const replayStyle = document.createElement('style');
-  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,5,3,.78);backdrop-filter:blur(5px)}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(460px,100%);max-height:82dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:#2b1d12;color:#f6e2b7;padding:15px}#xiangqiMenuHistoryList{max-height:24dvh;overflow:auto;margin:8px 0}#xiangqiMenuHistoryList button{display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;cursor:pointer}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
+  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:10px;background:rgba(8,5,3,.9);backdrop-filter:blur(5px);overflow:auto}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(760px,100%);max-height:96dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:linear-gradient(145deg,#332316,#21160f);color:#f6e2b7;padding:12px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(220px,.85fr);gap:10px;align-items:start}#xiangqiReplayCard h3,#xiangqiReplayClose,#xiangqiReplayCount{grid-column:1/-1}#xiangqiReplayBoard{grid-column:1;grid-row:4 / span 2;min-width:0;display:flex;align-items:center;justify-content:center;background:#17100b;border:1px solid #806348;border-radius:10px;padding:6px}#xiangqiReplayBoard #board{display:block!important;max-width:100%;max-height:62dvh;object-fit:contain}#xiangqiReplayMoves{grid-column:2;grid-row:4;max-height:42dvh;overflow:auto;display:grid;grid-template-columns:1fr;gap:5px;margin:0}#xiangqiReplayControls{grid-column:2;grid-row:5;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}#xiangqiReplayControls button{min-height:38px}@media(max-width:620px){#xiangqiReplayCard{grid-template-columns:1fr;max-height:98dvh}#xiangqiReplayBoard,#xiangqiReplayMoves,#xiangqiReplayControls{grid-column:1;grid-row:auto}#xiangqiReplayBoard #board{max-height:48dvh}#xiangqiReplayMoves{grid-template-columns:repeat(2,minmax(0,1fr));max-height:22dvh}#xiangqiReplayControls{grid-template-columns:repeat(5,minmax(0,1fr))}#xiangqiReplayControls button{font-size:11px;padding:6px 3px}}#xiangqiMenuHistoryList{max-height:24dvh;overflow:auto;margin:8px 0}#xiangqiMenuHistoryList button{display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;cursor:pointer}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
   document.head.appendChild(replayStyle);
   const menuHistorySection = document.createElement('section');
   menuHistorySection.id = 'xiangqiMenuHistory';
@@ -220,8 +220,28 @@
   }
   const replayPanel = document.createElement('div');
   replayPanel.id = 'xiangqiReplayPanel';
-  replayPanel.innerHTML = '<div id="xiangqiReplayCard"><button id="xiangqiReplayClose" type="button">Đóng ✕</button><h3>Biên bản & Replay</h3><div id="xiangqiReplayCount">Nước 0 / 0</div><div id="xiangqiReplayMoves"></div><div id="xiangqiReplayControls"><button data-step="start">⏮ Đầu</button><button data-step="back">◀ Lùi</button><button data-step="play">▶ Phát</button><button data-step="next">Tiến ▶</button><button data-step="end">Cuối ⏭</button></div></div>';
+  replayPanel.innerHTML = '<div id="xiangqiReplayCard"><button id="xiangqiReplayClose" type="button">Đóng ✕</button><h3>Biên bản & Replay</h3><div id="xiangqiReplayCount">Nước 0 / 0</div><div id="xiangqiReplayBoard" aria-label="Bàn cờ xem lại"></div><div id="xiangqiReplayMoves"></div><div id="xiangqiReplayControls"><button data-step="start">⏮ Đầu</button><button data-step="back">◀ Lùi</button><button data-step="play">▶ Phát</button><button data-step="next">Tiến ▶</button><button data-step="end">Cuối ⏭</button></div></div>';
   gameContainer.appendChild(replayPanel);
+  const replayBoardEl = replayPanel.querySelector('#xiangqiReplayBoard');
+  const boardHome = canvasEl.parentNode;
+  const boardHomeNext = canvasEl.nextSibling;
+  function mountReplayBoard() {
+    if (canvasEl.parentNode !== replayBoardEl) replayBoardEl.appendChild(canvasEl);
+    canvasEl.style.width = '100%';
+    canvasEl.style.height = 'auto';
+    canvasEl.style.maxWidth = '100%';
+    canvasEl.style.maxHeight = '62dvh';
+    canvasEl.style.aspectRatio = '7 / 8';
+  }
+  function unmountReplayBoard() {
+    if (boardHome && canvasEl.parentNode !== boardHome) boardHome.insertBefore(canvasEl, boardHomeNext && boardHomeNext.parentNode === boardHome ? boardHomeNext : null);
+    canvasEl.style.width = '';
+    canvasEl.style.height = '';
+    canvasEl.style.maxWidth = '';
+    canvasEl.style.maxHeight = '';
+    canvasEl.style.aspectRatio = '';
+    requestAnimationFrame(fitBoard);
+  }
   const historyListEl = menuHistorySection.querySelector('#xiangqiMenuHistoryList');
   const replayMovesEl = replayPanel.querySelector('#xiangqiReplayMoves');
   const replayCountEl = replayPanel.querySelector('#xiangqiReplayCount');
@@ -310,6 +330,7 @@
     replayFrames = item.frames;
     replayMovesEl.innerHTML = (item.moves || []).map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+(r.captured?' · ăn '+glyph(r.captured):'')+'</button>').join('');
     replayPanel.classList.add('show');
+    mountReplayBoard();
     showReplayFrame(0);
   }
   function openReplay() {
@@ -328,11 +349,13 @@
     if (!replayFrames.length) { toast('Ván này chưa có biên bản để phát lại.'); return; }
     replaySavedState = window.XiangqiReplay?.snapshot() || null;
     replayPanel.classList.add('show');
+    mountReplayBoard();
     showReplayFrame(0);
   }
   function closeReplay() {
     stopReplayTimer();
     replayPanel.classList.remove('show');
+    unmountReplayBoard();
     if (replaySavedState && window.XiangqiReplay) window.XiangqiReplay.restore(replaySavedState);
     replaySavedState = null;
     if (replayReturnToMenu && menuOverlayEl) menuOverlayEl.style.display = 'flex';
