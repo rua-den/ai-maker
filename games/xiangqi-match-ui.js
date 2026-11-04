@@ -206,12 +206,13 @@
   }
 
   const replayStyle = document.createElement('style');
-  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,5,3,.78);backdrop-filter:blur(5px)}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(460px,100%);max-height:82dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:#2b1d12;color:#f6e2b7;padding:15px}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
+  replayStyle.textContent = '#xiangqiReplayPanel{position:absolute;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(8,5,3,.78);backdrop-filter:blur(5px)}#xiangqiReplayPanel.show{display:flex}#xiangqiReplayCard{width:min(460px,100%);max-height:82dvh;overflow:auto;border:1px solid #9b7545;border-radius:16px;background:#2b1d12;color:#f6e2b7;padding:15px}#xiangqiHistoryList{max-height:22dvh;overflow:auto;margin:8px 0}#xiangqiReplayMoves{max-height:30dvh;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:10px 0}#xiangqiReplayMoves button,#xiangqiReplayControls button{border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0;padding:8px;font-weight:700}#xiangqiReplayMoves button.active{background:#e5c17a;color:#302014}#xiangqiReplayControls{display:flex;gap:6px;flex-wrap:wrap}#xiangqiReplayControls button{flex:1}#xiangqiReplayClose{float:right}';
   document.head.appendChild(replayStyle);
   const replayPanel = document.createElement('div');
   replayPanel.id = 'xiangqiReplayPanel';
-  replayPanel.innerHTML = '<div id="xiangqiReplayCard"><button id="xiangqiReplayClose" type="button">Đóng ✕</button><h3>Biên bản & Replay</h3><div id="xiangqiReplayCount">Chưa có nước đi</div><div id="xiangqiReplayMoves"></div><div id="xiangqiReplayControls"><button data-step="start">⏮ Đầu</button><button data-step="back">◀ Lùi</button><button data-step="play">▶ Phát</button><button data-step="next">Tiến ▶</button><button data-step="end">Cuối ⏭</button></div></div>';
+  replayPanel.innerHTML = '<div id="xiangqiReplayCard"><button id="xiangqiReplayClose" type="button">Đóng ✕</button><h3>Lịch sử ván đấu</h3><div id="xiangqiHistoryList"></div><h4>Biên bản & Replay</h4><div id="xiangqiReplayCount">Chưa có nước đi</div><div id="xiangqiReplayMoves"></div><div id="xiangqiReplayControls"><button data-step="start">⏮ Đầu</button><button data-step="back">◀ Lùi</button><button data-step="play">▶ Phát</button><button data-step="next">Tiến ▶</button><button data-step="end">Cuối ⏭</button></div></div>';
   gameContainer.appendChild(replayPanel);
+  const historyListEl = replayPanel.querySelector('#xiangqiHistoryList');
   const replayMovesEl = replayPanel.querySelector('#xiangqiReplayMoves');
   const replayCountEl = replayPanel.querySelector('#xiangqiReplayCount');
   function replayLabel(record, index) {
@@ -228,8 +229,44 @@
     replayCountEl.textContent = 'Nước ' + replayIndex + ' / ' + Math.max(0, replayFrames.length - 1);
     [...replayMovesEl.children].forEach((button, i) => button.classList.toggle('active', i === replayIndex - 1));
   }
+  function readGameHistory() {
+    try { const value = JSON.parse(localStorage.getItem(GAME_HISTORY_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (_) { return []; }
+  }
+  function writeGameHistory(items) {
+    try { localStorage.setItem(GAME_HISTORY_KEY, JSON.stringify(items.slice(0, 50))); } catch (_) { toast('Không lưu được lịch sử trên thiết bị này.'); }
+  }
+  function saveCompletedGame(game) {
+    if (!game || !Array.isArray(game.frames) || game.frames.length < 2 || !game.id) return;
+    const items = readGameHistory();
+    if (items.some(item => item.id === game.id)) return;
+    items.unshift(game);
+    writeGameHistory(items);
+  }
+  function saveLocalCompletedGame(resultLabel = 'Đã kết thúc') {
+    if (currentMode() === 'online' || localReplayFrames.length < 2) return;
+    saveCompletedGame({
+      id: 'local-' + (localMoveLog[0]?.movedAt || Date.now()),
+      date: Date.now(), mode: 'Local', result: resultLabel,
+      moveCount: localMoveLog.length, frames: cloneValue(localReplayFrames),
+      moves: cloneValue(localMoveLog), incrementSeconds: Number(storedNumber(TIME_INCREMENT_KEY, 10, false))
+    });
+  }
+  function renderHistoryList() {
+    const items = readGameHistory();
+    historyListEl.innerHTML = items.length ? items.map((item, index) => '<button type="button" data-history="'+index+'" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border:1px solid #806348;border-radius:8px;background:#443126;color:#fff0d0"><b>'+new Date(item.date).toLocaleString()+'</b><br>'+item.mode+' · '+item.moveCount+' nước<br>'+item.result+'</button>').join('') : '<p style="opacity:.75">Chưa có ván đã lưu. Ván đấu sẽ xuất hiện ở đây sau khi kết thúc.</p>';
+  }
+  function openSavedGame(item) {
+    if (!item?.frames?.length) return;
+    stopReplayTimer();
+    replaySavedState = window.XiangqiReplay?.snapshot() || null;
+    replayFrames = item.frames;
+    replayMovesEl.innerHTML = (item.moves || []).map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+(r.captured?' · ăn '+glyph(r.captured):'')+'</button>').join('');
+    replayPanel.classList.add('show');
+    showReplayFrame(0);
+  }
   function openReplay() {
     stopReplayTimer();
+    renderHistoryList();
     const online = currentMode() === 'online' && lastRoom;
     if (online) {
       const records = Object.entries(lastRoom.moveHistory || {}).map(([key, value]) => ({key, ...value})).sort((a,b)=>(Number(a.movedAt)||0)-(Number(b.movedAt)||0));
@@ -252,6 +289,7 @@
     replaySavedState = null;
   }
   replayPanel.querySelector('#xiangqiReplayClose').addEventListener('click', closeReplay);
+  historyListEl.addEventListener('click', e => { const button=e.target.closest('button[data-history]'); if(button) openSavedGame(readGameHistory()[Number(button.dataset.history)]); });
   replayMovesEl.addEventListener('click', e => { const button=e.target.closest('button[data-frame]'); if(button) showReplayFrame(Number(button.dataset.frame)); });
   replayPanel.querySelector('#xiangqiReplayControls').addEventListener('click', e => {
     const step=e.target.closest('button')?.dataset.step; if(!step) return;
@@ -260,7 +298,7 @@
   });
   document.getElementById('menuBtn')?.addEventListener('click', () => {});
   const recordButton = document.createElement('button');
-  recordButton.type='button'; recordButton.textContent='♟ Biên bản / Replay'; recordButton.className='xiangqiReplayButton';
+  recordButton.type='button'; recordButton.textContent='♟ Lịch sử ván đấu'; recordButton.className='xiangqiReplayButton';
   recordButton.style.cssText='width:100%;border:1px solid #8e6c48;border-radius:9px;background:#3b2b20;color:#f6dfb3;padding:9px;font-weight:800;cursor:pointer';
   const railTopBar = document.getElementById('topBar');
   if (railTopBar) railTopBar.appendChild(recordButton);
@@ -293,6 +331,8 @@
   let replayFrames = [];
   let replayIndex = 0;
   let replayTimer = null;
+  const GAME_HISTORY_KEY = 'xiangqiCompletedGameHistoryV1';
+  let savedOnlineGameId = null;
   let localClock = null;
   let captureFx = [];
 
@@ -403,6 +443,7 @@
     overTitle.textContent = (winner === 'r' ? '🔴 Đỏ' : '⚫ Đen') + ' thắng! (' + reason + ')';
     overOverlay.style.display = 'flex';
     toast(sideName(loser) + ' đã hết giờ.');
+    saveLocalCompletedGame((opposite(loser) === 'r' ? 'Đỏ' : 'Đen') + ' thắng · hết giờ');
   }
 
   try {
@@ -597,6 +638,15 @@
 
   function onRoomValue(room) {
     lastRoom = room;
+    if (room?.status === 'finished' && boundRoomId && savedOnlineGameId !== boundRoomId) {
+      const records = Object.values(room.moveHistory || {}).sort((a,b)=>(Number(a.movedAt)||0)-(Number(b.movedAt)||0));
+      const first = records[0];
+      const frames = first ? [{board:first.boardBefore,turn:first.turnBefore,lastMove:first.lastMoveBefore,gameState:'replay'}, ...records.map(r=>({board:r.boardAfter,turn:r.turnAfter,lastMove:r.lastMoveAfter,gameState:'replay'}))] : [];
+      if (frames.length > 1) {
+        saveCompletedGame({id:'online-'+boundRoomId,date:Number(room.finishedAt)||Date.now(),mode:'Online',result:room.winner === 'r' ? 'Đỏ thắng' : room.winner === 'b' ? 'Đen thắng' : 'Hòa / kết thúc',moveCount:records.length,frames,moves:records,roomId:boundRoomId});
+        savedOnlineGameId = boundRoomId;
+      }
+    }
     renderClock(room);
     renderCaptured(capturesFromRoom(room));
     ensureTimeControl(room);
@@ -813,6 +863,7 @@
       localClock.turn = opposite(mover);
       localClock.turnStartedAt = Date.now();
       if (window.XiangqiReplay) localReplayFrames.push(window.XiangqiReplay.snapshot());
+      if (gameState === 'over') saveLocalCompletedGame(typeof winner !== 'undefined' && winner ? (winner === 'r' ? 'Đỏ thắng' : 'Đen thắng') : 'Đã kết thúc');
       renderCaptured(localCaptures);
       renderClock();
       return result;
