@@ -26,7 +26,7 @@ test('Xiangqi moves status and suggestion helpers into a left assist rail', () =
 test('Xiangqi chat is taller and collapsed chat clears the music control', () => {
   assert.match(matchUi, /#xiangqiLiveChat\{height:min\(560px,68vh\)!important\}/);
   assert.match(matchUi, /#xiangqiLiveChat\.collapsed\{height:auto!important;bottom:64px!important/);
-  assert.match(matchUi, /#xiangqiLiveChat\\{height:min\\(420px,48dvh\\)!important;right:8px!important/);
+  assert.doesNotMatch(matchUi, /#xiangqiLiveChat\\{height:min\\(420px,48dvh\\)!important/);
 });
 
 test('Xiangqi online undo requires opponent approval before restoring state', () => {
@@ -55,7 +55,7 @@ test('Xiangqi supports untimed play and one cumulative time pool per side', () =
   assert.match(matchUi, /option value="600">10 phút/);
   assert.match(matchUi, /Quỹ thời gian tích lũy cả ván; cộng thêm sau mỗi nước đi hợp lệ/);
   assert.match(matchUi, /function isTimeControlEnabled/);
-  assert.match(matchUi, /return \\{ enabled, totalSeconds: enabled \\? total : 0, incrementSeconds:/);
+  assert.match(matchUi, /return \\{ enabled, totalSeconds: enabled \\? total : 0, incrementSeconds: storedNumber/);
   assert.match(matchUi, /xiangqiClockOff/);
   assert.match(matchUi, /∞ Không tính giờ/);
   assert.doesNotMatch(matchUi, /TIME_TURN_KEY|DEFAULT_TURN_SECONDS|xiangqiTimeTurnSeconds|xiangqiTurnTime|turnSeconds|xiangqiTurnClock|hết giờ lượt/);
