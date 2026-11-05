@@ -351,6 +351,12 @@
     replayReturnToMenu = !!(menuOverlayEl && getComputedStyle(menuOverlayEl).display !== 'none');
     if (menuOverlayEl) menuOverlayEl.style.display = 'none';
     replayFrames = item.frames;
+    const playerLegend = replayPanel.querySelector('#xiangqiReplayPlayers') || document.createElement('div');
+    playerLegend.id = 'xiangqiReplayPlayers';
+    playerLegend.style.cssText = 'grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 10px;border:1px solid rgba(255,216,155,.24);border-radius:9px;background:rgba(0,0,0,.18);font-size:13px';
+    playerLegend.innerHTML = '<span><b style="color:#f1c779">🔴 ĐỎ:</b> '+escapeHtml(item.redName || 'Đỏ')+'</span><span><b style="color:#ddd">⚫ ĐEN:</b> '+escapeHtml(item.blackName || 'Đen')+'</span>';
+    const replayTitle = replayPanel.querySelector('#xiangqiReplayCard h3');
+    if (replayTitle && !playerLegend.parentNode) replayTitle.insertAdjacentElement('afterend', playerLegend);
     replayMovesEl.innerHTML = (item.moves || []).map((r,i)=>'<button type="button" data-frame="'+(i+1)+'">'+replayLabel(r,i)+(r.captured?' · ăn '+glyph(r.captured):'')+'</button>').join('');
     replayPanel.classList.add('show');
     mountReplayBoard();
