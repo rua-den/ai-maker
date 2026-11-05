@@ -136,10 +136,10 @@ test('Xiangqi saves completed games in persistent history and replays them later
 });
 
 test('Xiangqi history is shared across devices through one global Firebase collection', () => {
-  assert.match(matchUi, /historyRef\.orderByChild\('date'\)\.limitToLast\(50\)/);
+  assert.match(matchUi, /historyRef\.once\('value'\)/);
   assert.match(matchUi, /db\.ref\('xiangqiGameHistory'\)\.child\(game\.id\)\.set\(game\)/);
   assert.match(matchUi, /historyRef\.update\(migration\)/);
-  assert.match(matchUi, /historyRef\.child\(historyOwnerId\(\)\)/);
+  assert.match(matchUi, /Flatten every legacy qh-\* owner folder/);
 });
 
 test('Xiangqi game history is visible in mode selection with player names and replay action', () => {
