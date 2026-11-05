@@ -12,7 +12,7 @@ test('Xiangqi board center fix loads after match UI', () => {
 
 test('Xiangqi board remains viewport-centered despite match UI sizing', () => {
   assert.match(centerFix, /#gameContainer > #board/);
-  assert.match(centerFix, /transform: none !important/);
+  assert.match(centerFix, /transform: translateY\\(var\\(--xiangqi-board-offset-y, 0px\\)\\) !important/);
   assert.match(centerFix, /justify-content:center/);
   assert.doesNotThrow(() => new Function(centerFix));
 });
