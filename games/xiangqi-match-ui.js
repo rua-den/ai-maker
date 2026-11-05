@@ -288,21 +288,27 @@
     if (!db) return localItems;
     try {
       const historyRef = db.ref('xiangqiGameHistory');
-      const [globalSnapshot, legacySnapshot] = await Promise.all([
-        historyRef.orderByChild('date').limitToLast(50).once('value'),
-        historyRef.child(historyOwnerId()).once('value')
-      ]);
-      // Migrate this browser's old local/per-owner history into the shared collection.
-      const legacyItems = [
-        ...Object.values(legacySnapshot.val() || {}),
-        ...localItems
-      ].filter(item => item?.id && Array.isArray(item.frames));
+      // Read the collection as-is instead of relying on an indexed query.
+      // The node contains both flat game records and legacy per-device folders.
+      const snapshot = await historyRef.once('value');
+      const root = snapshot.val() || {};
+      const cloudItems = [];
       const migration = {};
-      for (const item of legacyItems) migration[item.id] = item;
+      for (const value of Object.values(root)) {
+        if (!value || typeof value !== 'object') continue;
+        if (value.id && Array.isArray(value.frames)) {
+          cloudItems.push(value);
+          continue;
+        }
+        // Flatten every legacy qh-* owner folder, not only this browser's folder.
+        for (const item of Object.values(value)) {
+          if (!item?.id || !Array.isArray(item.frames)) continue;
+          cloudItems.push(item);
+          migration[item.id] = item;
+        }
+      }
       if (Object.keys(migration).length) await historyRef.update(migration);
-
-      const refreshed = Object.values((await historyRef.orderByChild('date').limitToLast(50).once('value')).val() || {});
-      const merged = mergeGameHistory([...refreshed, ...legacyItems]);
+      const merged = mergeGameHistory([...cloudItems, ...localItems]);
       writeGameHistory(merged);
       return merged;
     } catch (error) {
