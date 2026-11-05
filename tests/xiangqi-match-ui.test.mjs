@@ -53,7 +53,7 @@ test('Xiangqi supports untimed play and one cumulative time pool per side', () =
   assert.match(matchUi, /option value="0">∞ Không tính giờ/);
   assert.match(matchUi, /Quỹ thời gian mỗi bên/);
   assert.match(matchUi, /option value="600">10 phút/);
-  assert.match(matchUi, /Thời gian được tích lũy cho cả ván đấu/);
+  assert.match(matchUi, /Quỹ thời gian tích lũy cả ván; cộng thêm sau mỗi nước đi hợp lệ/);
   assert.match(matchUi, /function isTimeControlEnabled/);
   assert.match(matchUi, /return \{ enabled, totalSeconds: enabled \? total : 0 \}/);
   assert.match(matchUi, /xiangqiClockOff/);
